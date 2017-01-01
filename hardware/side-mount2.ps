@@ -1,0 +1,64 @@
+%!PS-Adobe-3.0
+%%BoundingBox: 0 0 600 600
+
+/mm { 72 25.4 div mul } bind def
+
+/screw-r 3.2 mm 2 div def
+
+% x y
+/screw {
+    moveto
+    currentpoint
+    screw-r 0 rmoveto
+    screw-r 0 360 arc
+} def
+
+0 setlinewidth
+
+20 mm 20 mm translate
+
+0 0 moveto
+
+%if
+0 87 mm lineto
+%else
+%0 120 mm lineto
+%15 mm 120 mm lineto
+%45 mm 87 mm lineto
+%endif
+
+150 mm 87 mm lineto
+150 mm 45 mm lineto
+100 mm 0 mm lineto
+0 0 lineto
+
+% bottom
+/ypos 7.5 mm def
+7.5 mm ypos screw
+35 mm ypos screw
+62.5 mm ypos screw
+90 mm ypos screw
+
+% top
+/ypos 60 mm 7.5 mm sub def
+7.5 mm ypos screw
+90 mm ypos screw
+35 mm ypos screw
+62.5 mm ypos screw
+117.5 mm ypos screw
+145 mm ypos screw
+
+/ypos 60 mm 12 mm add 7.5 mm add def
+7.5 mm ypos screw
+90 mm ypos screw
+36.6 mm ypos screw
+63.3 mm ypos screw
+116.6 mm ypos screw
+143.3 mm ypos screw
+
+/ypos 60 mm 12 mm add 25 mm add def
+%7.5 mm ypos screw
+%7.5 mm ypos 15 mm add screw
+
+stroke
+showpage
