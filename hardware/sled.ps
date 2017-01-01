@@ -1,0 +1,41 @@
+%!PS-Adobe-3.0
+%%BoundingBox: 0 0 600 600
+
+/mm { 72 25.4 div mul } bind def
+
+/screw-r 3.2 mm 2 div def
+
+% x y
+/screw {
+    moveto
+    currentpoint
+    screw-r 0 rmoveto
+    screw-r 0 360 arc
+} def
+
+/box {
+  /h exch def
+  /w exch def
+
+  w 0 rlineto
+  0 h rlineto
+  w neg 0 rlineto
+  0 h neg rlineto
+  closepath
+  stroke
+} def
+
+0 setlinewidth
+
+20 mm 20 mm translate
+
+0 0 moveto 150 mm 90 mm box
+
+30 mm 7.5 mm screw
+150 mm 30 mm sub 7.5 mm screw
+
+30 mm 90 mm 7.5 mm sub screw
+150 mm 30 mm sub 90 mm 7.5 mm sub screw
+
+stroke
+showpage
