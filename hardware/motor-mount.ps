@@ -3,7 +3,8 @@
 
 /mm { 72 25.4 div mul } bind def
 
-/axis-r 22.3 mm 2 div def
+/axis-mount-r 22.3 mm 2 div def
+/axis-r 8.5 mm 2 div def
 /mount-dist 31 mm 2 div def
 /screw-r 3.2 mm 2 div def
 
@@ -31,13 +32,18 @@
 } def
 
 /motor {
-    0 0 axis-r circle
+    0 0 axis-mount-r circle
 
     mount-dist neg mount-dist neg screw-r circle
     mount-dist mount-dist neg screw-r circle
     mount-dist neg mount-dist screw-r circle
     mount-dist mount-dist screw-r circle
 
+    stroke
+} def
+
+/axis {
+    0 0 axis-r circle
     stroke
 } def
 
@@ -66,6 +72,7 @@
 %-45 mm 0 moveto 15 mm 60 mm box
 %30 mm 0  moveto 15 mm 60 mm box
 
-0 15 mm 42.3 mm 2 div add translate motor
+%0 15 mm 42.3 mm 2 div add translate motor
+0 15 mm 42.3 mm 2 div add translate axis
 
 showpage

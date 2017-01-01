@@ -1,4 +1,4 @@
-ALL_DXF=laser-rot-mount.dxf
+ALL_DXF=laser-rot-mount.dxf motor-mount.dxf
 
 all : $(ALL_DXF)
 
