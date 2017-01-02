@@ -58,7 +58,7 @@ ldgraphy: main.o $(OBJECTS)
 $(PASM):
 	make -C $(AM335_BASE)
 
-main.o : laser-scribe-pru_bin.h
+uio-pruss-interface.cc : laser-scribe-pru_bin.h
 
 # Auto generated dependencies
 -include $(DEPENDENCY_RULES)
