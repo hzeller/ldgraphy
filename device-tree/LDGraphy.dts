@@ -1,0 +1,56 @@
+/*
+ * Based on github.com/jadonk/validation-scripts/tree/master/test-capemgr
+ * Copyright (C) 2012 Texas Instruments Incorporated - http://www.ti.com/
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Purpose License Version 2 as
+ * published by the Free Software Foundation
+ *
+ * To create the binary representation that the device manager can handle, run
+ *   make LDGraphy-00A0.dtbo
+ * (The binary fill is checked into github, so this is only needed if you are
+ *  modifying this file)
+ */
+
+/dts-v1/;
+/plugin/;
+
+/{
+    compatible = "ti,beaglebone", "ti,beaglebone-black", "ti,beaglebone-green";
+    part-number = "LDGraphy";
+    version = "00A0";
+
+    exclusive-use = "pruss",  // Programmable realtime unit
+    		  "P9.18", "P9.17";
+
+    fragment@0 {
+        target = <&am33xx_pinmux>;
+        __overlay__ {
+            beagleg_gpio_pins: LDGraphy_Pins {
+                pinctrl-single,pins = <
+		    0x158 0x07 /* GPIO0[4] ; Polygon Mirror Clock */
+		    0x15c 0x07 /* GPIO0[5] ; Laser Data */
+                >;
+            };
+        };
+    };
+
+    fragment@1 {
+        target = <&ocp>;
+        __overlay__ {
+            test_helper: helper {
+                compatible = "bone-pinmux-helper";
+                pinctrl-names = "default";
+                pinctrl-0 = <&beagleg_gpio_pins>;
+                status = "okay";
+            };
+        };
+    };
+
+   fragment@2{
+        target = <&pruss>;
+        __overlay__ {
+            status = "okay";
+        };
+   };
+};

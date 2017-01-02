@@ -1,0 +1,3 @@
+[submodule "am335x_pru_package"]
+	path = am335x_pru_package
+	url = https://github.com/hzeller/am335x_pru_package.git

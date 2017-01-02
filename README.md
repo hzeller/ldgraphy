@@ -1,6 +1,8 @@
 LDgraphy - Laser Direct Lithography
 ===================================
 
+(work in progress, nothing to see here yet)
+
 Simple implementation of direct photo resist exposure using a 405nm laser.
 
 Uses
@@ -8,6 +10,10 @@ Uses
   * Commonly available polygon mirror scanner (from laser printers)
   * stepper motor
   * Beaglebone Black to control it all.
+
+Build
+-----
+git clone --recursive https://github.com/hzeller/ldgraphy.git
 
 ----
 Polygon scanner mirror

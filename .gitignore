@@ -1,2 +1,6 @@
 *~
-
+.compiler-flags
+*.o
+*.o.d
+*-pru_bin.h
+ldgraphy
