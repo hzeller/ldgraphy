@@ -18,6 +18,8 @@
 ;; along with LDGraphy.  If not, see <http://www.gnu.org/licenses/>.
 
 
+#include "laser-scribe-constants.h"
+
 .origin 0
 .entrypoint INIT
 
@@ -35,8 +37,16 @@
 
 ;; Each loop takes 2 CPU cycles, so freq = 200Mhz / (2*1000)
 ;; So here: 50kHz
-#define DATA_SLEEP 1000
+#define DATA_SLEEP 200
 
+	;; Registers
+	;; r1 ... r8 : common use
+	;; r9  - queue memory position
+	;; r10 - GPIO write position
+	;; r11 - Laser mask
+	;; r12 - needs advancing
+
+;; uses r5
 .macro WaitLoop
 .mparam loop_count
 
@@ -57,44 +67,86 @@ INIT:
 	MOV r3, GPIO_0_BASE | GPIO_OE
 	SBBO r2, r3, 0, 4
 
-	MOV r4, GPIO_0_BASE | GPIO_DATAOUT ; remember where we can write
+	MOV r9, 0			    ; Byte position in DRAM
+	MOV r10, GPIO_0_BASE | GPIO_DATAOUT ; remember where we can write
+	MOV r11, 0			    ; Laser off by default.
 
 NEXT_LINE:
-	;; first four bytes: status
-	LBCO r1.b0, CONST_PRUDRAM, 0, 1
-	QBNE FINISH, r1.b0, 0x55 ; this value means: keep going.
+	LBCO r1.b0, CONST_PRUDRAM, r9, 1
+	QBEQ FINISH, r1.b0, STATE_EXIT
 
+	;; Unless this slot is filled, we switch off the laser.
+	;; We have to keep going clocking data to not interrupt the
+	;; mirror clock.
+	QBEQ DATA_RUN, r1.b0, STATE_FILLED
+
+EMPTY_RUN:
+	MOV r11, 0
+	MOV r12, 0
+	JMP SCAN_LINE
+
+DATA_RUN:
+	MOV r11, (1<<LASER_DATA)
+	MOV r12, 1
+
+SCAN_LINE:
+	;; Set pulse for the mirror
 	MOV r1, (1<<MIRROR_CLOCK)
-	SBBO r1, r4, 0, 4
+	SBBO r1, r10, 0, 4
 	WaitLoop MIRROR_SLEEP
-
-	;; Simple test: just toggle a while
-	MOV r2, 512		; this number of 'pixels'
-
-LASER_LOOP:
-	QBBS SET_LASER_ONE, r2, 3 ; div by 8
-
 	MOV r1, 0
+	SBBO r1, r10, 0, 4
+
+	MOV r2, HEADER_SIZE 		; Start after header
+DATA_LOOP:
+	MOV r3, r9
+	ADD r3, r3, r2
+	LBCO r1.b0, CONST_PRUDRAM, r3, 1
+
+	MOV r3, 7		; Bit loop
+LASER_BITS_LOOP:
+	QBBS LASER_SET_ON, r1.b0, r3
+
+	MOV r4, 0
 	JMP LASER_DATA_SET
-
-SET_LASER_ONE:
-	MOV r1, (1<<LASER_DATA)
-
+LASER_SET_ON:
+	MOV r4, r11		; Set laser, but only if we have it enabled
 LASER_DATA_SET:
-	SBBO r1, r4, 0, 4
+	SBBO r4, r10, 0, 4	; Switch laser via GPIO
 	WaitLoop DATA_SLEEP
 
-	SUB r2, r2, 1
-	QBNE LASER_LOOP, r2, 0
+	QBEQ LASER_BITS_LOOP_DONE, r3, 0 ; that was the last bit
+	SUB r3, r3, 1
+	JMP LASER_BITS_LOOP
 
+LASER_BITS_LOOP_DONE:
+	ADD r2, r2, 1		; next data byte
+	MOV r3, ITEM_SIZE
+	QBLT DATA_LOOP, r3, r2
+
+	QBEQ NEXT_LINE, r12, 0	; Empty run: don't increase, just recheck.
+
+	;; We are done with this element. Tell the host.
+	MOV r1.b0, STATE_EMPTY
+	SBCO r1.b0, CONST_PRUDRAM, r9, 1
+	MOV R31.b0, PRU0_ARM_INTERRUPT+16 ; tell that status changed.
+
+	MOV r3, ITEM_SIZE
+	ADD r9, r9, r3
+
+	MOV r3, QUEUE_LEN*ITEM_SIZE
+	QBLT NEXT_LINE, r3, r9
+
+	MOV r9, 0		; Start at beginning of ring-buffer again
 	JMP NEXT_LINE
 
 FINISH:
-	MOV r1, 0
-	SBBO r1, r4, 0, 4
+	MOV r1, 0		; Switch off all GPIO bits.
+	SBBO r1, r10, 0, 4
 
-
-	MOV r1.b0, 0x22
-	SBCO r1.b0, CONST_PRUDRAM, 0, 1	  ; Indicate finish status.
+	;; Tell host that we've read the current queue status and exited.
+	MOV r1.b0, STATE_DONE
+	SBCO r1.b0, CONST_PRUDRAM, r9, 1
 	MOV R31.b0, PRU0_ARM_INTERRUPT+16 ; Tell that we're done.
+
 	HALT

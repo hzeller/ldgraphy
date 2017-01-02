@@ -1,7 +1,7 @@
 /* -*- mode: c++; c-basic-offset: 4; indent-tabs-mode: nil; -*-
  * (c) 2017 Henner Zeller <h.zeller@acm.org>
  *
- * This file is part of LDGraphyhttp://github.com/hzeller/ldgraphy
+ * This file is part of LDGraphy http://github.com/hzeller/ldgraphy
  *
  * LDGraphy is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,30 +19,126 @@
 
 #include "uio-pruss-interface.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <unistd.h>
 
+#include "laser-scribe-constants.h"
+
+struct QueueElement {
+    volatile uint8_t state;
+    volatile uint8_t data[DATA_SIZE];
+};
+
+// Stop gap for compiler attempting to be overly clever when copying between
+// host and PRU memory.
+static void unaligned_memcpy(volatile void *dest, const void *src, size_t size) {
+  volatile char *d = (volatile char*) dest;
+  const char *s = (char*) src;
+  const volatile char *end = d + size;
+  while (d < end) {
+    *d++ = *s++;
+  }
+}
+
+// Sends scan lines to the ring-buffer in the PRU.
+class ScanLineSender {
+public:
+    ScanLineSender() : running_(false), queue_pos_(0) {
+        // Make sure that things are packed the way we think it is.
+        assert(sizeof(struct QueueElement) == ITEM_SIZE);
+    }
+    ~ScanLineSender() {
+        if (running_) pru_.Shutdown();
+    }
+
+    bool Init() {
+        if (running_) {
+            fprintf(stderr, "Already running. Init() has no effect\n");
+            return false;
+        }
+        if (!pru_.Init()) {
+            return false;
+        }
+
+        if (!pru_.AllocateSharedMem((void**) &ring_buffer_,
+                                    QUEUE_LEN * sizeof(QueueElement))) {
+            return false;
+        }
+        for (int i = 0; i < QUEUE_LEN; ++i) {
+            ring_buffer_[i].state = STATE_EMPTY;
+        }
+        running_ = pru_.StartExecution();
+        return running_;
+    }
+
+    void SetNextData(uint8_t *data, size_t size) {
+        assert(size == DATA_SIZE);  // We only accept full lines :)
+        WaitUntil(queue_pos_, STATE_EMPTY);
+        unaligned_memcpy(ring_buffer_[queue_pos_].data, data, size);
+        ring_buffer_[queue_pos_].state = STATE_FILLED;
+
+        queue_pos_++;
+        queue_pos_ %= QUEUE_LEN;
+    }
+
+    bool Shutdown() {
+        WaitUntil(queue_pos_, STATE_EMPTY);
+        ring_buffer_[queue_pos_].state = STATE_EXIT;
+        // PRU will set it to empty again when actually halted.
+        WaitUntil(queue_pos_, STATE_DONE);
+        pru_.Shutdown();
+        running_ = false;
+        return true;
+    }
+
+private:
+    void WaitUntil(int pos, int state) {
+        while (ring_buffer_[pos].state != state) {
+            pru_.WaitEvent();
+        }
+    }
+
+    volatile QueueElement *ring_buffer_;
+    bool running_;
+    int queue_pos_;
+    UioPrussInterface pru_;
+};
 
 int main(int argc, char *argv[]) {
-    UioPrussInterface pru;
-    if (!pru.Init())
+    ScanLineSender line_sender;
+
+    if (!line_sender.Init())
         return 1;
 
-    volatile uint8_t *loop_status;
-    pru.AllocateSharedMem((void**)&loop_status, sizeof(*loop_status));
+    // Create two buffers
+    uint8_t buffer1[DATA_SIZE];
+    uint8_t buffer2[DATA_SIZE];
+    for (int i = 0; i < DATA_SIZE; ++i) {
+        if (i > 80 && i < DATA_SIZE - 60) {
+            buffer1[i] = (i % 2 == 0) ? 0xff : 0x00;
+            buffer2[i] = ((i + 1) % 2 == 0) ? 0xff : 0x00;
+        } else {
+            buffer1[i] = 0x00;
+            buffer2[i] = 0x00;
+        }
+    }
 
-    *loop_status = 0x55;
+    fprintf(stderr, "wait until done.\n");
+    sleep(1);  // Let motor spin up and synchronize
 
-    // Very simple: run until return.
-    pru.StartExecution();
+    //getchar();
+    for (int i = 0; i < 1000; ++i) {
+        if ((i / 50) % 2 == 0) {
+            line_sender.SetNextData(buffer1, DATA_SIZE);
+        } else  {
+            line_sender.SetNextData(buffer2, DATA_SIZE);
+        }
+    }
 
-    fprintf(stderr, "Press RETURN to finish\n");
-    getchar();
+    line_sender.Shutdown();
 
-    *loop_status = 0x00;  // shutdown.
-    pru.WaitEvent();   // Wait until finished.
-
-    fprintf(stderr, "Successful shutdown (0x%x)\n", *loop_status);
-
-    pru.Shutdown();
+    fprintf(stderr, "Successful shutdown.\n");
+    return 0;
 }
