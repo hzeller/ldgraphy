@@ -28,8 +28,14 @@
         __overlay__ {
             beagleg_gpio_pins: LDGraphy_Pins {
                 pinctrl-single,pins = <
-		    0x158 0x07 /* GPIO0[4] ; Polygon Mirror Clock */
-		    0x15c 0x07 /* GPIO0[5] ; Laser Data */
+		    /* Pixel data */
+		    0x158 0x07 /* GPIO0[4] ; P9.18 Polygon Mirror Clock */
+		    0x15c 0x07 /* GPIO0[5] ; P9.17 Laser Data */
+
+		    /* Stepmotor data */
+		    0x040 0x07 /* GPIO1[16]; P9.15 Dir */
+		    0x044 0x07 /* GPIO1[17]; P9.23 Enable */
+		    0x048 0x07 /* GPIO1[18]; P9.14 Step */
                 >;
             };
         };
