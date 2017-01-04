@@ -16,22 +16,23 @@ PASM=$(AM335_BASE)/pru_sw/utils/pasm
 LIBDIR_APP_LOADER?=$(AM335_BASE)/pru_sw/app_loader/lib
 INCDIR_APP_LOADER?=$(AM335_BASE)/pru_sw/app_loader/include
 
-CAPE_INCLUDE=../hardware/$(LDGRAPHY_HARDWARE_TARGET)
+MAGICK_CXXFLAGS=`GraphicsMagick++-config --cppflags --cxxflags`
+MAGICK_LDFLAGS=`GraphicsMagick++-config --ldflags --libs`
 
 # Optmization flags. Typically, that should be -O3 for regluar use, but for
 # debugging and development "-g -O0" can be more helpful. Overridable by
 # environment variable.
 LDGRAPHY_OPT_CFLAGS?=-O3
 
-CFLAGS+=-Wall -I$(INCDIR_APP_LOADER) -I$(CAPE_INCLUDE) -D_XOPEN_SOURCE=500 $(ARM_COMPILE_FLAGS) $(LDGRAPHY_OPT_CFLAGS) -DCAPE_NAME='"$(LDGRAPHY_HARDWARE_TARGET)"'
+CFLAGS+=-Wall -Wno-unused-function -I$(INCDIR_APP_LOADER) -D_XOPEN_SOURCE=500 $(ARM_COMPILE_FLAGS) $(LDGRAPHY_OPT_CFLAGS)
 
 # We use c++11, but it looks like that even the latest
 # bone-debian-7.11-lxde-4gb-armhf-2016-06-16-4gb image has an ancient 4.6.3
 # compiler that still referred to that standard as c++0x
-export CXXFLAGS+=-std=c++0x $(CFLAGS)
+export CXXFLAGS+=-std=c++0x $(CFLAGS) $(MAGICK_CXXFLAGS)
 export CXX?=g++
 
-LDFLAGS+=-lpthread -lm
+LDFLAGS+=-lpthread -lm $(MAGICK_LDFLAGS)
 PRUSS_LIBS=$(LIBDIR_APP_LOADER)/libprussdrv.a
 
 # Assembled binary from *.p file.
@@ -46,10 +47,10 @@ DEPENDENCY_RULES=$(OBJECTS:=.d)
 all : $(TARGETS)
 
 ldgraphy: main.o $(OBJECTS)
-	$(CROSS_COMPILE)$(CXX) -o $@ $^ $(LDFLAGS) $(PRUSS_LIBS)
+	$(CROSS_COMPILE)$(CXX) -o $@ $^ $(PRUSS_LIBS) $(LDFLAGS)
 
 %.o: %.cc .compiler-flags
-	$(CROSS_COMPILE)$(CXX) $(CXXFLAGS)  -c  $< -o $@
+	$(CROSS_COMPILE)$(CXX) $(CXXFLAGS) -c  $< -o $@
 	@$(CROSS_COMPILE)$(CXX) $(CXXFLAGS) -MM $< > $@.d
 
 %_bin.h : %.p $(PASM)

@@ -43,7 +43,7 @@
 
 ;; Each loop takes 2 CPU cycles, so freq = 200Mhz / (2*1000)
 ;; So here: 50kHz
-#define DATA_SLEEP 200
+#define DATA_SLEEP 180
 
 // Mapping some fixed registers to names variables.
 // We have enough registers to keep things readable.
