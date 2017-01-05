@@ -20,12 +20,13 @@
 #include "uio-pruss-interface.h"
 
 #include <assert.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <signal.h>
 #include <math.h>
+#include <signal.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <strings.h>
+#include <time.h>
+#include <unistd.h>
 
 #include <vector>
 #include <Magick++.h>
@@ -36,9 +37,7 @@ constexpr float kSledMMperStep = 2.0 / 200 / 8;
 constexpr float kRadiusMM = 70.0;
 constexpr int kMirrorFaces = 6;
 
-constexpr float angle_fudging = 2.0;   // need to figure out that.
-
-constexpr float kScanFrequency = 250;  // Hz. For rough time calculation
+constexpr float kScanFrequency = 245*2;  // Hz. For rough time calculation
 
 //constexpr int kBytePhaseShift = 0;  // corrective
 
@@ -171,7 +170,7 @@ struct ScanLookup {
 // the y-coordinates will be negative.
 static void CreateSampleLookup(float radius, size_t num,
                                ScanLookup *lookups) {
-    const float range_radiants = 2 * M_PI / kMirrorFaces * angle_fudging;
+    const float range_radiants = 2 * M_PI / kMirrorFaces;
     const float step_radiants = range_radiants / num;
     const float start = -range_radiants / 2;
     for (size_t i = 0; i < num; ++i) {
@@ -247,9 +246,8 @@ int main(int argc, char *argv[]) {
     // Let's see what the range is we need to scan.
     int start_x_offset = lookups[SCAN_PIXELS/2].x;
     const int image_half = height / 2;
-    fprintf(stderr, "Exposure size: (%.1fmm, %.1fmm) = (%dpx, %dpx)\n",
-            width * kSledMMperStep, height * kSledMMperStep,
-            width, height);
+    fprintf(stderr, "Exposure size: (%.1fmm, %.1fmm)\n",
+            width * kSledMMperStep, height * kSledMMperStep);
     if (image_half > lookups[0].y)
         return usage(argv[0], "Image too wide for this device.\n");
 
@@ -264,9 +262,9 @@ int main(int argc, char *argv[]) {
     const int overshoot_scanning = start_x_offset + lookups[0].x;
     const int scanlines = width + overshoot_scanning;
     fprintf(stderr, "Need to scan %.1fmm further due to arc. "
-            "Total %d scan lines. Total %.1f seconds.\n",
+            "Total %d scan lines. Total %.0f seconds.\n",
             overshoot_scanning * kSledMMperStep,
-            scanlines, scanlines / kScanFrequency);
+            scanlines, ceil(scanlines / kScanFrequency));
     if (dryrun)
         return 0;
 
@@ -280,6 +278,7 @@ int main(int argc, char *argv[]) {
     sleep(1);  // Let motor spin up and synchronize
 
     fprintf(stderr, "\n");
+    const time_t start_t = time(NULL);
     int prev_percent = -1;
     BitArray<SCAN_PIXELS> scan_bits;
     for (int x = 0; x < scanlines && !interrupt_received; ++x) {
@@ -309,6 +308,7 @@ int main(int argc, char *argv[]) {
     if (interrupt_received)
         fprintf(stderr, "Received interrupt. Exposure might be incomplete.\n");
     else
-        fprintf(stderr, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bDone.\n");
+        fprintf(stderr, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b"
+                "Done (%ld sec)\n", time(NULL) - start_t);
     return 0;
 }

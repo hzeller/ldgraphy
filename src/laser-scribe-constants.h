@@ -23,7 +23,7 @@
 #define STATE_DONE    3
 
 #define HEADER_SIZE 1   // A single byte containting the state.
-#define DATA_SIZE 256   // Bytes that follow
+#define DATA_SIZE 256   // Bytes that follow. We have 8x the pixels.
 
 #define ITEM_SIZE (HEADER_SIZE + DATA_SIZE)
 
