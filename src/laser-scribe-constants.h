@@ -20,9 +20,10 @@
 #define LASER_SCRIBE_CONSTANTS_H
 
 #define STATE_EMPTY   0
-#define STATE_FILLED  1
-#define STATE_EXIT    2
-#define STATE_DONE    3
+#define STATE_SCAN_DATA  1
+#define STATE_SCAN_DATA_NO_SLED  2
+#define STATE_EXIT    3
+#define STATE_DONE    4
 
 #define SCANLINE_HEADER_SIZE 1   // A single byte containting the state.
 #define SCANLINE_DATA_SIZE 256   // Bytes that follow. We have 8x the pixels.

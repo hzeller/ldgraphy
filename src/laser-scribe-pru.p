@@ -35,9 +35,11 @@
 #define LASER_DATA   5    // GPIO_0, PIN_P9_17
 #define MIRROR_CLOCK 4    // GPIO_0, PIN_P9_18
 
-// Not yet used.
+//#define SLED_ENABLE 17 // GPIO_1, PIN_P9_23
+#define SLED_ENABLE 31 // GPIO_0, PIN_P9_13
+
+// Not yet used. sled step is connected to mirror currently.
 #define SLED_DIR 16    // GPIO_1, PIN_P9_15
-#define SLED_ENABLE 17 // GPIO_1, PIN_P9_23
 #define SLED_STEP 18   // GPIO_1, PIN_P9_14
 
 // Time waited per data Laser bit. It also influences the motor speed.
@@ -105,11 +107,11 @@ INIT:
 	MOV v.ringbuffer_size, SCANLINE_ITEM_SIZE * QUEUE_LEN
 
 	;; Set GPIO bits to writable. Output bits need to be set to 0.
-	MOV r1, (0xffffffff ^ ((1<<LASER_DATA)|(1<<MIRROR_CLOCK)))
+	MOV r1, (0xffffffff ^ ((1<<SLED_ENABLE)|(1<<LASER_DATA)|(1<<MIRROR_CLOCK)))
 	MOV r2, GPIO_0_BASE | GPIO_OE
 	SBBO r1, r2, 0, 4
 
-	MOV r1, (0xffffffff ^ ((1<<SLED_DIR)|(1<<SLED_STEP)|(1<<SLED_ENABLE)))
+	MOV r1, (0xffffffff ^ ((1<<SLED_DIR)|(1<<SLED_STEP)))
 	MOV r2, GPIO_1_BASE | GPIO_OE
 	SBBO r1, r2, 0, 4
 
@@ -124,7 +126,13 @@ NEXT_LINE:
 
 	;; If we don't get data, we still need to continue with an empty
 	;; run to keep the mirror rotating. But we switch off the laser
-	QBEQ DATA_RUN, r1.b0, STATE_FILLED
+	QBEQ DATA_RUN, r1.b0, STATE_SCAN_DATA
+
+	;; For what is coming, we don't want the sled to move
+	SET v.gpio_out, v.gpio_out, SLED_ENABLE ; negative logic
+
+	;; For focusing the laser etc, we want the stepper disabled.
+	QBEQ DATA_RUN_NO_SLED, r1.b0, STATE_SCAN_DATA_NO_SLED
 
 EMPTY_RUN:
 	MOV v.laser_mask, 0
@@ -133,9 +141,10 @@ EMPTY_RUN:
 	JMP SCAN_LINE
 
 DATA_RUN:
+	CLR v.gpio_out, v.gpio_out, SLED_ENABLE ; negative logic
+DATA_RUN_NO_SLED:
 	MOV v.laser_mask, (1<<LASER_DATA)
 	MOV v.needs_advancing, 1
-	NOP
 	NOP
 
 SCAN_LINE:
@@ -207,6 +216,7 @@ LASER_BITS_LOOP_DONE:
 
 FINISH:
 	MOV r1, 0		; Switch off all GPIO bits.
+	SET r1, r1, SLED_ENABLE ; Well, and the motor ~enable
 	SBBO r1, v.gpio_0_write, 0, 4
 
 	;; Tell host that we've seen the STATE_EXIT and acknowledge with DONE

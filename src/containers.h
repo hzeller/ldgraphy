@@ -50,11 +50,14 @@ public:
     int width() const { return width_; }
     int height() const { return height_; }
 
-    char &at(int x, int y) { return buffer_[width_ * y + x]; }
+    char &at(int x, int y) {
+        if (x < 0 || x >= width_ || y < 0 || y >= height_) return buffer_[0];
+        return buffer_[width_ * y + x];
+    }
 
 private:
-    int width_, height_;
-    char *buffer_;
+    const int width_, height_;
+    char *const buffer_;
 };
 
 #endif // LDGRAPHY_CONTAINERS_H

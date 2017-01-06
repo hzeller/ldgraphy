@@ -52,6 +52,7 @@ static int usage(const char *progname, const char *errmsg = NULL) {
     fprintf(stderr, "Usage:\n%s [options] <image-file>\n", progname);
     fprintf(stderr, "Options:\n"
             "\t-d <val>   : DPI of input image. Default 600\n"
+            "\t-F         : Run a focus round until the first Ctrl-C\n"
             "\t-i         : Inverse image: black becomes laser on\n"
             "\t-n         : Dryrun. Do not do any scanning.\n"
             "\t-h         : This help\n");
@@ -86,6 +87,7 @@ static void PrepareSampleLookupArc(float radius, size_t num,
 static SimpleImage *LoadImage(const char *filename, bool invert) {
     std::vector<Magick::Image> bundle;
     try {
+        fprintf(stderr, "Decode image %s\n", filename);
         readImages(&bundle, filename);
     } catch (std::exception& e) {
         fprintf(stderr, "%s: %s\n", filename, e.what());
@@ -100,6 +102,9 @@ static SimpleImage *LoadImage(const char *filename, bool invert) {
                 filename);
     }
     const Magick::Image &img = bundle[0];
+    fprintf(stderr, "Convert %dx%d image to bitmap. ",
+            (int)img.columns(), (int)img.rows());
+    fflush(stderr);
     SimpleImage *result = new SimpleImage(img.columns(), img.rows());
     for (size_t y = 0; y < img.rows(); ++y) {
         for (size_t x = 0; x < img.columns(); ++x) {
@@ -107,6 +112,7 @@ static SimpleImage *LoadImage(const char *filename, bool invert) {
             result->at(x, y) = ((gray >= 0.5) ^ invert) ? 1 : 0;
         }
     }
+    fprintf(stderr, "Done.\n");
     return result;
 }
 
@@ -115,9 +121,10 @@ int main(int argc, char *argv[]) {
     int input_dpi = 600;
     bool dryrun = false;
     bool invert = false;
+    bool do_focus = false;
 
     int opt;
-    while ((opt = getopt(argc, argv, "hnid:")) != -1) {
+    while ((opt = getopt(argc, argv, "Fhnid:")) != -1) {
         switch (opt) {
         case 'h': return usage(argv[0]);
         case 'd':
@@ -128,6 +135,9 @@ int main(int argc, char *argv[]) {
             break;
         case 'i':
             invert = true;
+            break;
+        case 'F':
+            do_focus = true;
             break;
         }
     }
@@ -155,8 +165,8 @@ int main(int argc, char *argv[]) {
     // Let's see what the range is we need to scan.
     int start_x_offset = scan_pos[SCAN_PIXELS/2].x;
     const int image_half = height / 2;
-    fprintf(stderr, "Exposure size: (%.1fmm, %.1fmm)\n",
-            width * kSledMMperStep, height * kSledMMperStep);
+    fprintf(stderr, "Exposure size: (%.1fmm, %.1fmm). Internal scale %.1f\n",
+            width * kSledMMperStep, height * kSledMMperStep, image_scale);
     if (image_half > scan_pos[0].y) {
         // The outer edge of the scanline's Y determines how wide we can go
         fprintf(stderr, "Image too wide for this device (%.1fmm).\n",
@@ -190,10 +200,24 @@ int main(int argc, char *argv[]) {
 
     sleep(1);  // Let motor spin up and synchronize
 
-    fprintf(stderr, "\n");
+    if (do_focus) {
+        fprintf(stderr, "FOCUS run. Actual exposure starts after Ctrl-C.\n");
+        uint8_t focus_pattern[SCANLINE_DATA_SIZE];
+        for (int i = 0; i < SCANLINE_DATA_SIZE; ++i) {
+            focus_pattern[i] = (i % 2 == 0) ? 0xff : 0x00;
+        }
+        while (!interrupt_received) {
+            line_sender.EnqueueNextData(focus_pattern, SCANLINE_DATA_SIZE, false);
+        }
+        interrupt_received = false;  // Re-arm signal handler.
+        fprintf(stderr, "Focus run done.\n");
+    }
+
+    fprintf(stderr, "Exposure. Cancel with Ctrl-C\n");
     const time_t start_t = time(NULL);
     int prev_percent = -1;
     BitArray<SCAN_PIXELS> scan_bits;
+    int x_last_img_pos = -1;
     for (int x = 0; x < scanlines && !interrupt_received; ++x) {
         // Some status
         int percent = 100 * x / scanlines;
@@ -203,19 +227,27 @@ int main(int argc, char *argv[]) {
             prev_percent = percent;
         }
 
-        // Assemble one scan line and send it over.
-        for (int i = 0; i < SCAN_PIXELS; ++i) {
-            const int pic_x = scan_pos[i].x + x + start_x_offset;
-            const int pic_y = scan_pos[i].y + image_half;
-            if (pic_x < 0 || pic_x >= (int)height
-                || pic_y < 0 || pic_y >= (int)width) {
-                scan_bits.Set(i, false);
-                continue;
+        const int x_origin = x + start_x_offset;
+
+        // Assemble one scan line whenever we advanced enough in X to cover
+        // a new pixel in the original image. We do a little overscanning.
+        const int new_img_pos = roundf(2 * x_origin / image_scale);
+        if (new_img_pos != x_last_img_pos) {
+            x_last_img_pos = new_img_pos;
+            for (int i = 0; i < SCAN_PIXELS; ++i) {
+                const int scan_x = scan_pos[i].x + x_origin;
+                const int scan_y = scan_pos[i].y + image_half;
+                if (scan_x < 0 || scan_x >= (int)width
+                    || scan_y < 0 || scan_y >= (int)height) {
+                    scan_bits.Set(i, false);
+                    continue;
+                }
+                scan_bits.Set(i, img->at(roundf(scan_x / image_scale),
+                                         roundf(scan_y / image_scale)));
             }
-            scan_bits.Set(i, img->at(pic_x / image_scale,
-                                     pic_y / image_scale));
         }
-        line_sender.EnqueueNextData(scan_bits.buffer(), SCANLINE_DATA_SIZE);
+        line_sender.EnqueueNextData(scan_bits.buffer(), SCANLINE_DATA_SIZE,
+                                    true);
     }
 
     line_sender.Shutdown();

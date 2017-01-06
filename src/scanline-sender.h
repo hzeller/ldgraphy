@@ -32,7 +32,7 @@ public:
     bool Init();
 
     // Enqueue next scanline. Blocks until there is space in the ring buffer.
-    void EnqueueNextData(const uint8_t *data, size_t size);
+    void EnqueueNextData(const uint8_t *data, size_t size, bool sled_on);
 
     // Shutdown the system.
     bool Shutdown();

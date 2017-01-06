@@ -67,11 +67,15 @@ bool ScanLineSender::Init() {
     return running_;
 }
 
-void ScanLineSender::EnqueueNextData(const uint8_t *data, size_t size) {
+void ScanLineSender::EnqueueNextData(const uint8_t *data, size_t size,
+                                     bool sled_on) {
     assert(size == SCANLINE_DATA_SIZE);  // We only accept full lines :)
     WaitUntil(queue_pos_, STATE_EMPTY);
     unaligned_memcpy(ring_buffer_[queue_pos_].data, data, size);
-    ring_buffer_[queue_pos_].state = STATE_FILLED;
+    // TODO: maybe later transmit a byte telling how many steps the sled-stepper
+    // should do. Including zero.
+    ring_buffer_[queue_pos_].state =
+        sled_on ? STATE_SCAN_DATA : STATE_SCAN_DATA_NO_SLED;
 
     queue_pos_++;
     queue_pos_ %= QUEUE_LEN;
