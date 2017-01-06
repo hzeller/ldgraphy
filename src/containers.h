@@ -39,4 +39,22 @@ public:
 private:
     uint8_t buffer_[N+7/8];
 };
+
+// An Image .. 2D container essentially.
+class SimpleImage {
+public:
+    SimpleImage(int width, int height)
+        : width_(width), height_(height), buffer_(new char [width * height]) {}
+    ~SimpleImage() { delete [] buffer_; }
+
+    int width() const { return width_; }
+    int height() const { return height_; }
+
+    char &at(int x, int y) { return buffer_[width_ * y + x]; }
+
+private:
+    int width_, height_;
+    char *buffer_;
+};
+
 #endif // LDGRAPHY_CONTAINERS_H
