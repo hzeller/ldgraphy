@@ -17,8 +17,6 @@
  * along with LDGraphy.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "uio-pruss-interface.h"
-
 #include <assert.h>
 #include <math.h>
 #include <signal.h>
@@ -30,7 +28,10 @@
 
 #include <vector>
 #include <Magick++.h>
+
 #include "laser-scribe-constants.h"
+#include "containers.h"
+#include "scanline-sender.h"
 
 // These need to be modified depending on the machine.
 constexpr float kSledMMperStep = 2.0 / 200 / 8;
@@ -39,111 +40,10 @@ constexpr int kMirrorFaces = 6;
 
 constexpr float kScanFrequency = 245*2;  // Hz. For rough time calculation
 
-//constexpr int kBytePhaseShift = 0;  // corrective
-
 volatile bool interrupt_received = false;
 static void InterruptHandler(int signo) {
   interrupt_received = true;
 }
-
-struct QueueElement {
-    volatile uint8_t state;
-    volatile uint8_t data[DATA_SIZE];
-};
-
-// Stop gap for compiler attempting to be overly clever when copying between
-// host and PRU memory.
-static void unaligned_memcpy(volatile void *dest, const void *src, size_t size) {
-  volatile char *d = (volatile char*) dest;
-  const char *s = (char*) src;
-  const volatile char *end = d + size;
-  while (d < end) {
-    *d++ = *s++;
-  }
-}
-
-// Sends scan lines to the ring-buffer in the PRU.
-class ScanLineSender {
-public:
-    ScanLineSender() : running_(false), queue_pos_(0) {
-        // Make sure that things are packed the way we think it is.
-        assert(sizeof(struct QueueElement) == ITEM_SIZE);
-    }
-    ~ScanLineSender() {
-        if (running_) pru_.Shutdown();
-    }
-
-    bool Init() {
-        if (running_) {
-            fprintf(stderr, "Already running. Init() has no effect\n");
-            return false;
-        }
-        if (!pru_.Init()) {
-            return false;
-        }
-
-        if (!pru_.AllocateSharedMem((void**) &ring_buffer_,
-                                    QUEUE_LEN * sizeof(QueueElement))) {
-            return false;
-        }
-        for (int i = 0; i < QUEUE_LEN; ++i) {
-            ring_buffer_[i].state = STATE_EMPTY;
-        }
-        running_ = pru_.StartExecution();
-        return running_;
-    }
-
-    void SetNextData(const uint8_t *data, size_t size) {
-        assert(size == DATA_SIZE);  // We only accept full lines :)
-        WaitUntil(queue_pos_, STATE_EMPTY);
-        unaligned_memcpy(ring_buffer_[queue_pos_].data, data, size);
-        ring_buffer_[queue_pos_].state = STATE_FILLED;
-
-        queue_pos_++;
-        queue_pos_ %= QUEUE_LEN;
-    }
-
-    bool Shutdown() {
-        WaitUntil(queue_pos_, STATE_EMPTY);
-        ring_buffer_[queue_pos_].state = STATE_EXIT;
-        // PRU will set it to empty again when actually halted.
-        WaitUntil(queue_pos_, STATE_DONE);
-        pru_.Shutdown();
-        running_ = false;
-        return true;
-    }
-
-private:
-    void WaitUntil(int pos, int state) {
-        while (ring_buffer_[pos].state != state) {
-            pru_.WaitEvent();
-        }
-    }
-
-    volatile QueueElement *ring_buffer_;
-    bool running_;
-    int queue_pos_;
-    UioPrussInterface pru_;
-};
-
-template <int N>
-class BitArray {
-public:
-    BitArray() { bzero(buffer_, (N+7)/8); }
-
-    void Set(int b, bool value) {
-        assert(b >= 0 && b < N);
-        if (value)
-            buffer_[b / 8] |= 1 << (7 - b % 8);
-        else
-            buffer_[b / 8] &= ~(1 << (7 - b % 8));
-    }
-
-    const uint8_t *buffer() const { return buffer_; }
-
-private:
-    uint8_t buffer_[N+7/8];
-};
 
 static int usage(const char *progname, const char *errmsg = NULL) {
     if (errmsg) {
@@ -161,15 +61,14 @@ static int usage(const char *progname, const char *errmsg = NULL) {
 // A position in the image to sample from.
 struct ScanLookup {
     int x, y;
-    // TODO: define a kernel of some kind to average from.
 };
 
 // Returns where in the original image we have to sample for the given scan
 // position. Return in an (preallocated) array of size num.
 // This is vertically centered around the height of the image, thus half
 // the y-coordinates will be negative.
-static void CreateSampleLookup(float radius, size_t num,
-                               ScanLookup *lookups) {
+static void PrepareSampleLookupArc(float radius, size_t num,
+                                   ScanLookup *lookups) {
     const float range_radiants = 2 * M_PI / kMirrorFaces;
     const float step_radiants = range_radiants / num;
     const float start = -range_radiants / 2;
@@ -239,27 +138,27 @@ int main(int argc, char *argv[]) {
     const int width = img.columns() * image_scale;
     const int height = img.rows() * image_scale;
 
-    constexpr int SCAN_PIXELS = DATA_SIZE * 8;
-    ScanLookup lookups[SCAN_PIXELS];
-    CreateSampleLookup(kRadiusMM / kSledMMperStep, SCAN_PIXELS, lookups);
+    constexpr int SCAN_PIXELS = SCANLINE_DATA_SIZE * 8;
+    ScanLookup scan_pos[SCAN_PIXELS];
+    PrepareSampleLookupArc(kRadiusMM / kSledMMperStep, SCAN_PIXELS, scan_pos);
 
     // Let's see what the range is we need to scan.
-    int start_x_offset = lookups[SCAN_PIXELS/2].x;
+    int start_x_offset = scan_pos[SCAN_PIXELS/2].x;
     const int image_half = height / 2;
     fprintf(stderr, "Exposure size: (%.1fmm, %.1fmm)\n",
             width * kSledMMperStep, height * kSledMMperStep);
-    if (image_half > lookups[0].y)
+    if (image_half > scan_pos[0].y)
         return usage(argv[0], "Image too wide for this device.\n");
 
     for (int i = 0; i < SCAN_PIXELS/2; ++i) {
-        if (lookups[i].y < image_half) {
-            start_x_offset = -lookups[i].x + 1;
+        if (scan_pos[i].y < image_half) {
+            start_x_offset = -scan_pos[i].x + 1;
             break;
         }
     }
     // Because we scan a bow, we need to scan more until the center is
     // covered.
-    const int overshoot_scanning = start_x_offset + lookups[0].x;
+    const int overshoot_scanning = start_x_offset + scan_pos[0].x;
     const int scanlines = width + overshoot_scanning;
     fprintf(stderr, "Need to scan %.1fmm further due to arc. "
             "Total %d scan lines. Total %.0f seconds.\n",
@@ -289,8 +188,8 @@ int main(int argc, char *argv[]) {
             prev_percent = percent;
         }
         for (int i = 0; i < SCAN_PIXELS; ++i) {
-            const int pic_x = lookups[i].x + x + start_x_offset;
-            const int pic_y = lookups[i].y + image_half;
+            const int pic_x = scan_pos[i].x + x + start_x_offset;
+            const int pic_y = scan_pos[i].y + image_half;
             if (pic_x < 0 || pic_x >= (int)height
                 || pic_y < 0 || pic_y >= (int)width) {
                 scan_bits.Set(i, false);
@@ -300,7 +199,7 @@ int main(int argc, char *argv[]) {
                                                pic_y / image_scale).intensity();
             scan_bits.Set(i, (gray >= 0.5) ^ invert);
         }
-        line_sender.SetNextData(scan_bits.buffer(), DATA_SIZE);
+        line_sender.EnqueueNextData(scan_bits.buffer(), SCANLINE_DATA_SIZE);
     }
 
     line_sender.Shutdown();

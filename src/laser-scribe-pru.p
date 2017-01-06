@@ -47,7 +47,7 @@
 // Number of bits between each mirror clock toggle. In this case, our clock
 // is half the line frequency, but there might be other mirrors out there that
 // have strange multiples.
-#define MIRROR_CYCLES (DATA_SIZE * 8)
+#define MIRROR_CYCLES (SCANLINE_DATA_SIZE * 8)
 
 // Phase shift mirror clock so that a centered laser is in the center.
 #define MIRROR_OFFSET MIRROR_CYCLES - 800
@@ -101,8 +101,8 @@ INIT:
 	;; Populate some constants
 	MOV v.gpio_0_write, GPIO_0_BASE | GPIO_DATAOUT
 	MOV v.gpio_1_write, GPIO_1_BASE | GPIO_DATAOUT
-	MOV v.item_size, ITEM_SIZE
-	MOV v.ringbuffer_size, ITEM_SIZE*QUEUE_LEN
+	MOV v.item_size, SCANLINE_ITEM_SIZE
+	MOV v.ringbuffer_size, SCANLINE_ITEM_SIZE * QUEUE_LEN
 
 	;; Set GPIO bits to writable. Output bits need to be set to 0.
 	MOV r1, (0xffffffff ^ ((1<<LASER_DATA)|(1<<MIRROR_CLOCK)))
@@ -139,7 +139,7 @@ DATA_RUN:
 	NOP
 
 SCAN_LINE:
-	MOV v.item_pos, HEADER_SIZE 		; Start after header
+	MOV v.item_pos, SCANLINE_HEADER_SIZE 		; Start after header
 DATA_LOOP:
 	MOV r2, v.item_start
 	ADD r2, r2, v.item_pos

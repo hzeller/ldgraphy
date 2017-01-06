@@ -16,19 +16,27 @@
  * You should have received a copy of the GNU General Public License
  * along with LDGraphy.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LASER_SCRIBE_CONSTANTS_H
-#define LASER_SCRIBE_CONSTANTS_H
+#ifndef LDGRAPHY_CONTAINERS_H
+#define LDGRAPHY_CONTAINERS_H
 
-#define STATE_EMPTY   0
-#define STATE_FILLED  1
-#define STATE_EXIT    2
-#define STATE_DONE    3
+#include <strings.h>
 
-#define SCANLINE_HEADER_SIZE 1   // A single byte containting the state.
-#define SCANLINE_DATA_SIZE 256   // Bytes that follow. We have 8x the pixels.
+template <int N>
+class BitArray {
+public:
+    BitArray() { bzero(buffer_, (N+7)/8); }
 
-#define SCANLINE_ITEM_SIZE (SCANLINE_HEADER_SIZE + SCANLINE_DATA_SIZE)
+    void Set(int b, bool value) {
+        assert(b >= 0 && b < N);
+        if (value)
+            buffer_[b / 8] |= 1 << (7 - b % 8);
+        else
+            buffer_[b / 8] &= ~(1 << (7 - b % 8));
+    }
 
-#define QUEUE_LEN 3
+    const uint8_t *buffer() const { return buffer_; }
 
-#endif // LASER_SCRIBE_CONSTANTS_H
+private:
+    uint8_t buffer_[N+7/8];
+};
+#endif // LDGRAPHY_CONTAINERS_H

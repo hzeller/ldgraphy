@@ -38,7 +38,7 @@ PRUSS_LIBS=$(LIBDIR_APP_LOADER)/libprussdrv.a
 # Assembled binary from *.p file.
 PRU_BIN=laser-scribe-pru_bin.h
 
-OBJECTS=uio-pruss-interface.o
+OBJECTS=uio-pruss-interface.o scanline-sender.o
 MAIN_OBJECTS=main.o
 TARGETS=ldgraphy
 

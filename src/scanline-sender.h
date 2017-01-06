@@ -16,19 +16,36 @@
  * You should have received a copy of the GNU General Public License
  * along with LDGraphy.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LASER_SCRIBE_CONSTANTS_H
-#define LASER_SCRIBE_CONSTANTS_H
+#ifndef LDGRAPHY_SCANLINESENDER_H
+#define LDGRAPHY_SCANLINESENDER_H
 
-#define STATE_EMPTY   0
-#define STATE_FILLED  1
-#define STATE_EXIT    2
-#define STATE_DONE    3
+#include "uio-pruss-interface.h"
+#include <stdint.h>
 
-#define SCANLINE_HEADER_SIZE 1   // A single byte containting the state.
-#define SCANLINE_DATA_SIZE 256   // Bytes that follow. We have 8x the pixels.
+// Sends scan lines to the ring-buffer in the PRU.
+class ScanLineSender {
+public:
+    ScanLineSender();
+    ~ScanLineSender();
 
-#define SCANLINE_ITEM_SIZE (SCANLINE_HEADER_SIZE + SCANLINE_DATA_SIZE)
+    // Initialize and return if successful.
+    bool Init();
 
-#define QUEUE_LEN 3
+    // Enqueue next scanline. Blocks until there is space in the ring buffer.
+    void EnqueueNextData(const uint8_t *data, size_t size);
 
-#endif // LASER_SCRIBE_CONSTANTS_H
+    // Shutdown the system.
+    bool Shutdown();
+
+private:
+    class QueueElement;
+
+    void WaitUntil(int pos, int state);
+
+    volatile QueueElement *ring_buffer_;
+    bool running_;
+    int queue_pos_;
+    UioPrussInterface pru_;
+};
+
+#endif  // LDGRAPHY_SCANLINESENDER_H
