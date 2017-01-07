@@ -1,4 +1,4 @@
-ALL_DXF=laser-rot-mount.dxf motor-mount.dxf side-mount.dxf side-mount2.dxf rot-mirror-mount.dxf sled.dxf
+ALL_DXF=laser-rot-mount.dxf motor-mount.dxf side-mount.dxf side-mount2.dxf rot-mirror-mount.dxf sled.dxf spacers.dxf
 
 all : $(ALL_DXF)
 

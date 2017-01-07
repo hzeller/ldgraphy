@@ -3,7 +3,7 @@
 
 /mm { 72 25.4 div mul } bind def
 
-/screw-r 3.2 mm 2 div def
+/screw-r 3.1 mm 2 div def
 
 % x y
 /screw {
@@ -58,11 +58,14 @@
 7.5 mm 45 mm add ypos screw
 7.5 mm 60 mm add ypos screw
 
-30 mm 20 mm moveto screw-r 2 mul 15 mm box
-60 mm 20 mm moveto screw-r 2 mul 15 mm box
+%30 mm 20 mm moveto screw-r 2 mul 15 mm box
+%60 mm 20 mm moveto screw-r 2 mul 15 mm box
 
-30 mm 90 mm 35 mm sub moveto screw-r 2 mul 15 mm box
-60 mm 90 mm 35 mm sub moveto screw-r 2 mul 15 mm box
+%30 mm 90 mm 35 mm sub moveto screw-r 2 mul 15 mm box
+%60 mm 90 mm 35 mm sub moveto screw-r 2 mul 15 mm box
+
+40 mm 35 mm screw-r sub moveto 10 mm screw-r 2 mul box
+40 mm 90 mm 35 mm sub screw-r sub moveto 10 mm screw-r 2 mul box
 
 stroke
 showpage
