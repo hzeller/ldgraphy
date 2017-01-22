@@ -44,6 +44,12 @@ Options:
         -h         : This help
 ```
 
+Case
+----
+There is [work-in-progress](./hardware) to make a case that does not need
+extruded aluminum which was used for the first test, but rather a simple
+laser-cut acrylic case.
+
 Setup
 -----
 ![Initial setup](./img/setup.jpg)

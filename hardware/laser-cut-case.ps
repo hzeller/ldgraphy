@@ -1,0 +1,445 @@
+%!PS-Adobe-3.0
+%%BoundingBox: 0 0 860 860
+
+% There are two parts to print, each of them fits on a 30cmx30cm acrylic
+% sheet. Choose part 0 or part 1 here.
+% TODO: this needs to be done better. For instance, is there a way to set
+% a dictionary value from the command line ?
+/print-part 0 def
+
+/mm { 72 25.4 div mul } bind def
+
+/acrylic-t 3 mm def
+/screw-r 3.1 mm 2 div def
+/rod-r 4.7 mm 2 div def
+/finger-len 11 mm def
+
+/pcb-w 100 mm 2 mm add def
+/pcb-h 160 mm 2 mm add def
+
+/bed-w pcb-w 16 mm add def    % 3 mm + 5 mm on each side
+/bed-h pcb-h 10 mm add def
+
+/bed-slide-high 15 mm def
+/slide-hole-count 4 def
+
+/stepper-width 0.8 25.4 mm mul def  % nema8
+
+/laser-slot-distance 160 mm stepper-width add def
+/laser-slot-h 10 mm def
+/laser-slot-w pcb-w 2 mm add def
+
+/mirror-w 10 mm def
+/mirror-t 5 mm def
+
+/rot-mirror-high 33 mm 2 div def  % center of the laser
+/rot-mirror-w 44 mm def
+/rot-mirror-h 60 mm def
+
+/mirror-holder-width 20 mm def  % width of the 45 degree down mirror holder
+
+/rot-mirror-diameter 30 mm def
+
+% Given that we cover 60 degrees, we cover 2 * sin(30) times radius in
+% horizontal direction, i.e. radius == pcb-w. We want to use a little less of
+% the range to have space for synchronization.
+/arc-radius pcb-w 20 mm add def
+
+% actually, we should calculate the laser slot from the mirror center which
+% should be placed as much back as we want. But for version #1, we already
+% have set up the laser-slot-distance and the grooves and fingers, so let's go with
+% that first.
+/mirror-center-mount-from-slot
+    arc-radius rot-mirror-high sub bed-slide-high sub
+    rot-mirror-diameter add def
+
+% We want to be at least half pcb sled longer so that we are supported
+% at center of gravity.
+/inner-device-len laser-slot-distance bed-h 2 div add def
+/inner-device-high bed-slide-high 2 mul acrylic-t add def
+
+/mirror-holder-r mirror-holder-width 2 div def
+/mirror-holder-high rot-mirror-high mirror-holder-r add def
+
+% -- variables to place properly between cuts
+% distance between different cuts
+/cut-dist 2 mm def
+/side-cut-distance inner-device-high 2 mul mirror-holder-high add cut-dist add acrylic-t add def
+
+% Linewidth doesn't do anything to the DXF output, it just makes it easier
+% to manually inspect in the PostScript viewer.
+1 setlinewidth
+
+% dx dy amount
+/perpendicular {
+	5 dict begin
+       /thick exch  def
+       /dy exch def
+       /dx exch def
+       /len dx dx mul dy dy mul add sqrt def
+       /fraction thick len div def  % fraction of amount that is perpendicular
+       dy fraction mul neg dx fraction mul rlineto
+       end
+} def
+
+% dx dy thick
+/orth-segment {
+	3 dict begin
+       /thick exch  def
+       /dy exch def
+       /dx exch def
+       dx dy thick perpendicular
+       dx dy rlineto
+       dx dy thick neg perpendicular
+       end
+} def
+
+/finger-slot-rlineto {
+    9 dict begin
+    /thick exch def
+    /dy exch def
+    /dx exch def
+    /len dx dx mul dy dy mul add sqrt def
+    /factor acrylic-t len div def  % perpendicular thing.
+    /segments
+         len finger-len sub  % we want one finger len at the end
+	 finger-len 2 mul    % number of low and up segments
+	 div floor cvi def
+    /extra-fraction len finger-len sub
+         segments finger-len 2 mul mul sub len div 2 div def
+    dx extra-fraction mul dy extra-fraction mul rlineto
+    /sdx dx finger-len len div mul def
+    /sdy dy finger-len len div mul def
+    1 1 segments {
+	pop
+	sdx sdy rlineto
+	sdx sdy thick orth-segment
+    } for
+    sdx sdy rlineto  % one extra bottom segment.
+    dx extra-fraction mul dy extra-fraction mul rlineto
+    end
+} def
+
+% dx dy
+/finger-rlineto {
+    acrylic-t neg finger-slot-rlineto
+} def
+
+/groove-rlineto {
+    2 dict begin
+    /dy exch def
+    /dx exch def
+    dx dy acrylic-t neg perpendicular
+    dx dy acrylic-t finger-slot-rlineto
+    dx dy acrylic-t perpendicular
+    end
+} def
+
+% xt yt
+/finger-lineto {  % need: (xt - x) (yt - y)
+    currentpoint  % xt yt x y
+    3 -1 roll exch sub  % xt yt x y -> xt x y yt -> xt x yt y -> xt x (yt - y)
+    3 1 roll sub  % dy dx
+    exch
+    finger-rlineto
+} def
+
+/groove-lineto {  % need: (xt - x) (yt - y)
+    currentpoint  % xt yt x y
+    3 -1 roll exch sub  % xt yt x y -> xt x y yt -> xt x yt y -> xt x (yt - y)
+    3 1 roll sub  % dy dx
+    exch
+    groove-rlineto
+} def
+
+% x y r
+/circle {
+    1 dict begin
+    /crr exch def
+    moveto
+    currentpoint
+    crr 0 rmoveto
+    crr 0 360 arc
+    end
+} def
+
+/screw {
+    screw-r circle
+} def
+
+/rod {
+    rod-r circle
+} def
+
+/box {
+  2 dict begin
+  /h exch def
+  /w exch def
+
+  w 0 rlineto
+  0 h rlineto
+  w neg 0 rlineto
+  0 h neg rlineto
+  closepath stroke
+  end
+} def
+
+% w h radius
+/rounded-corner-box {
+   3 dict begin
+   /radius exch def
+   /height exch def
+   /width exch def
+
+   currentpoint
+   gsave
+   translate
+   0 radius add 0 moveto
+   width radius sub 0 lineto
+   width radius sub 0 radius add radius -90 0 arc
+
+   width height radius sub lineto
+   width radius sub height radius sub radius 0 90 arc
+
+   0 radius add height lineto
+   0 radius add height radius sub radius 90 180 arc
+
+   0 0 radius add lineto
+   0 radius add 0 radius add radius 180 270 arc
+   closepath stroke
+   grestore
+   end
+} def
+
+% Boolean if outline should be printed
+% bool x y
+/rot-mirror-footprint {
+    gsave
+    translate
+    0 0 moveto
+    currentpoint 7 mm circle
+    40 mm 2 div 40 mm screw
+    40 mm 2 div neg 40 mm screw
+    40 mm 2 div -18 mm screw
+    40 mm 2 div neg -18 mm screw
+    stroke
+
+    48 mm 2 div neg -22 mm translate
+    {
+       0 0 moveto 48 mm 68 mm box    % cuts the outer of the mirror
+    } if
+    48 mm 15 mm sub 2 div -2 mm moveto 15 mm 5 mm box
+    stroke
+    grestore
+} def
+
+% (text)
+/center-show {
+    dup stringwidth pop 2 div neg 0 rmoveto
+    show
+} def
+
+/slide-holes {
+    inner-device-len slide-hole-count div 2 div
+    inner-device-len slide-hole-count div
+    inner-device-len {
+	bed-slide-high 2 div rod
+    } for
+    stroke
+} def
+
+/toppanel {
+    % bottom area
+    newpath
+    0 0 moveto
+
+    % up to mirror slot
+    laser-slot-distance mirror-holder-r sub 0 groove-lineto
+
+    % mirror slot width
+    mirror-holder-width 0 rlineto
+
+    % to the end on the right.
+    inner-device-len 0 groove-lineto
+
+    % up. Either straight line or circular cut
+    false {
+       0 bed-w rlineto
+    } {
+       inner-device-len bed-w 2 div
+       bed-w 2 div 10 mm sub
+       270 90 arcn
+       inner-device-len bed-w lineto
+    } ifelse
+
+    laser-slot-distance mirror-holder-r add bed-w groove-lineto
+    mirror-holder-width neg 0 rlineto
+
+    0 bed-w groove-lineto
+    0 0 groove-lineto
+    closepath stroke
+
+    false  % do not cut outline
+    laser-slot-distance mirror-center-mount-from-slot sub bed-w 2 div rot-mirror-footprint
+    laser-slot-distance laser-slot-h 2 div sub bed-w laser-slot-w sub 2 div moveto
+    laser-slot-h laser-slot-w 3 mm rounded-corner-box
+
+    gsave
+      0 1 0 setrgbcolor
+      laser-slot-distance laser-slot-h 2 div add bed-w 2 div moveto
+      90 rotate
+      /Courier findfont 5 mm scalefont setfont
+      0 -5 mm rmoveto
+      gsave (github/hzeller) center-show grestore
+      /Courier findfont 22 mm scalefont setfont
+      0 -18 mm rmoveto
+      gsave (LDGraphy) center-show grestore
+   grestore
+} def
+
+/sidepanel {
+    newpath
+    % bottom parth
+    0 0 moveto
+    inner-device-len 0 lineto
+
+    % up right side
+    inner-device-len inner-device-high groove-lineto
+
+    % to start of mirror-holder
+    inner-device-len laser-slot-distance sub mirror-holder-r add inner-device-high finger-lineto
+
+    % Notch for mirror
+    0 rot-mirror-high rlineto  % center of 45 degree mirror
+    inner-device-len laser-slot-distance sub inner-device-high rot-mirror-high add mirror-holder-r 0 180 arc
+
+    % end of mirror holder, down to top panel again.
+    inner-device-len laser-slot-distance sub mirror-holder-r sub inner-device-high lineto
+
+    0 inner-device-high finger-lineto
+
+    0 0 groove-lineto
+    closepath stroke
+
+    gsave
+      inner-device-len laser-slot-distance sub inner-device-high rot-mirror-high add translate
+      45 rotate
+      mirror-w 2 div neg mirror-t 2 div neg moveto mirror-w mirror-t box
+      stroke
+   grestore
+
+   slide-holes
+   gsave 0 bed-slide-high 3 mm add translate slide-holes grestore
+} def
+
+/slide-rail {
+    0 0 moveto inner-device-len bed-slide-high box
+    slide-holes
+    stroke
+} def
+
+/back {
+   newpath
+   0 0 moveto
+   bed-w 0 lineto
+
+   bed-w inner-device-high finger-lineto   % up
+   bed-w neg 0 finger-rlineto       % top accross
+   0 0 finger-lineto   % down
+
+   closepath stroke
+
+   % Slot for material
+   0 bed-slide-high 2.5 mm sub moveto bed-w 8 mm 2 mm rounded-corner-box
+
+   % drive screw
+   bed-w 2 div 7 mm 8 mm 2 div circle
+} def
+
+/front {
+   newpath
+   0 0 moveto
+   bed-w 0 lineto
+
+   bed-w inner-device-high finger-lineto   % up
+
+   -10 mm 0 rlineto
+   0 -15 mm rlineto
+   bed-w 20 mm sub neg 0 rlineto
+   0 15 mm rlineto       % top accross
+   -10 mm 0 rlineto
+
+   0 0 finger-lineto   % down
+
+   closepath stroke
+
+   % Slot for material
+   0 bed-slide-high 2.5 mm sub moveto bed-w 8 mm 2 mm rounded-corner-box
+
+   % drive screw
+   bed-w 2 div 7 mm 8 mm 2 div circle
+} def
+
+%% Assembly
+
+cut-dist acrylic-t add cut-dist translate
+
+print-part 0 eq {
+  % Two side-panels, turned around and printed in place
+  sidepanel
+  gsave inner-device-len side-cut-distance translate 180 rotate sidepanel grestore
+
+  % above
+  0 side-cut-distance cut-dist add translate
+
+  slide-rail
+  0 bed-slide-high cut-dist add translate slide-rail
+  0 bed-slide-high cut-dist add translate slide-rail
+  0 bed-slide-high cut-dist add translate slide-rail
+
+  0 bed-slide-high cut-dist add acrylic-t add translate
+  0 0 moveto toppanel
+
+  % extra raiser board for the mirror
+  gsave
+  inner-device-len 50 mm translate
+  true  % cut outline
+  0 0 rot-mirror-footprint stroke
+  grestore
+}
+ % else
+{
+  % front-piece
+  gsave
+  bed-w 2 mul inner-device-high add 10 mm add 0 translate 90 rotate
+  0 0 moveto front stroke
+  grestore
+
+  % back piece
+  gsave
+  bed-w 2 mul inner-device-high add 10 mm add bed-w 10 mm add translate 90 rotate
+  0 0 moveto back stroke
+  grestore
+
+  % extra raiser board for the mirror
+  gsave
+  160 mm bed-h 30 mm add translate -90 rotate
+  true  % cut outline
+  0 0 rot-mirror-footprint stroke
+  grestore
+
+  % Frame to place PCB in.
+  3 mm 0 moveto bed-w 6 mm sub bed-h box
+  8 mm 5 mm moveto pcb-w pcb-h box
+
+  % Corner relieves to place them really in the corner.
+  8 mm 5 mm 0.8 mm circle
+  8 mm pcb-w add 5 mm 0.8 mm circle
+  8 mm 5 mm pcb-h add 0.8 mm circle
+  8 mm pcb-w add 5 mm pcb-h add 0.8 mm circle
+
+  bed-w 1 mm add 0 moveto bed-w bed-h box  % the sled
+
+} ifelse
+stroke
+showpage
