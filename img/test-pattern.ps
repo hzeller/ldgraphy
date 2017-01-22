@@ -1,0 +1,161 @@
+%!PS-Adobe-3.0
+%%BoundingBox: 0 0 90 90
+% cat sample.ps | gs -q -sDEVICE=pnm -sOutputFile=- -r600x600 -g800x800 - | pnmcrop | pnmtopng > /tmp/x.png
+
+/mm { 72 25.4 div mul } bind def
+
+/box {
+  /h exch def
+  /w exch def
+
+  w 0 rlineto
+  0 h rlineto
+  w neg 0 rlineto
+  0 h neg rlineto
+  closepath
+  stroke
+} def
+
+/clip-box {
+  /h exch def
+  /w exch def
+
+  w 0 rlineto
+  0 h rlineto
+  w neg 0 rlineto
+  0 h neg rlineto
+  closepath
+  clip
+} def
+
+% x y r
+/circle {
+    /rr exch def
+    moveto
+    currentpoint
+    rr 0 rmoveto
+    rr 0 360 arc
+} def
+
+1 mm 1 mm translate
+
+0.25 mm setlinewidth
+
+ 0 mm 0 mm moveto 10 mm 10 mm box
+10 mm 0 mm moveto 10 mm 10 mm box
+20 mm 0 mm moveto 10 mm 10 mm box
+
+ 0 mm 10 mm moveto 10 mm 10 mm box
+10 mm 10 mm moveto 10 mm 10 mm box
+20 mm 10 mm moveto 10 mm 10 mm box
+
+ 0 mm 20 mm moveto 10 mm 10 mm box
+10 mm 20 mm moveto 10 mm 10 mm box
+20 mm 20 mm moveto 10 mm 10 mm box
+
+0 mm 14.5 mm moveto 30 mm 14.5 mm lineto
+0 mm 15 mm moveto 30 mm 15 mm lineto
+0 mm 15.5 mm moveto 30 mm 15.5 mm lineto
+
+14.5 mm 0 moveto 14.5 mm 30 mm lineto
+15 mm   0 moveto 15 mm 30 mm lineto
+15.5 mm 0 moveto 15.5 mm 30 mm lineto
+
+/Helvetica findfont 2.4 mm scalefont setfont
+1 mm 17 mm moveto (line/dist) show
+0.5 mm 12 mm moveto (0.25 mm) show
+stroke
+
+% Top left
+/Helvetica findfont 3.8 mm scalefont setfont
+(TEST) dup stringwidth pop 2 div neg 5 mm add 27 mm moveto show
+
+/Helvetica findfont 1 mm scalefont setfont
+(hzeller) dup stringwidth pop 2 div neg 5 mm add 24.5 mm moveto show
+
+/Helvetica findfont 1.5 mm scalefont setfont
+(github) dup stringwidth pop 2 div neg 5 mm add 23 mm moveto show
+
+/Helvetica findfont 2 mm scalefont setfont
+(LDGraphy) dup stringwidth pop 2 div neg 5 mm add 21 mm moveto show
+stroke
+
+% Bottom left
+5 mm 5 mm 0.5 mm circle
+5 mm 5 mm 1 mm circle
+5 mm 5 mm 1.5 mm circle
+5 mm 5 mm 2 mm circle
+5 mm 5 mm 2.5 mm circle
+5 mm 5 mm 3 mm circle
+5 mm 5 mm 3.5 mm circle
+5 mm 5 mm 4 mm circle
+5 mm 5 mm 4.5 mm circle
+stroke
+
+/Helvetica-Bold findfont 1.5 mm scalefont setfont
+/triple {
+    /len exch def
+    moveto
+    /thick exch def
+    thick setlinewidth
+    len 0 rlineto
+    len neg thick 2 mul rmoveto len 0 rlineto
+    len neg thick 2 mul rmoveto len 0 rlineto
+    len neg 0.3 mm rmoveto
+    show
+    stroke
+} def
+
+/triple-line {
+  (0.2 mm) 0.2 mm 1 mm 7.5 mm 8 mm triple
+  (0.3 mm) 0.3 mm 1 mm 4.5 mm 8 mm triple
+  (0.4 mm) 0.4 mm 1 mm 0.8 mm 8 mm triple
+} def
+
+% Top right
+gsave
+20 mm 20 mm translate triple-line
+grestore
+
+% Bottom right
+% msg thick x y len
+gsave
+30 mm 0 mm translate
+90 rotate
+triple-line
+grestore
+
+% top center
+gsave
+10 mm 20 mm moveto 10 mm 10 mm clip-box
+15 mm 25 mm translate
+45 rotate
+-8 mm -5 mm translate
+() 0.2 mm 1 mm 7.5 mm 15 mm triple
+() 0.3 mm 1 mm 4.5 mm 15 mm triple
+() 0.4 mm 1 mm 0.8 mm 15 mm triple
+grestore
+
+% bottom center
+gsave
+10 mm 0 mm moveto 10 mm 10 mm clip-box
+15 mm 5 mm translate
+135 rotate
+-8 mm -5 mm translate
+() 0.2 mm 1 mm 7.5 mm 15 mm triple
+() 0.3 mm 1 mm 4.5 mm 15 mm triple
+() 0.4 mm 1 mm 0.8 mm 15 mm triple
+grestore
+
+% right center. Solder pads.
+21 mm 17.5 mm moveto (Dia) show
+
+25 mm 17.5 mm 0.5 mm circle fill
+26 mm 17.5 mm moveto (1 mm) show
+gsave 1 setgray 25 mm 17.5 mm 0.2 mm circle fill grestore
+
+25 mm 12.25 mm 1 mm circle fill
+26 mm 13 mm moveto (2 mm) show
+gsave 1 setgray 25 mm 12.25 mm 0.2 mm circle fill grestore
+
+showpage
