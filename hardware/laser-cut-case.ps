@@ -9,22 +9,30 @@
 
 /mm { 72 25.4 div mul } bind def
 
-/acrylic-t 3 mm def
+/acrylic-t 3 mm def   % Material thickness.
 /screw-r 3.1 mm 2 div def
 /rod-r 4.7 mm 2 div def
 /finger-len 11 mm def
 
-/pcb-w 100 mm 2 mm add def
-/pcb-h 160 mm 2 mm add def
+/pcb-w-mm 100 def
+/pcb-h-mm 160 def
 
-/bed-w pcb-w 16 mm add def    % 3 mm + 5 mm on each side
+/pcb-w pcb-w-mm mm 2 mm add def
+/pcb-h pcb-h-mm mm 2 mm add def
+
+/bed-w pcb-w 16 mm add def    % (3 mm in the rails + 5 mm) on each side
 /bed-h pcb-h 10 mm add def
+
+% derived from above.
+/bed-pcb-off-w bed-w pcb-w sub 2 div def
+/bed-pcb-off-h bed-h pcb-h sub 2 div def
 
 /bed-slide-high 15 mm def
 /slide-hole-count 4 def
 
 /stepper-width 0.8 25.4 mm mul def  % nema8
 
+% TODO: calculate laser slot distance from angle, pcb-w, laser height etc.
 /laser-slot-distance 160 mm stepper-width add def
 /laser-slot-h 10 mm def
 /laser-slot-w pcb-w 2 mm add def
@@ -68,7 +76,7 @@
 
 % Linewidth doesn't do anything to the DXF output, it just makes it easier
 % to manually inspect in the PostScript viewer.
-1 setlinewidth
+0.5 setlinewidth
 
 % dx dy amount
 /perpendicular {
@@ -429,14 +437,53 @@ print-part 0 eq {
   grestore
 
   % Frame to place PCB in.
-  3 mm 0 moveto bed-w 6 mm sub bed-h box
-  8 mm 5 mm moveto pcb-w pcb-h box
+  gsave
+   % Outer frame
+   acrylic-t 0 moveto bed-w acrylic-t 2 mul sub bed-h box
 
-  % Corner relieves to place them really in the corner.
-  8 mm 5 mm 0.8 mm circle
-  8 mm pcb-w add 5 mm 0.8 mm circle
-  8 mm 5 mm pcb-h add 0.8 mm circle
-  8 mm pcb-w add 5 mm pcb-h add 0.8 mm circle
+   % Inner frame
+   bed-pcb-off-w bed-pcb-off-h translate
+   0 0 moveto pcb-w pcb-h box
+
+   % Corner reliefs
+   0 0 0.8 mm circle
+   pcb-w 0 0.8 mm circle
+   0 pcb-h 0.8 mm circle
+   pcb-w pcb-h 0.8 mm circle
+   stroke
+
+   0 1 0 setrgbcolor
+   pcb-w 0 translate  % bottom left corner as origin for measurements
+   /Courier findfont 2.5 mm scalefont setfont
+   0 1 pcb-w-mm {
+       1 dict begin
+       /i exch def
+       i mm neg 1 mm moveto
+       i 5 mod 0 eq { i 10 mod 0 eq { -7 mm } { -4.5 mm } ifelse } { -3 mm } ifelse 0 exch rlineto stroke
+       i 10 mod 0 eq {
+	   gsave
+           i mm neg 0.5 mm sub -4.5 mm translate 90 rotate
+	   0 0 moveto
+	   i 10 div cvi 5 string cvs show
+	   grestore
+       } if
+      end
+   } for
+   0 1 pcb-h-mm {
+       1 dict begin
+       /i exch def
+       i mm -1 mm exch moveto
+       i 5 mod 0 eq { i 10 mod 0 eq { 7 mm } { 4.5 mm } ifelse } { 3 mm } ifelse 0 rlineto stroke
+       i 10 mod 0 eq {
+	   gsave
+           i mm 0.5 mm add 4.5 mm exch translate 90 rotate
+	   0 0 moveto
+	   i 10 div cvi 5 string cvs show
+	   grestore
+       } if
+       end
+   } for
+  grestore
 
   bed-w 1 mm add 0 moveto bed-w bed-h box  % the sled
 
