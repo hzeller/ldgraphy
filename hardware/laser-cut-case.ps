@@ -226,17 +226,18 @@
     translate
     0 0 moveto
     currentpoint 7 mm circle
-    40 mm 2 div 40 mm screw
-    40 mm 2 div neg 40 mm screw
-    40 mm 2 div -18 mm screw
-    40 mm 2 div neg -18 mm screw
+    41.6 mm 2 div 40 mm screw
+    41.6 mm 2 div neg 40 mm screw
+    41.6 mm 2 div -18.5 mm screw
+    41.6 mm 2 div neg -18.5 mm screw
     stroke
 
-    48 mm 2 div neg -22 mm translate
-    {
-       0 0 moveto 48 mm 68 mm box    % cuts the outer of the mirror
-    } if
-    48 mm 15 mm sub 2 div -2 mm moveto 15 mm 5 mm box
+    48 mm 2 div neg -24 mm translate
+
+    % should we print the outline ?
+    { 0 0 moveto 48 mm 68 mm box  } if % cuts the outer of the mirror
+
+    48 mm 15 mm sub 2 div 0 moveto 15 mm 5 mm box
     stroke
     grestore
 } def
