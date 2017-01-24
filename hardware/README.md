@@ -11,14 +11,13 @@ glass-clear transparent acrylic for the real machine, a 500mW laser can
 blind you!
 
 ### How to cut
-The file covers two parts: the main body and some
-left-over parts that didn't make it to on the first sheet (assuming the
-availability of 30cmx30cm (12"x12") acrylic sheets.
+The file covers several parts, and depending on which you can fit
+on your acrylic sheet and/or which you have to re-do, you can choose the ones
+to be output in the first section that defines the
+[`/print-...`](./laser-cut-case.ps#L3) boolean variables.
 
-For that, change the variable [`/print-part`](./laser-cut-case.ps#L8) in
-the laser-cut-case.ps and run a dxf-conversion for each of these.
-
-The Makefile can create a dxf file that is then usable in any laser cutter.
+The Makefile can create a dxf file that is then usable in any laser cutter, just
+call `make`.
 
 There are two layers, the 'black layer' and the 'green layer'. The green layer
 should be used in 'engraving' mode on the laser cutter, the black layer for

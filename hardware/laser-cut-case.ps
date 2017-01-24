@@ -1,5 +1,15 @@
 %!PS-Adobe-3.0
-%%BoundingBox: 0 0 860 860
+%%BoundingBox: 0 0 860 1500
+
+% Choices what to selectively cut.
+/print-toppanel true def     % The laser and rotating mirror are mounted here.
+/print-sidepanels true def   % Side panels framing device.
+/print-siderails true def    % The rails the sled is riding on.
+/print-front-back true def   % front and back parts of the case
+/print-sled true def         % The sled moving the PCB along
+
+% Suggested to cut on thinner material (1mm acrylic)
+/print-pcbframe false def
 
 % There are two parts to print, each of them fits on a 30cmx30cm acrylic
 % sheet. Choose part 0 or part 1 here.
@@ -73,7 +83,7 @@
 
 % -- variables to place properly between cuts
 % distance between different cuts
-/cut-dist 2 mm def
+/cut-dist 1 mm def
 /side-cut-distance inner-device-high 2 mul mirror-holder-high add cut-dist add acrylic-t add def
 
 % Linewidth doesn't do anything to the DXF output, it just makes it easier
@@ -259,7 +269,9 @@
     stroke
 } def
 
-/toppanel {
+%---- end help procedures, start parts.
+
+/part-toppanel {
     % bottom area
     newpath
     0 0 moveto
@@ -290,8 +302,11 @@
     0 0 groove-lineto
     closepath stroke
 
+    % mounting holes for mirror
     false  % do not cut outline
     laser-slot-distance mirror-center-mount-from-slot sub bed-w 2 div rot-mirror-footprint
+
+    % Laser slot
     laser-slot-distance laser-slot-h 2 div sub bed-w laser-slot-w sub 2 div moveto
     laser-slot-h laser-slot-w 3 mm rounded-corner-box
 
@@ -308,7 +323,7 @@
    grestore
 } def
 
-/sidepanel {
+/part-sidepanel {
     newpath
     % bottom parth
     0 0 moveto
@@ -344,13 +359,13 @@
    gsave 0 bed-slide-high 3 mm add translate slide-holes grestore
 } def
 
-/slide-rail {
+/part-slide-rail {
     0 0 moveto inner-device-len bed-slide-high box
     slide-holes
     stroke
 } def
 
-/back {
+/part-back {
    newpath
    0 0 moveto
    bed-w 0 lineto
@@ -368,7 +383,8 @@
    bed-w 2 div 7 mm 8 mm 2 div circle
 } def
 
-/front {
+% TODO: this is too fragile
+/part-front {
    newpath
    0 0 moveto
    bed-w 0 lineto
@@ -392,54 +408,7 @@
    bed-w 2 div 7 mm 8 mm 2 div circle
 } def
 
-%% Assembly
-
-cut-dist acrylic-t add cut-dist translate
-
-print-part 0 eq {
-  % Two side-panels, turned around and printed in place
-  sidepanel
-  gsave inner-device-len side-cut-distance translate 180 rotate sidepanel grestore
-
-  % above
-  0 side-cut-distance cut-dist add translate
-
-  slide-rail
-  0 bed-slide-high cut-dist add translate slide-rail
-  0 bed-slide-high cut-dist add translate slide-rail
-  0 bed-slide-high cut-dist add translate slide-rail
-
-  0 bed-slide-high cut-dist add acrylic-t add translate
-  0 0 moveto toppanel
-
-  % extra raiser board for the mirror
-  gsave
-  inner-device-len 50 mm translate
-  true  % cut outline
-  0 0 rot-mirror-footprint stroke
-  grestore
-}
- % else
-{
-  % front-piece
-  gsave
-  bed-w 2 mul inner-device-high add 10 mm add 0 translate 90 rotate
-  0 0 moveto front stroke
-  grestore
-
-  % back piece
-  gsave
-  bed-w 2 mul inner-device-high add 10 mm add bed-w 10 mm add translate 90 rotate
-  0 0 moveto back stroke
-  grestore
-
-  % extra raiser board for the mirror
-  gsave
-  160 mm bed-h 30 mm add translate -90 rotate
-  true  % cut outline
-  0 0 rot-mirror-footprint stroke
-  grestore
-
+/part-pcb-frame {
   % Frame to place PCB in.
   gsave
    % Outer frame
@@ -488,9 +457,69 @@ print-part 0 eq {
        end
    } for
   grestore
+} def
 
-  bed-w 1 mm add 0 moveto bed-w bed-h box  % the sled
+%% Assembly
 
-} ifelse
+acrylic-t cut-dist add cut-dist translate
+
+print-sidepanels {
+  % Two side-panels, turned around and printed in place
+  part-sidepanel
+  gsave inner-device-len side-cut-distance translate 180 rotate part-sidepanel grestore
+  % move up
+  0 side-cut-distance cut-dist add translate
+} if
+
+print-siderails {
+  part-slide-rail
+  0 bed-slide-high cut-dist add translate part-slide-rail
+  0 bed-slide-high cut-dist add translate part-slide-rail
+  0 bed-slide-high cut-dist add translate part-slide-rail
+  0 bed-slide-high cut-dist add translate
+} if
+
+print-toppanel {
+  0 acrylic-t translate   % to have space for the fingers
+  0 0 moveto part-toppanel
+
+  true {
+     % extra raiser board for the mirror
+    gsave
+    inner-device-len 10 mm sub 49 mm translate
+    true  % cut outline
+    0 0 rot-mirror-footprint stroke
+    grestore
+  } if
+
+  0 bed-w 2 acrylic-t mul add translate
+} if
+
+print-front-back {
+  0 0 moveto part-front stroke % front-piece
+  gsave bed-w acrylic-t 2 mul add cut-dist add 0 translate
+        part-back stroke grestore % back piece
+  0 inner-device-high acrylic-t add cut-dist add translate
+} if
+
+print-sled {
+  0 0 moveto bed-h bed-w box  % the sled
+  0 bed-w cut-dist add translate
+} if
+
+print-pcbframe {
+  gsave
+  0 bed-w acrylic-t sub translate -90 rotate
+  part-pcb-frame
+  % extra raiser board for the mirror. Use empty space in the area in the
+  % middle. Since that often needs to be a thinner shim, this is perfect
+  % as this is typically printed on 1mm
+  40 mm 40 mm translate
+  true  % cut outline
+  0 0 rot-mirror-footprint stroke
+  grestore
+  0 bed-w acrylic-t 2 mul sub cut-dist add translate
+} if
+
 stroke
 showpage
