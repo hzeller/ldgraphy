@@ -37,16 +37,17 @@
 /laser-slot-h 10 mm def
 /laser-slot-w pcb-w 2 mm add def
 
-/mirror-w 10 mm def
-/mirror-t 5 mm def
-
 /rot-mirror-high 33 mm 2 div def  % center of the laser
 /rot-mirror-w 44 mm def
 /rot-mirror-h 60 mm def
-
-/mirror-holder-width 20 mm def  % width of the 45 degree down mirror holder
-
 /rot-mirror-diameter 30 mm def
+
+% The down mirror is elevated above the top plate, so we need the acrylic
+% thickness to be on the same level as the rot mirror that is mounted on
+% the top plate.
+/down-mirror-high rot-mirror-high acrylic-t add def
+/down-mirror-w 10 mm def
+/down-mirror-t 4.5 mm def
 
 % Given that we cover 60 degrees, we cover 2 * sin(30) times radius in
 % horizontal direction, i.e. radius == pcb-w. We want to use a little less of
@@ -66,8 +67,9 @@
 /inner-device-len laser-slot-distance bed-h 2 div add def
 /inner-device-high bed-slide-high 2 mul acrylic-t add def
 
+/mirror-holder-width 20 mm def  % width of the 45 degree down mirror holder
 /mirror-holder-r mirror-holder-width 2 div def
-/mirror-holder-high rot-mirror-high mirror-holder-r add def
+/mirror-holder-high down-mirror-high mirror-holder-r add def
 
 % -- variables to place properly between cuts
 % distance between different cuts
@@ -319,8 +321,8 @@
     inner-device-len laser-slot-distance sub mirror-holder-r add inner-device-high finger-lineto
 
     % Notch for mirror
-    0 rot-mirror-high rlineto  % center of 45 degree mirror
-    inner-device-len laser-slot-distance sub inner-device-high rot-mirror-high add mirror-holder-r 0 180 arc
+    0 down-mirror-high rlineto  % center of 45 degree mirror
+    inner-device-len laser-slot-distance sub inner-device-high down-mirror-high add mirror-holder-r 0 180 arc
 
     % end of mirror holder, down to top panel again.
     inner-device-len laser-slot-distance sub mirror-holder-r sub inner-device-high lineto
@@ -331,9 +333,10 @@
     closepath stroke
 
     gsave
-      inner-device-len laser-slot-distance sub inner-device-high rot-mirror-high add translate
+      inner-device-len laser-slot-distance sub  % we go from the back
+      inner-device-high down-mirror-high add translate
       45 rotate
-      mirror-w 2 div neg mirror-t 2 div neg moveto mirror-w mirror-t box
+      down-mirror-w 2 div neg down-mirror-t 2 div neg moveto down-mirror-w down-mirror-t box
       stroke
    grestore
 
