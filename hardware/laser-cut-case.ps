@@ -11,12 +11,6 @@
 % Suggested to cut on thinner material (1mm acrylic)
 /print-pcbframe false def
 
-% There are two parts to print, each of them fits on a 30cmx30cm acrylic
-% sheet. Choose part 0 or part 1 here.
-% TODO: this needs to be done better. For instance, is there a way to set
-% a dictionary value from the command line ?
-/print-part 0 def
-
 /mm { 72 25.4 div mul } bind def
 
 /acrylic-t 3 mm def   % Material thickness.
@@ -371,11 +365,8 @@
       0 1 0 setrgbcolor
       laser-slot-distance laser-slot-h 2 div add bed-w 2 div moveto
       90 rotate
-      /Courier findfont 5 mm scalefont setfont
-      0 -5 mm rmoveto
-      gsave (github/hzeller) center-show grestore
       /Courier findfont 22 mm scalefont setfont
-      0 -18 mm rmoveto
+      0 -22 mm rmoveto
       gsave (LDGraphy) center-show grestore
    grestore
 } def
