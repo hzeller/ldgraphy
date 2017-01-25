@@ -33,6 +33,13 @@
 /bed-w pcb-w 16 mm add def    % (3 mm in the rails + 5 mm) on each side
 /bed-h pcb-h 10 mm add def
 
+/bed-drive-screw-w 3.4 mm def  % thickness of driving screw
+/bed-drive-screw-r 10.5 2 div mm def  % outer radius of nut driving the thing.
+
+/bed-drive-pos bed-h 2 div def  % where the drive position relative from back.
+/bed-drive-w 29 mm def
+/bed-drive-h bed-drive-screw-r 2 mul 5 mm add def
+
 % derived from above.
 /bed-pcb-off-w bed-w pcb-w sub 2 div def
 /bed-pcb-off-h bed-h pcb-h sub 2 div def
@@ -114,7 +121,7 @@
        end
 } def
 
-/finger-slot-rlineto {
+/finger-groove-rlineto {
     9 dict begin
     /thick exch def
     /dy exch def
@@ -142,7 +149,7 @@
 
 % dx dy
 /finger-rlineto {
-    acrylic-t neg finger-slot-rlineto
+    acrylic-t neg finger-groove-rlineto
 } def
 
 /groove-rlineto {
@@ -150,7 +157,7 @@
     /dy exch def
     /dx exch def
     dx dy acrylic-t neg perpendicular
-    dx dy acrylic-t finger-slot-rlineto
+    dx dy acrylic-t finger-groove-rlineto
     dx dy acrylic-t perpendicular
     end
 } def
@@ -172,6 +179,34 @@
     groove-rlineto
 } def
 
+% dx dy  TODO: this is hacky.
+/slot-rlineto {
+    gsave
+    1 0 0 setrgbcolor   % inside kerf correction.
+    9 dict begin
+    /dy exch def
+    /dx exch def
+    /len dx dx mul dy dy mul add sqrt def
+    /segments
+         len finger-len sub  % we want one finger len at the end
+	 finger-len 2 mul    % number of low and up segments
+	 div floor cvi def
+    /extra-fraction len finger-len sub
+         segments finger-len 2 mul mul sub len div 2 div def
+    dx extra-fraction mul dy extra-fraction mul rmoveto
+    /sdx dx finger-len len div mul def
+    /sdy dy finger-len len div mul def
+    1 1 segments {
+	pop
+	sdx sdy rmoveto
+	currentpoint
+	acrylic-t sdy box
+	moveto 0 sdy rmoveto
+    } for
+    end
+    grestore
+} def
+
 % x y r
 /circle {
     1 dict begin
@@ -181,6 +216,28 @@
     crr 0 rmoveto
     crr 0 360 arc
     end
+} def
+
+% r is the outer radius.
+% n r
+/n-polygon {
+    gsave
+    currentpoint translate
+    3 dict begin
+    /r exch def
+    /n exch def
+    /angle 360 n div def
+    r 0 moveto
+    1 1 n {
+	dup
+	angle mul cos r mul
+	exch
+	angle mul sin r mul
+	lineto
+    } for
+    closepath stroke
+    end
+    grestore
 } def
 
 /screw {
@@ -329,8 +386,11 @@
     0 0 moveto
     inner-device-len 0 lineto
 
-    % up right side
-    inner-device-len inner-device-high groove-lineto
+   % up right side (back)
+   1 dict begin
+      /finger-len 4 mm def
+     inner-device-len inner-device-high groove-lineto
+   end
 
     % to start of mirror-holder
     inner-device-len laser-slot-distance sub mirror-holder-r add inner-device-high finger-lineto
@@ -344,7 +404,13 @@
 
     0 inner-device-high finger-lineto
 
-    0 0 groove-lineto
+   % TODO: this does not align properly yet, because we do three notches here
+   % but the front only has one.
+   % down left side (front)
+   1 dict begin
+      /finger-len 4 mm def
+      0 0 groove-lineto
+    end
     closepath stroke
 
     gsave
@@ -370,42 +436,54 @@
    0 0 moveto
    bed-w 0 lineto
 
-   bed-w inner-device-high finger-lineto   % up
+   1 dict begin
+      /finger-len 4 mm def
+      bed-w inner-device-high finger-lineto   % up
+   end
+
    bed-w neg 0 finger-rlineto       % top accross
-   0 0 finger-lineto   % down
+
+   1 dict begin
+      /finger-len 4 mm def
+     0 0 finger-lineto   % down
+   end
 
    closepath stroke
 
-   % Slot for material
-   0 bed-slide-high 2.5 mm sub moveto bed-w 8 mm 2 mm rounded-corner-box
-
-   % drive screw
-   bed-w 2 div 7 mm 8 mm 2 div circle
+   % drive screw and nema8 mount
+   gsave
+   1 0	 0 setrgbcolor
+   bed-w 2 div 10 mm translate
+   0 0 16 mm 2 div circle stroke
+   7.7 mm 7.7 mm 1 mm circle stroke
+   -7.7 mm 7.7 mm 1 mm circle stroke
+   -7.7 mm -7.7 mm 1 mm circle stroke
+   7.7 mm -7.7 mm 1 mm circle stroke
+   grestore
 } def
 
-% TODO: this is too fragile
+% TODO: this does not align properly yet.
 /part-front {
    newpath
    0 0 moveto
    bed-w 0 lineto
 
-   bed-w inner-device-high finger-lineto   % up
+   1 dict begin
+      /finger-len 4 mm def
+     bed-w bed-slide-high finger-lineto   % up
+   end
 
-   -10 mm 0 rlineto
-   0 -15 mm rlineto
-   bed-w 20 mm sub neg 0 rlineto
-   0 15 mm rlineto       % top accross
-   -10 mm 0 rlineto
+   bed-w neg 0 rlineto
 
-   0 0 finger-lineto   % down
+   1 dict begin
+      /finger-len 4 mm def
+      0 0 finger-lineto   % down
+   end
 
    closepath stroke
 
-   % Slot for material
-   0 bed-slide-high 2.5 mm sub moveto bed-w 8 mm 2 mm rounded-corner-box
-
    % drive screw
-   bed-w 2 div 7 mm 8 mm 2 div circle
+   bed-w 2 div 10 mm rod-r circle stroke
 } def
 
 /part-pcb-frame {
@@ -459,6 +537,50 @@
   grestore
 } def
 
+/subpart-drive-holder {
+  gsave
+  0 0 moveto
+  bed-drive-h 0 rlineto
+  0 bed-drive-w rlineto
+  bed-drive-h neg 0 rlineto
+  0 bed-drive-w neg finger-rlineto
+  stroke
+  bed-drive-h bed-drive-w 2 div bed-drive-h 1.2 div circle stroke
+  grestore
+} def
+
+/part-sled {
+  1 dict begin
+  /finger-len 4 mm def
+
+  0 0 moveto bed-h bed-w box  % the sled
+
+  gsave
+    bed-drive-pos bed-drive-screw-w 2 div sub acrylic-t sub
+    bed-w 2 div bed-drive-w 2 div sub moveto
+    0 bed-drive-w slot-rlineto stroke
+  grestore
+
+  gsave
+    bed-drive-pos bed-drive-screw-w 2 div add
+    bed-w 2 div bed-drive-w 2 div sub moveto
+    0 bed-drive-w slot-rlineto stroke
+  grestore
+
+  gsave
+  bed-h cut-dist add acrylic-t add 0 translate subpart-drive-holder
+  0 bed-drive-w cut-dist add translate subpart-drive-holder
+  0 bed-drive-w cut-dist add translate
+
+  0 0 moveto bed-drive-screw-r 2 mul 2 mm add bed-drive-w 1.2 mul box
+  bed-drive-screw-r 1 mm add bed-drive-w 1.2 mul 2 div translate
+  0 0 moveto
+  360 12 div rotate
+  6 bed-drive-screw-r n-polygon stroke
+  grestore
+  end
+} def
+
 %% Assembly
 
 acrylic-t cut-dist add cut-dist translate
@@ -503,7 +625,7 @@ print-front-back {
 } if
 
 print-sled {
-  0 0 moveto bed-h bed-w box  % the sled
+  part-sled
   0 bed-w cut-dist add translate
 } if
 
