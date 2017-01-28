@@ -44,7 +44,7 @@
 
 // Time waited per data Laser bit. It also influences the motor speed.
 // Limited essentially by the bandwidth of the laser.
-#define DATA_SLEEP 90
+#define DATA_SLEEP 290
 
 // Number of bits between each mirror clock toggle. In this case, our clock
 // is half the line frequency, but there might be other mirrors out there that
@@ -52,7 +52,7 @@
 #define MIRROR_CYCLES (SCANLINE_DATA_SIZE * 8)
 
 // Phase shift mirror clock so that a centered laser is in the center.
-#define MIRROR_OFFSET MIRROR_CYCLES - 800
+#define MIRROR_OFFSET MIRROR_CYCLES - 850
 
 // Mapping some fixed registers to named variables.
 // We have enough registers to keep things readable.

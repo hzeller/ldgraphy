@@ -35,10 +35,10 @@
 
 // These need to be modified depending on the machine.
 constexpr float kSledMMperStep = 2.0 / 200 / 8;
-constexpr float kRadiusMM = 70.0;
+constexpr float kRadiusMM = 80.0;
 constexpr int kMirrorFaces = 6;
 
-constexpr float kScanFrequency = 245*2;  // Hz. For rough time calculation
+constexpr float kScanFrequency = 352*2;  // Hz. For rough time calculation
 
 volatile bool interrupt_received = false;
 static void InterruptHandler(int signo) {
@@ -52,8 +52,9 @@ static int usage(const char *progname, const char *errmsg = NULL) {
     fprintf(stderr, "Usage:\n%s [options] <image-file>\n", progname);
     fprintf(stderr, "Options:\n"
             "\t-d <val>   : DPI of input image. Default 600\n"
-            "\t-F         : Run a focus round until the first Ctrl-C\n"
+            "\t-s <spinup>: Warmup seconds of mirror spin (default 10)\n"
             "\t-i         : Inverse image: black becomes laser on\n"
+            "\t-F         : Run a focus round until the first Ctrl-C\n"
             "\t-n         : Dryrun. Do not do any scanning.\n"
             "\t-h         : This help\n");
     return errmsg ? 1 : 0;
@@ -122,9 +123,10 @@ int main(int argc, char *argv[]) {
     bool dryrun = false;
     bool invert = false;
     bool do_focus = false;
+    int spin_warmup_seconds = 10;
 
     int opt;
-    while ((opt = getopt(argc, argv, "Fhnid:")) != -1) {
+    while ((opt = getopt(argc, argv, "Fhnid:s:")) != -1) {
         switch (opt) {
         case 'h': return usage(argv[0]);
         case 'd':
@@ -138,6 +140,9 @@ int main(int argc, char *argv[]) {
             break;
         case 'F':
             do_focus = true;
+            break;
+        case 's':
+            spin_warmup_seconds = atoi(optarg);
             break;
         }
     }
@@ -198,13 +203,28 @@ int main(int argc, char *argv[]) {
     signal(SIGTERM, InterruptHandler);
     signal(SIGINT, InterruptHandler);
 
-    sleep(1);  // Let motor spin up and synchronize
+    fprintf(stderr, "Spinning up mirror and wait for it to be stable:\n");
+    const time_t finish_spinup = time(NULL) + spin_warmup_seconds;
+    while (time(NULL) < finish_spinup && !interrupt_received) {
+        fprintf(stderr, "\b\b\b\b%4d", (int) (finish_spinup - time(NULL)));
+        usleep(500 * 1000);
+    }
+    fprintf(stderr, "\b\b\b\bDone.\n");
 
     if (do_focus) {
         fprintf(stderr, "FOCUS run. Actual exposure starts after Ctrl-C.\n");
         uint8_t focus_pattern[SCANLINE_DATA_SIZE];
         for (int i = 0; i < SCANLINE_DATA_SIZE; ++i) {
-            focus_pattern[i] = (i % 2 == 0) ? 0xff : 0x00;
+#if 0
+            //focus_pattern[i] = (i % 4 < 2) ? 0xff : 0x00;
+            //focus_pattern[i] = 0xf0;
+	    focus_pattern[i] = (i == 0) ? 0xff : 0;
+#else
+            // Center to watch drift.
+            //focus_pattern[i] = (i > SCANLINE_DATA_SIZE/2 - 5 && i < SCANLINE_DATA_SIZE/2 + 5) ? 0xff : 0x00;
+            focus_pattern[i] = (i == SCANLINE_DATA_SIZE/2) ? 0xff : 0x00;
+            //focus_pattern[i] = (i < SCANLINE_DATA_SIZE/2) ? 0xff : 0x00;
+#endif
         }
         while (!interrupt_received) {
             line_sender.EnqueueNextData(focus_pattern, SCANLINE_DATA_SIZE, false);
