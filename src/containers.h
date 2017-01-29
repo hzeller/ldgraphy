@@ -24,8 +24,9 @@
 template <int N>
 class BitArray {
 public:
-    BitArray() { bzero(buffer_, (N+7)/8); }
+    BitArray() { Clear(); }
 
+    void Clear() {  bzero(buffer_, (N+7)/8); }
     void Set(int b, bool value) {
         assert(b >= 0 && b < N);
         if (value)

@@ -22,6 +22,7 @@
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include <strings.h>
 #include <time.h>
 #include <unistd.h>
@@ -34,11 +35,16 @@
 #include "scanline-sender.h"
 
 // These need to be modified depending on the machine.
-constexpr float kSledMMperStep = 2.0 / 200 / 8;
-constexpr float kRadiusMM = 80.0;
-constexpr int kMirrorFaces = 6;
+constexpr float kSledMMperStep = (25.4 / 24) / 200 / 8;
+constexpr float deg2rad = 2*M_PI/360;
 
-constexpr float kScanFrequency = 352*2;  // Hz. For rough time calculation
+// reflection: angle * 2
+constexpr int kMirrorFaces = 6;
+constexpr float segment_angle = 2 * (360 / kMirrorFaces) * deg2rad;
+
+constexpr float kRadiusMM = 135.0;
+constexpr float bed_len = 160.0;
+constexpr float bed_width = 100.0;
 
 volatile bool interrupt_received = false;
 static void InterruptHandler(int signo) {
@@ -60,26 +66,28 @@ static int usage(const char *progname, const char *errmsg = NULL) {
     return errmsg ? 1 : 0;
 }
 
-// A position in the image to sample from.
-struct ScanLookup {
-    int x, y;
-};
-
-// Returns where in the original image we have to sample for the given scan
-// position. Return in an (preallocated) array of size num.
-// This is vertically centered around the height of the image, thus half
-// the y-coordinates will be negative.
-static void PrepareSampleLookupArc(float radius, size_t num,
-                                   ScanLookup *lookups) {
-    const float range_radiants = 2 * M_PI / kMirrorFaces;
-    const float step_radiants = range_radiants / num;
-    const float start = -range_radiants / 2;
+// Radius is given in pixels; output is a vector given a data position shows
+// where to look up the pixel in the original image. Maximum of 'num' values, but
+// will return less as we only cover a smaller segment.
+static std::vector<int> PrepareTangensLookup(float radius_pixels,
+                                             float scan_range_pixels,
+                                             size_t num) {
+    std::vector<int> result;
+    const float scan_angle_range = 2 * atan(scan_range_pixels/2 / radius_pixels);
+    const float scan_angle_start = -scan_angle_range/2;
+    const float angle_step = segment_angle / num;  // Overall arc mapped to full
+    const float scan_center = scan_range_pixels / 2;
+    // only the values between -angle_range/2 .. angle_range/2
     for (size_t i = 0; i < num; ++i) {
-        // X is on the left, so negative.
-        lookups[i].x = (int)roundf(-cosf(start + i * step_radiants) * radius);
-        // Y is scanning from the bottom up, hence negative.
-        lookups[i].y = (int)roundf(-sinf(start + i * step_radiants) * radius);
+        int y_pixel = (int)roundf(tan(scan_angle_start + i * angle_step)
+                                  * radius_pixels + scan_center);
+        if (y_pixel > scan_range_pixels)
+            break;
+        result.push_back(y_pixel);
     }
+    fprintf(stderr, "Last pixel was %d, using %d out of %d. scan angle: %.2f\n", result.back(),
+            result.size(), num, scan_angle_range / deg2rad);
+    return result;
 }
 
 // Load image and pre-process to be in a SimpleImage structure. Reading pixels
@@ -159,40 +167,22 @@ int main(int argc, char *argv[]) {
         return 1;
 
     const float image_resolution_mm_per_pixel = 25.4f / input_dpi;
-    const float image_scale = image_resolution_mm_per_pixel / kSledMMperStep;
-    const int width = img->width() * image_scale;
-    const int height = img->height() * image_scale;
+    const float sled_step_per_pixel = image_resolution_mm_per_pixel / kSledMMperStep;
 
     constexpr int SCAN_PIXELS = SCANLINE_DATA_SIZE * 8;
-    ScanLookup scan_pos[SCAN_PIXELS];
-    PrepareSampleLookupArc(kRadiusMM / kSledMMperStep, SCAN_PIXELS, scan_pos);
-
+    std::vector<int> y_lookup = PrepareTangensLookup(kRadiusMM / image_resolution_mm_per_pixel,
+                                                     bed_width / image_resolution_mm_per_pixel,
+                                                     SCAN_PIXELS);
     // Let's see what the range is we need to scan.
-    int start_x_offset = scan_pos[SCAN_PIXELS/2].x;
-    const int image_half = height / 2;
-    fprintf(stderr, "Exposure size: (%.1fmm, %.1fmm). Internal scale %.1f\n",
-            width * kSledMMperStep, height * kSledMMperStep, image_scale);
-    if (image_half > scan_pos[0].y) {
-        // The outer edge of the scanline's Y determines how wide we can go
-        fprintf(stderr, "Image too wide for this device (%.1fmm).\n",
-                scan_pos[0].y * 2 * kSledMMperStep);
-        return 1;
-    }
-    for (int i = 0; i < SCAN_PIXELS/2; ++i) {
-        if (scan_pos[i].y < image_half) {
-            start_x_offset = -scan_pos[i].x + 1;
-            break;
-        }
-    }
+    fprintf(stderr, "Exposure size: (%.1fmm, %.1fmm). "
+            "Sled step per pixel %.1f (%.0fmm x %.0fmm = %.0f x %.0f pixels)\n",
+            img->width() * image_resolution_mm_per_pixel,
+            img->height() * image_resolution_mm_per_pixel,
+            sled_step_per_pixel,
+            bed_len, bed_width,
+            bed_len / image_resolution_mm_per_pixel,
+            bed_width / image_resolution_mm_per_pixel);
 
-    // Because we scan a bow, we need to scan more until the center is
-    // covered.
-    const int overshoot_scanning = -start_x_offset - scan_pos[SCAN_PIXELS/2].x;
-    const int scanlines = width + overshoot_scanning;
-    fprintf(stderr, "Need to scan %.1fmm further due to arc. "
-            "Total %d scan lines. Total %.0f seconds.\n",
-            overshoot_scanning * kSledMMperStep,
-            scanlines, ceil(scanlines / kScanFrequency));
     if (dryrun)
         return 0;
 
@@ -211,23 +201,18 @@ int main(int argc, char *argv[]) {
     }
     fprintf(stderr, "\b\b\b\bDone.\n");
 
+    BitArray<SCAN_PIXELS> scan_bits;
+
     if (do_focus) {
         fprintf(stderr, "FOCUS run. Actual exposure starts after Ctrl-C.\n");
-        uint8_t focus_pattern[SCANLINE_DATA_SIZE];
-        for (int i = 0; i < SCANLINE_DATA_SIZE; ++i) {
-#if 0
-            //focus_pattern[i] = (i % 4 < 2) ? 0xff : 0x00;
-            //focus_pattern[i] = 0xf0;
-	    focus_pattern[i] = (i == 0) ? 0xff : 0;
-#else
-            // Center to watch drift.
-            //focus_pattern[i] = (i > SCANLINE_DATA_SIZE/2 - 5 && i < SCANLINE_DATA_SIZE/2 + 5) ? 0xff : 0x00;
-            focus_pattern[i] = (i == SCANLINE_DATA_SIZE/2) ? 0xff : 0x00;
-            //focus_pattern[i] = (i < SCANLINE_DATA_SIZE/2) ? 0xff : 0x00;
-#endif
+        scan_bits.Clear();
+        constexpr int ft = 4;  // focus thickness.
+        for (int j = 0; j < 10; ++j) {
+            for (int i = 0; i < ft; ++i) scan_bits.Set(j*y_lookup.size()/10+i, true);
         }
+        for (int i = 0; i < 12; ++i) scan_bits.Set(y_lookup.size()/2+i, true);
         while (!interrupt_received) {
-            line_sender.EnqueueNextData(focus_pattern, SCANLINE_DATA_SIZE, false);
+            line_sender.EnqueueNextData(scan_bits.buffer(), SCANLINE_DATA_SIZE, false);
         }
         interrupt_received = false;  // Re-arm signal handler.
         fprintf(stderr, "Focus run done.\n");
@@ -235,35 +220,28 @@ int main(int argc, char *argv[]) {
 
     fprintf(stderr, "Exposure. Cancel with Ctrl-C\n");
     const time_t start_t = time(NULL);
+    const int scanlines = img->width() * sled_step_per_pixel;
     int prev_percent = -1;
-    BitArray<SCAN_PIXELS> scan_bits;
     int x_last_img_pos = -1;
-    for (int x = 0; x < scanlines && !interrupt_received; ++x) {
-        // Some status
-        int percent = 100 * x / scanlines;
+    scan_bits.Clear();
+    for (int step_x = 0; step_x < scanlines && !interrupt_received; ++step_x) {
+        const int percent = roundf(100.0 * step_x / scanlines);
         if (percent != prev_percent) {
-            fprintf(stderr, "\b\b\b\b\b\b\b\b\b\b\b\b%d%% (%d)", percent, x);
+            fprintf(stderr, "\b\b\b\b\b\b\b\b\b\b\b\b%d%% (%d)",
+                    percent, step_x);
             fflush(stderr);
             prev_percent = percent;
         }
 
-        const int x_origin = x + start_x_offset;
+        const int x_pixel = roundf(step_x / sled_step_per_pixel);
+        if (x_pixel != x_last_img_pos) {
+            x_last_img_pos = x_pixel;
 
-        // Assemble one scan line whenever we advanced enough in X to cover
-        // a new pixel in the original image. We do a little overscanning.
-        const int new_img_pos = roundf(2 * x_origin / image_scale);
-        if (new_img_pos != x_last_img_pos) {
-            x_last_img_pos = new_img_pos;
-            for (int i = 0; i < SCAN_PIXELS; ++i) {
-                const int scan_x = scan_pos[i].x + x_origin;
-                const int scan_y = scan_pos[i].y + image_half;
-                if (scan_x < 0 || scan_x >= (int)width
-                    || scan_y < 0 || scan_y >= (int)height) {
-                    scan_bits.Set(i, false);
-                    continue;
-                }
-                scan_bits.Set(i, img->at(roundf(scan_x / image_scale),
-                                         roundf(scan_y / image_scale)));
+            for (size_t i = 0; i < y_lookup.size(); ++i) {
+                const int y_pixel = img->height() - y_lookup[i];
+                if (y_pixel < 0)
+                    break;
+                scan_bits.Set(i, img->at(x_pixel, y_pixel));
             }
         }
         line_sender.EnqueueNextData(scan_bits.buffer(), SCANLINE_DATA_SIZE,
