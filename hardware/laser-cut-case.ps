@@ -16,7 +16,8 @@
 /acrylic-t 3 mm def   % Material thickness.
 /screw-r 3.1 mm 2 div def
 /rod-r 4.7 mm 2 div def
-/finger-len 11 mm def
+/finger-len 20 mm def
+/connect-screw-len 4.5 mm def
 
 /pcb-w-mm 100 def
 /pcb-h-mm 160 def
@@ -91,7 +92,31 @@
 % to manually inspect in the PostScript viewer.
 0.5 setlinewidth
 
-% dx dy amount
+% x y r
+/circle {
+    1 dict begin
+    /crr exch def
+    moveto
+    currentpoint
+    crr 0 rmoveto
+    crr 0 360 arc
+    crr neg 0 rmoveto
+    end
+} def
+
+% dir_x dir_y amount  -> dx dy (relative position)
+/colinear {
+	5 dict begin
+       /thick exch  def
+       /dy exch def
+       /dx exch def
+       /len dx dx mul dy dy mul add sqrt def
+       /fraction thick len div def  % fraction of amount that is perpendicular
+       dx fraction mul dy fraction mul
+       end
+} def
+
+% dir_x dir_y amount  -> dx dy (relative position)
 /perpendicular {
 	5 dict begin
        /thick exch  def
@@ -99,7 +124,7 @@
        /dx exch def
        /len dx dx mul dy dy mul add sqrt def
        /fraction thick len div def  % fraction of amount that is perpendicular
-       dy fraction mul neg dx fraction mul rlineto
+       dy fraction mul neg dx fraction mul
        end
 } def
 
@@ -109,14 +134,59 @@
        /thick exch  def
        /dy exch def
        /dx exch def
-       dx dy thick perpendicular
+       dx dy thick perpendicular rlineto
        dx dy rlineto
-       dx dy thick neg perpendicular
+       dx dy thick neg perpendicular rlineto
        end
 } def
 
+% dx dy  % create a hole half way down the dx dy
+/connect-hole {
+    2 dict begin
+    /sdy exch def
+    /sdx exch def
+    sdx 2 div sdy 2 div rmoveto
+    sdx sdy thick 2 div perpendicular rmoveto
+    currentpoint 1 mm circle
+    sdx sdy thick 2 div neg perpendicular rmoveto
+    sdx 2 div neg sdy 2 div neg rmoveto
+    end
+} def
+
+% dx dy  % create a tslot half way down the dx dy
+/connect-t-slot {
+  3 dict begin
+  /sdy exch def
+  /sdx exch def
+  /ff finger-len 2 mm sub finger-len div 2 div def
+  sdx ff mul sdy ff mul rmoveto
+  sdx sdy -0.5 mm perpendicular rmoveto
+  sdx sdy connect-screw-len perpendicular rlineto
+  sdx sdy -1 mm colinear rlineto
+  currentpoint 0.2 mm circle
+  sdx sdy 1.6 mm perpendicular rlineto
+  sdx sdy 1 mm colinear rlineto
+  sdx sdy connect-screw-len 2 div perpendicular rlineto
+  sdx sdy 2 mm colinear rlineto
+  sdx sdy connect-screw-len 2 div neg perpendicular rlineto
+  sdx sdy 1 mm colinear rlineto
+  sdx sdy -1.6 mm perpendicular rlineto
+  currentpoint stroke moveto
+  currentpoint 0.2 mm circle
+  sdx sdy -1 mm colinear rlineto
+  sdx sdy connect-screw-len neg perpendicular rlineto
+  currentpoint stroke moveto
+  % go back
+  sdx sdy 0.5 mm perpendicular rmoveto
+  sdx sdy 2 mm neg colinear rmoveto
+  sdx ff mul neg sdy ff mul neg rmoveto
+  end
+} def
+
+% x y thick do_hole { 0, 1, 2 }
 /finger-groove-rlineto {
-    9 dict begin
+    12 dict begin
+    /do-hole exch def
     /thick exch def
     /dy exch def
     /dx exch def
@@ -141,18 +211,83 @@
     end
 } def
 
+% x y thick do_hole { 0, 1, 2 }
+/hole-slot-rlineto {
+    12 dict begin
+    /do-hole exch def
+    /thick exch def
+    /dy exch def
+    /dx exch def
+    /len dx dx mul dy dy mul add sqrt def
+    /factor acrylic-t len div def  % perpendicular thing.
+    /segments
+         len finger-len sub  % we want one finger len at the end
+	 finger-len 2 mul    % number of low and up segments
+	 div floor cvi def
+    /extra-fraction len finger-len sub
+         segments finger-len 2 mul mul sub len div 2 div def
+    dx extra-fraction mul dy extra-fraction mul rmoveto
+    /sdx dx finger-len len div mul def
+    /sdy dy finger-len len div mul def
+    1 1 segments {
+	pop
+	do-hole 1 eq {  % hole
+	    sdx sdy connect-hole
+	} if
+	do-hole 2 eq {  % t-slot
+	    sdx sdy connect-t-slot
+	} if
+	sdx sdy rmoveto
+	sdx sdy rmoveto
+    } for
+
+    do-hole 1 eq {  % hole
+      sdx sdy connect-hole
+    } if
+    do-hole 2 eq {  % t-slot
+      sdx sdy connect-t-slot
+    } if
+    sdx sdy rmoveto
+    dx extra-fraction mul dy extra-fraction mul rmoveto
+    end
+} def
+
+% dx dy
+/t-slot-rlineto {
+    acrylic-t neg 2 hole-slot-rlineto
+} def
+/hole-rlineto {
+    acrylic-t neg 1 hole-slot-rlineto
+} def
+
 % dx dy
 /finger-rlineto {
-    acrylic-t neg finger-groove-rlineto
+    2 copy t-slot-rlineto 2 copy neg exch neg exch rmoveto
+    acrylic-t neg 2 finger-groove-rlineto
 } def
 
 /groove-rlineto {
     2 dict begin
     /dy exch def
     /dx exch def
-    dx dy acrylic-t neg perpendicular
-    dx dy acrylic-t finger-groove-rlineto
-    dx dy acrylic-t perpendicular
+    dx dy hole-rlineto dx neg dy neg rmoveto
+    dx dy acrylic-t neg perpendicular rlineto
+    dx dy acrylic-t 1 finger-groove-rlineto
+    dx dy acrylic-t perpendicular rlineto
+    end
+} def
+
+/finger-rlineto-noscrew {
+    acrylic-t neg 2 finger-groove-rlineto
+} def
+
+/groove-rlineto-noscrew {
+    2 dict begin
+    /dy exch def
+    /dx exch def
+    dx dy acrylic-t neg perpendicular rlineto
+    dx dy acrylic-t 1 finger-groove-rlineto
+    dx dy acrylic-t perpendicular rlineto
     end
 } def
 
@@ -199,17 +334,6 @@
     } for
     end
     grestore
-} def
-
-% x y r
-/circle {
-    1 dict begin
-    /crr exch def
-    moveto
-    currentpoint
-    crr 0 rmoveto
-    crr 0 360 arc
-    end
 } def
 
 % r is the outer radius.
@@ -351,7 +475,7 @@
 
     0 bed-w groove-lineto
     0 0 groove-lineto
-    closepath stroke
+    stroke
 
     % mounting holes for mirror
     false  % do not cut outline
@@ -379,7 +503,7 @@
 
    % up right side (back)
    1 dict begin
-      /finger-len 4 mm def
+      /finger-len 8 mm def
      inner-device-len inner-device-high groove-lineto
    end
 
@@ -399,10 +523,10 @@
    % but the front only has one.
    % down left side (front)
    1 dict begin
-      /finger-len 4 mm def
+      /finger-len 8 mm def
       0 0 groove-lineto
     end
-    closepath stroke
+    stroke
 
     gsave
       inner-device-len laser-slot-distance sub  % we go from the back
@@ -428,18 +552,18 @@
    bed-w 0 lineto
 
    1 dict begin
-      /finger-len 4 mm def
+      /finger-len 8 mm def
       bed-w inner-device-high finger-lineto   % up
    end
 
    bed-w neg 0 finger-rlineto       % top accross
 
    1 dict begin
-      /finger-len 4 mm def
+      /finger-len 8 mm def
      0 0 finger-lineto   % down
    end
 
-   closepath stroke
+   stroke
 
    % drive screw and nema8 mount
    gsave
@@ -460,18 +584,18 @@
    bed-w 0 lineto
 
    1 dict begin
-      /finger-len 4 mm def
+      /finger-len 8 mm def
      bed-w bed-slide-high finger-lineto   % up
    end
 
    bed-w neg 0 rlineto
 
    1 dict begin
-      /finger-len 4 mm def
+      /finger-len 8 mm def
       0 0 finger-lineto   % down
    end
 
-   closepath stroke
+   stroke
 
    % drive screw
    bed-w 2 div 10 mm rod-r circle stroke
@@ -534,7 +658,7 @@
   bed-drive-h 0 rlineto
   0 bed-drive-w rlineto
   bed-drive-h neg 0 rlineto
-  0 bed-drive-w neg finger-rlineto
+  0 bed-drive-w neg finger-rlineto-noscrew
   stroke
   bed-drive-h bed-drive-w 2 div bed-drive-h 1.2 div circle stroke
   grestore
@@ -544,7 +668,7 @@
   1 dict begin
   /finger-len 4 mm def
 
-  0 0 moveto bed-h bed-w box  % the sled
+  0 0 moveto bed-h bed-w 3 mm rounded-corner-box  % the sled
 
   gsave
     bed-drive-pos bed-drive-screw-w 2 div sub acrylic-t sub
