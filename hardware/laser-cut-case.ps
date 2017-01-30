@@ -2,6 +2,7 @@
 %%BoundingBox: 0 0 860 1500
 
 % Choices what to selectively cut.
+/print-bottom true def
 /print-toppanel true def     % The laser and rotating mirror are mounted here.
 /print-sidepanels true def   % Side panels framing device.
 /print-siderails true def    % The rails the sled is riding on.
@@ -43,10 +44,20 @@
 /bed-slide-high-top 8 mm def
 /slide-hole-count 4 def
 
-/stepper-width 0.8 25.4 mm mul def  % nema8
+/drive-train-fingers 11 mm def   % finger distance for drive train
+/stepper-len 36 mm def
+/stepper-height 28.2 mm def   % nema11
+/stepper-mount-screw 11.5 mm def  % screw distance measured from center
+/stepper-screw-dia 2.5 mm def     % M2.5 for nema11
+/stepper-center-plate-dia 22.5 mm def
+
+/acme-dia 5 mm def            % acme screw diameter
+
+/drive-mount-pos stepper-len def  % stepper mount position seen from back
+/bearing-mount-pos stepper-len 35 mm add pcb-h add def  % acme bearing
 
 % TODO: calculate laser slot distance from angle, pcb-w, laser height etc.
-/laser-slot-distance 160 mm stepper-width add def
+/laser-slot-distance 160 mm def
 /laser-slot-h 10 mm def
 /laser-slot-w pcb-w 2 mm add def
 
@@ -92,6 +103,16 @@
 % Linewidth doesn't do anything to the DXF output, it just makes it easier
 % to manually inspect in the PostScript viewer.
 0.5 setlinewidth
+
+/inner-cut {
+    1 0 0 setrgbcolor
+} def
+/outer-cut {
+    0 0 0 setrgbcolor
+} def
+/engraving-cut {
+    0 1 0 setrgbcolor
+} def
 
 % x y r
 /circle {
@@ -309,10 +330,10 @@
     groove-rlineto
 } def
 
-% dx dy  TODO: this is hacky.
-/slot-rlineto {
+% dx dy  TODO: this very is hacky. only works vertical
+/slot-rlineto-v {
     gsave
-    1 0 0 setrgbcolor   % inside kerf correction.
+    inner-cut
     9 dict begin
     /dy exch def
     /dx exch def
@@ -332,6 +353,34 @@
 	currentpoint
 	acrylic-t sdy box
 	moveto 0 sdy rmoveto
+    } for
+    end
+    grestore
+} def
+
+% this is very hacky.
+/slot-rlineto-h {
+    gsave
+    inner-cut   % inside kerf correction.
+    9 dict begin
+    /dy exch def
+    /dx exch def
+    /len dx dx mul dy dy mul add sqrt def
+    /segments
+         len finger-len sub  % we want one finger len at the end
+	 finger-len 2 mul    % number of low and up segments
+	 div floor cvi def
+    /extra-fraction len finger-len sub
+         segments finger-len 2 mul mul sub len div 2 div def
+    dx extra-fraction mul dy extra-fraction mul rmoveto
+    /sdx dx finger-len len div mul def
+    /sdy dy finger-len len div mul def
+    1 1 segments {
+	pop
+	sdx sdy rmoveto
+	currentpoint
+	sdx acrylic-t box
+	moveto sdx 0 rmoveto
     } for
     end
     grestore
@@ -493,7 +542,7 @@
     laser-slot-h laser-slot-w 3 mm rounded-corner-box
 
     gsave
-      0 1 0 setrgbcolor
+      engraving-cut
       laser-slot-distance laser-slot-h 2 div add bed-w 2 div moveto
       90 rotate
       /Courier findfont 22 mm scalefont setfont
@@ -549,9 +598,27 @@
 } def
 
 /part-slide-rail-bottom {
-    0 0 moveto inner-device-len bed-slide-high-bottom box
-    bed-slide-high-bottom slide-holes
+    0 acrylic-t translate
+    1 dict begin
+    /finger-len 15 mm def
+    0 0 moveto
+    inner-device-len 0 finger-rlineto-noscrew
+    0 bed-slide-high-bottom rlineto
+    inner-device-len neg 0 rlineto
+    0 bed-slide-high-bottom neg rlineto
     stroke
+
+    % see /subpart-drivetrain-base for corresponding fingers
+    /finger-len 5 mm def
+    drive-mount-pos 0 moveto
+    0 stepper-height slot-rlineto-v stroke
+
+    % mouting for bearing
+    bearing-mount-pos 0 moveto
+    0 stepper-height slot-rlineto-v stroke
+    end
+
+    bed-slide-high-bottom slide-holes stroke
 } def
 /part-slide-rail-top {
     0 0 moveto inner-device-len bed-slide-high-top box
@@ -581,7 +648,7 @@
    % drive screw and nema8 mount
    false {
    gsave
-   1 0	 0 setrgbcolor
+   inner-cut
    bed-w 2 div 10 mm translate
    0 0 16 mm 2 div circle stroke
    7.7 mm 7.7 mm 1 mm circle stroke
@@ -638,7 +705,7 @@
    pcb-w pcb-h 0.8 mm circle
    stroke
 
-   0 1 0 setrgbcolor
+   engraving-cut
    pcb-w 0 translate  % bottom left corner as origin for measurements
    /Courier findfont 2.5 mm scalefont setfont
    0 1 pcb-w-mm {
@@ -693,13 +760,13 @@
   gsave
     bed-drive-pos bed-drive-screw-w 2 div sub acrylic-t sub
     bed-w 2 div bed-drive-w 2 div sub moveto
-    0 bed-drive-w slot-rlineto stroke
+    0 bed-drive-w slot-rlineto-v stroke
   grestore
 
   gsave
     bed-drive-pos bed-drive-screw-w 2 div add
     bed-w 2 div bed-drive-w 2 div sub moveto
-    0 bed-drive-w slot-rlineto stroke
+    0 bed-drive-w slot-rlineto-v stroke
   grestore
 
   gsave
@@ -713,6 +780,59 @@
   360 12 div rotate
   6 bed-drive-screw-r n-polygon stroke
   grestore
+  end
+} def
+
+/subpart-drivetrain-base {
+    1 dict begin
+    0 0 moveto
+    /finger-len drive-train-fingers def
+    bed-w 0 finger-rlineto-noscrew
+
+    /finger-len 5 mm def
+    0 stepper-height finger-rlineto-noscrew
+    bed-w neg 0 rlineto
+    0 stepper-height neg finger-rlineto-noscrew
+    stroke
+    end
+} def
+
+/part-motor-holder {
+    subpart-drivetrain-base
+    bed-w 2 div stepper-height sub stepper-height 2 div 5 mm circle  % cable
+    gsave
+    inner-cut
+    bed-w 2 div stepper-height 2 div translate
+    0 0 stepper-center-plate-dia 2 div circle stroke
+    stepper-mount-screw stepper-mount-screw stepper-screw-dia 2 div circle stroke
+    stepper-mount-screw neg stepper-mount-screw stepper-screw-dia 2 div circle stroke
+    stepper-mount-screw neg stepper-mount-screw neg stepper-screw-dia 2 div circle stroke
+    stepper-mount-screw stepper-mount-screw neg stepper-screw-dia 2 div circle stroke
+    grestore
+} def
+
+/part-bearing-holder {
+    subpart-drivetrain-base
+    bed-w 2 div stepper-height 2 div acme-dia 2 div circle stroke
+} def
+
+/part-bottom {
+  acrylic-t neg acrylic-t neg moveto
+  inner-device-len acrylic-t 2 mul add bed-w acrylic-t 2 mul add box
+
+  1 dict begin
+  /finger-len 15 mm def
+  0 0 moveto inner-device-len 0 slot-rlineto-h stroke
+  0 bed-w acrylic-t sub moveto inner-device-len 0 slot-rlineto-h stroke
+
+  /finger-len drive-train-fingers def
+  % mounting for motor
+  drive-mount-pos 0 moveto
+  0 bed-w slot-rlineto-v stroke
+
+  % mouting for bearing
+  bearing-mount-pos 0 moveto
+  0 bed-w slot-rlineto-v stroke
   end
 } def
 
@@ -748,8 +868,20 @@ print-toppanel {
     0 0 rot-mirror-footprint stroke
     grestore
   } if
-
   0 bed-w 2 acrylic-t mul add translate
+} if
+
+print-bottom {
+  0 acrylic-t translate   % to have space for the fingers
+  part-bottom
+  0 bed-w acrylic-t add cut-dist add translate
+} if
+
+print-bottom {
+  0 acrylic-t translate   % to have space for the fingers
+  part-motor-holder
+  gsave bed-w acrylic-t 2 mul add cut-dist add 0 translate part-bearing-holder grestore
+  0 28.2 mm cut-dist add translate
 } if
 
 print-front-back {
