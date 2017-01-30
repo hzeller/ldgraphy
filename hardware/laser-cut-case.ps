@@ -39,7 +39,8 @@
 /bed-pcb-off-w bed-w pcb-w sub 2 div def
 /bed-pcb-off-h bed-h pcb-h sub 2 div def
 
-/bed-slide-high 15 mm def
+/bed-slide-high-bottom 29 mm def
+/bed-slide-high-top 8 mm def
 /slide-hole-count 4 def
 
 /stepper-width 0.8 25.4 mm mul def  % nema8
@@ -71,13 +72,13 @@
 % have set up the laser-slot-distance and the grooves and fingers, so let's go with
 % that first.
 /mirror-center-mount-from-slot
-    arc-radius rot-mirror-high sub bed-slide-high sub
+    arc-radius rot-mirror-high sub bed-slide-high-top sub
     rot-mirror-diameter add def
 
 % We want to be at least half pcb sled longer so that we are supported
 % at center of gravity.
 /inner-device-len laser-slot-distance bed-h 2 div add def
-/inner-device-high bed-slide-high 2 mul acrylic-t add def
+/inner-device-high bed-slide-high-bottom bed-slide-high-top add acrylic-t add def
 
 /mirror-holder-width 20 mm def  % width of the 45 degree down mirror holder
 /mirror-holder-r mirror-holder-width 2 div def
@@ -362,8 +363,10 @@
     screw-r circle
 } def
 
+% Initially, we had rods through the hole width, now just simple
+% screws.
 /rod {
-    rod-r circle
+    screw-r circle
 } def
 
 /box {
@@ -435,13 +438,17 @@
     show
 } def
 
+% height
 /slide-holes {
+    1 dict begin
+    /center-height exch 2 div def
     inner-device-len slide-hole-count div 2 div
     inner-device-len slide-hole-count div
     inner-device-len {
-	bed-slide-high 2 div rod
+	center-height rod
     } for
     stroke
+    end
 } def
 
 %---- end help procedures, start parts.
@@ -452,13 +459,13 @@
     0 0 moveto
 
     % up to mirror slot
-    laser-slot-distance mirror-holder-r sub 0 groove-lineto
+    laser-slot-distance mirror-holder-r sub 0 finger-lineto
 
     % mirror slot width
     mirror-holder-width 0 rlineto
 
     % to the end on the right.
-    inner-device-len 0 groove-lineto
+    inner-device-len 0 finger-lineto
 
     % up. Either straight line or circular cut
     false {
@@ -470,11 +477,11 @@
        inner-device-len bed-w lineto
     } ifelse
 
-    laser-slot-distance mirror-holder-r add bed-w groove-lineto
+    laser-slot-distance mirror-holder-r add bed-w finger-lineto
     mirror-holder-width neg 0 rlineto
 
-    0 bed-w groove-lineto
-    0 0 groove-lineto
+    0 bed-w finger-lineto
+    0 0 finger-lineto
     stroke
 
     % mounting holes for mirror
@@ -503,12 +510,12 @@
 
    % up right side (back)
    1 dict begin
-      /finger-len 8 mm def
-     inner-device-len inner-device-high groove-lineto
+      /finger-len 6 mm def
+     inner-device-len inner-device-high finger-lineto
    end
 
     % to start of mirror-holder
-    inner-device-len laser-slot-distance sub mirror-holder-r add inner-device-high finger-lineto
+    inner-device-len laser-slot-distance sub mirror-holder-r add inner-device-high groove-lineto
 
     % Notch for mirror
     0 down-mirror-high rlineto  % center of 45 degree mirror
@@ -517,14 +524,14 @@
     % end of mirror holder, down to top panel again.
     inner-device-len laser-slot-distance sub mirror-holder-r sub inner-device-high lineto
 
-    0 inner-device-high finger-lineto
+    0 inner-device-high groove-lineto
 
    % TODO: this does not align properly yet, because we do three notches here
    % but the front only has one.
    % down left side (front)
    1 dict begin
-      /finger-len 8 mm def
-      0 0 groove-lineto
+      /finger-len 6 mm def
+      0 0 finger-lineto
     end
     stroke
 
@@ -536,13 +543,19 @@
       stroke
    grestore
 
-   slide-holes
-   gsave 0 bed-slide-high 3 mm add translate slide-holes grestore
+   bed-slide-high-bottom slide-holes
+   gsave 0 bed-slide-high-bottom 3 mm add translate
+   bed-slide-high-top slide-holes grestore
 } def
 
-/part-slide-rail {
-    0 0 moveto inner-device-len bed-slide-high box
-    slide-holes
+/part-slide-rail-bottom {
+    0 0 moveto inner-device-len bed-slide-high-bottom box
+    bed-slide-high-bottom slide-holes
+    stroke
+} def
+/part-slide-rail-top {
+    0 0 moveto inner-device-len bed-slide-high-top box
+    bed-slide-high-top slide-holes
     stroke
 } def
 
@@ -552,20 +565,21 @@
    bed-w 0 lineto
 
    1 dict begin
-      /finger-len 8 mm def
-      bed-w inner-device-high finger-lineto   % up
+      /finger-len 6 mm def
+      bed-w inner-device-high groove-lineto   % up
    end
 
-   bed-w neg 0 finger-rlineto       % top accross
+   bed-w neg 0 groove-rlineto       % top accross
 
    1 dict begin
-      /finger-len 8 mm def
-     0 0 finger-lineto   % down
+      /finger-len 6 mm def
+     0 0 groove-lineto   % down
    end
 
    stroke
 
    % drive screw and nema8 mount
+   false {
    gsave
    1 0	 0 setrgbcolor
    bed-w 2 div 10 mm translate
@@ -575,6 +589,7 @@
    -7.7 mm -7.7 mm 1 mm circle stroke
    7.7 mm -7.7 mm 1 mm circle stroke
    grestore
+   } if
 } def
 
 % TODO: this does not align properly yet.
@@ -584,21 +599,26 @@
    bed-w 0 lineto
 
    1 dict begin
-      /finger-len 8 mm def
-     bed-w bed-slide-high finger-lineto   % up
+      /finger-len 6 mm def
+      bed-w inner-device-high groove-lineto   % up
    end
 
-   bed-w neg 0 rlineto
+   bed-w neg 0 groove-rlineto       % top accross
 
    1 dict begin
-      /finger-len 8 mm def
-      0 0 finger-lineto   % down
+      /finger-len 6 mm def
+     0 0 groove-lineto   % down
    end
 
    stroke
 
    % drive screw
-   bed-w 2 div 10 mm rod-r circle stroke
+   false {
+     bed-w 2 div 10 mm rod-r circle stroke
+   } if
+   % let's get rid of the top part
+   acrylic-t neg bed-slide-high-bottom 2 mm sub moveto
+   bed-w acrylic-t 2 mul add 22 mm box
 } def
 
 /part-pcb-frame {
@@ -709,11 +729,11 @@ print-sidepanels {
 } if
 
 print-siderails {
-  part-slide-rail
-  0 bed-slide-high cut-dist add translate part-slide-rail
-  0 bed-slide-high cut-dist add translate part-slide-rail
-  0 bed-slide-high cut-dist add translate part-slide-rail
-  0 bed-slide-high cut-dist add translate
+  part-slide-rail-bottom
+  0 bed-slide-high-bottom cut-dist add translate part-slide-rail-bottom
+  0 bed-slide-high-bottom cut-dist add translate part-slide-rail-top
+  0 bed-slide-high-top cut-dist add translate part-slide-rail-top
+  0 bed-slide-high-top cut-dist add translate
 } if
 
 print-toppanel {
