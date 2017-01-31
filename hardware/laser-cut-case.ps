@@ -1,5 +1,5 @@
 %!PS-Adobe-3.0
-%%BoundingBox: 0 0 860 1500
+%%BoundingBox: 0 0 860 1900
 
 % Choices what to selectively cut.
 /print-bottom true def
@@ -43,6 +43,10 @@
 /bed-slide-high-bottom 29 mm def
 /bed-slide-high-top 8 mm def
 /slide-hole-count 4 def
+
+% how high the front part should be. Essentially it should end shy below
+% where the bed tray emerges.
+/front-cover-high bed-slide-high-bottom 1 mm sub def
 
 /drive-train-fingers 11 mm def   % finger distance for drive train
 /stepper-len 36 mm def
@@ -126,7 +130,9 @@
     end
 } def
 
-% dir_x dir_y amount  -> dx dy (relative position)
+% Given a direction in delta coordinats and a length, return the new
+% coordinates where that vector points to.
+% dir_x dir_y length  -> dx dy (relative position)
 /colinear {
 	5 dict begin
        /thick exch  def
@@ -138,7 +144,9 @@
        end
 } def
 
-% dir_x dir_y amount  -> dx dy (relative position)
+% Similar to colinear, but yields the coordinates of the normal of the given
+% length, so perpendicular to the original coordinates in delta.
+% dir_x dir_y length  -> dx dy (relative position)
 /perpendicular {
 	5 dict begin
        /thick exch  def
@@ -575,11 +583,10 @@
 
     0 inner-device-high groove-lineto
 
-   % TODO: this does not align properly yet, because we do three notches here
-   % but the front only has one.
    % down left side (front)
    1 dict begin
       /finger-len 6 mm def
+      0 inner-device-high inner-device-high front-cover-high sub sub lineto
       0 0 finger-lineto
     end
     stroke
@@ -659,7 +666,6 @@
    } if
 } def
 
-% TODO: this does not align properly yet.
 /part-front {
    newpath
    0 0 moveto
@@ -667,10 +673,10 @@
 
    1 dict begin
       /finger-len 6 mm def
-      bed-w inner-device-high groove-lineto   % up
+      bed-w front-cover-high groove-lineto   % up
    end
 
-   bed-w neg 0 groove-rlineto       % top accross
+   bed-w neg 0 rlineto       % top accross
 
    1 dict begin
       /finger-len 6 mm def
@@ -678,14 +684,6 @@
    end
 
    stroke
-
-   % drive screw
-   false {
-     bed-w 2 div 10 mm rod-r circle stroke
-   } if
-   % let's get rid of the top part
-   acrylic-t neg bed-slide-high-bottom 2 mm sub moveto
-   bed-w acrylic-t 2 mul add 22 mm box
 } def
 
 /part-pcb-frame {
