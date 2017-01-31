@@ -19,9 +19,10 @@ to be output in the first section that defines the
 The Makefile can create a dxf file that is then usable in any laser cutter, just
 call `make`.
 
-There are two layers, the 'black layer' and the 'green layer'. The green layer
-should be used in 'engraving' mode on the laser cutter, the black layer for
-cutting.
+There are several layers:
+  * the 'black layer'. Cut with outward kerf correction.
+  * the 'red layer'. Cut with inside kerf correction.
+  * the 'green layer'. Set to engraving.
 
 ### Note
 This is pretty much work in progress, the drive and angle of laser mount etc.
@@ -29,3 +30,4 @@ are still beeing tweaked, there is no cover yet, there is no bottom yet or
 a place to mount the BeagleBone.
 
 ![](../img/sample-case.jpg)
+![](../img/laser-cut-outline.png)
