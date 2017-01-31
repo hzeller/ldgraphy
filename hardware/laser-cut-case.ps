@@ -29,13 +29,6 @@
 /bed-w pcb-w 16 mm add def    % (3 mm in the rails + 5 mm) on each side
 /bed-h pcb-h 10 mm add def
 
-/bed-drive-screw-w 3.4 mm def  % thickness of driving screw
-/bed-drive-screw-r 10.5 2 div mm def  % outer radius of nut driving the thing.
-
-/bed-drive-pos bed-h 2 div def  % where the drive position relative from back.
-/bed-drive-w 29 mm def
-/bed-drive-h bed-drive-screw-r 2 mul 5 mm add def
-
 % derived from above.
 /bed-pcb-off-w bed-w pcb-w sub 2 div def
 /bed-pcb-off-h bed-h pcb-h sub 2 div def
@@ -50,7 +43,7 @@
 
 /drive-train-fingers 11 mm def   % finger distance for drive train
 /stepper-len 36 mm def
-/stepper-height 28.2 mm def   % nema11
+/stepper-height 28.2 mm def       % nema11
 /stepper-mount-screw 11.5 mm def  % screw distance measured from center
 /stepper-screw-dia 2.5 mm def     % M2.5 for nema11
 /stepper-center-plate-dia 22.5 mm def
@@ -58,7 +51,21 @@
 /acme-dia 5 mm def            % acme screw diameter
 
 /drive-mount-pos stepper-len def  % stepper mount position seen from back
-/bearing-mount-pos stepper-len 35 mm add pcb-h add def  % acme bearing
+/drive-screw-start 35 mm def      % axle to where acme screw starts
+/bearing-mount-pos stepper-len drive-screw-start add pcb-h add def  % acme bearing
+
+% the corresponding assembly on the sled
+/bed-drive-screw-w acrylic-t def  % distance between driving holders
+/bed-drive-screw-r 10.5 2 div mm def  % outer radius of nut driving the thing.
+
+/bed-drive-wobble 0.5 mm def  % amount of 'wobble' we should give the drive screw
+/bed-drive-pos stepper-len drive-screw-start add def  % where the drive position relative from back.
+/bed-drive-screw-top
+     bed-slide-high-bottom stepper-height sub  % amount hovering about stepper
+     stepper-height 2 div add
+     def
+/bed-drive-w bed-w 2 div def
+/bed-drive-h bed-drive-screw-top bed-drive-screw-r add 2 mm add def
 
 % TODO: calculate laser slot distance from angle, pcb-w, laser height etc.
 /laser-slot-distance 160 mm def
@@ -745,16 +752,24 @@
   bed-drive-h neg 0 rlineto
   0 bed-drive-w neg finger-rlineto-noscrew
   stroke
-  bed-drive-h bed-drive-w 2 div bed-drive-h 1.2 div circle stroke
+
+  bed-drive-screw-top bed-drive-w 2 div translate
+  1 dict begin
+  /nut-r bed-drive-screw-r bed-drive-wobble add 0.5 mm add def
+  0 0 nut-r circle stroke
+  0 nut-r neg moveto
+  nut-r 1 mm add nut-r 2 mul box stroke
+  end
   grestore
 } def
 
 /part-sled {
   1 dict begin
-  /finger-len 4 mm def
+  /finger-len 6 mm def
 
   0 0 moveto bed-h bed-w 3 mm rounded-corner-box  % the sled
 
+  % slots on sled
   gsave
     bed-drive-pos bed-drive-screw-w 2 div sub acrylic-t sub
     bed-w 2 div bed-drive-w 2 div sub moveto
@@ -767,16 +782,25 @@
     0 bed-drive-w slot-rlineto-v stroke
   grestore
 
+  % drive holder. this should be a separate sub-part
   gsave
-  bed-h cut-dist add acrylic-t add 0 translate subpart-drive-holder
-  0 bed-drive-w cut-dist add translate subpart-drive-holder
-  0 bed-drive-w cut-dist add translate
+   bed-h cut-dist add acrylic-t add 0 translate subpart-drive-holder
+   bed-drive-h cut-dist add 6 mm add 0 translate subpart-drive-holder
+   stroke
+  grestore
 
-  0 0 moveto bed-drive-screw-r 2 mul 2 mm add bed-drive-w 1.2 mul box
-  bed-drive-screw-r 1 mm add bed-drive-w 1.2 mul 2 div translate
-  0 0 moveto
-  360 12 div rotate
-  6 bed-drive-screw-r n-polygon stroke
+  bed-h acrylic-t add cut-dist add bed-drive-w cut-dist add translate
+
+  % nut holder. That should be a separate sub-part.
+  bed-drive-wobble 0 moveto
+  bed-drive-h bed-drive-wobble sub bed-drive-w 2 mm rounded-corner-box
+
+  % Placing the nut.
+  gsave
+   % The nut is a polygon that we need to turn a little. So move to the center
+   % and rotate our canvas.
+   bed-drive-screw-top bed-drive-w 2 div translate
+   0 0 moveto 360 12 div rotate inner-cut 6 bed-drive-screw-r n-polygon stroke
   grestore
   end
 } def
