@@ -9,7 +9,7 @@
 /print-siderails-bottom true def % The rails the sled is riding on.
 /print-siderails-top true def    % The rails the sled is riding on.
 /print-front-back true def       % front and back parts of the case
-/print-sled true def             % The sled moving the PCB along
+/print-sled true def             % The sled moving the PCB along. Fluorescent: cool!
 
 % Suggested to cut on thinner material (1mm acrylic)
 /print-pcbframe false def
@@ -557,9 +557,13 @@
     0 0 finger-lineto
     stroke
 
-    % mounting holes for mirror
+    % mounting holes for rotating mirror
     false  % do not cut outline
-    laser-slot-distance mirror-center-mount-from-slot sub bed-w 2 div rot-mirror-footprint
+    laser-slot-distance mirror-center-mount-from-slot sub bed-w 2 div rot-mirror-footprint stroke
+
+    % holes to mount the laser. Two holes in 20 mm distance
+    40 mm 17 mm screw
+    60 mm 17 mm screw stroke
 
     % Laser slot
     laser-slot-distance laser-slot-h 2 div sub bed-w laser-slot-w sub 2 div moveto
@@ -667,19 +671,6 @@
    end
 
    stroke
-
-   % drive screw and nema8 mount
-   false {
-   gsave
-   inner-cut
-   bed-w 2 div 10 mm translate
-   0 0 16 mm 2 div circle stroke
-   7.7 mm 7.7 mm 1 mm circle stroke
-   -7.7 mm 7.7 mm 1 mm circle stroke
-   -7.7 mm -7.7 mm 1 mm circle stroke
-   7.7 mm -7.7 mm 1 mm circle stroke
-   grestore
-   } if
 } def
 
 /part-front {
@@ -835,7 +826,7 @@
     1 dict begin
     /width bed-w acrylic-t 2 mul sub def
     subpart-drivetrain-base
-    width 2 div stepper-height sub stepper-height 2 div 5 mm circle  % cable
+    width 2 div stepper-height sub stepper-height 2 div 5 mm circle stroke %cable
     gsave
     inner-cut
     width 2 div stepper-height 2 div translate
