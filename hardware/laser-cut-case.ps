@@ -1,15 +1,15 @@
 %!PS-Adobe-3.0
 %%BoundingBox: 0 0 760 2200
 
-% Choices what to selectively cut.
-/print-bottom true def           % Bottom pane, holding drive-train
+% Choices what to selectively cut. From bottom up.
+/print-bottom true def             % Bottom pane, holding drive-train
 /print-bottom-drivetrain true def  % motor holder and bearing
-/print-toppanel true def         % The laser and rotating mirror mounted here.
-/print-sidepanels true def       % Side panels framing device.
-/print-siderails-bottom true def % The rails the sled is riding on.
-/print-siderails-top true def    % The rails the sled is riding on.
-/print-front-back true def       % front and back parts of the case
-/print-sled true def             % The sled moving the PCB along. Fluorescent: cool!
+/print-siderails-bottom true def   % The rails the sled is riding on.
+/print-sled true def               % The sled moving the PCB along.
+/print-siderails-top true def      % The rails the sled is riding under.
+/print-sidepanels true def         % Side panels framing of the outer case.
+/print-front-back true def         % Front and back parts of the case.
+/print-toppanel true def           % The laser and rotating mirror mounted here.
 
 % Suggested to cut on thinner material (1mm acrylic)
 /print-pcbframe false def
@@ -63,8 +63,8 @@
     def  % acme bearing
 
 % the corresponding assembly on the sled
-/bed-drive-screw-w acrylic-t def  % distance between driving holders
-/bed-drive-screw-r 10.5 2 div mm def  % outer radius of nut driving the thing.
+/bed-drive-screw-w acrylic-t def      % distance between driving holders
+/bed-drive-screw-r 10.6 2 div mm def  % outer radius of nut driving the thing.
 
 /bed-drive-wobble 0.5 mm def  % amount of 'wobble' we should give the drive screw
 /bed-drive-pos stepper-len drive-screw-start add def  % where the drive position relative from back.
@@ -877,12 +877,17 @@
 
 acrylic-t cut-dist add cut-dist translate
 
-print-sidepanels {
-  % Two side-panels, turned around and printed in place
-  part-sidepanel
-  gsave inner-device-len side-cut-distance translate 180 rotate part-sidepanel grestore
-  % move up
-  0 side-cut-distance cut-dist add translate
+print-bottom {
+  0 acrylic-t translate   % to have space for the fingers
+  part-bottom
+  0 bed-w acrylic-t add cut-dist add translate
+} if
+
+print-bottom-drivetrain {
+  0 acrylic-t translate   % to have space for the fingers
+  part-motor-holder
+  gsave bed-w acrylic-t 2 mul add cut-dist add 0 translate part-bearing-holder grestore
+  0 28.2 mm cut-dist add translate
 } if
 
 print-siderails-bottom {
@@ -891,10 +896,30 @@ print-siderails-bottom {
   0 bed-slide-high-bottom cut-dist add translate
 } if
 
+print-sled {
+  part-sled
+  0 bed-w cut-dist add translate
+} if
+
 print-siderails-top {
   part-slide-rail-top
   0 bed-slide-high-top cut-dist add translate part-slide-rail-top
   0 bed-slide-high-top cut-dist add translate
+} if
+
+print-sidepanels {
+  % Two side-panels, turned around and printed in place
+  part-sidepanel
+  gsave inner-device-len side-cut-distance translate 180 rotate part-sidepanel grestore
+  % move up
+  0 side-cut-distance cut-dist add translate
+} if
+
+print-front-back {
+  0 0 moveto part-front stroke % front-piece
+  gsave bed-w acrylic-t 2 mul add cut-dist add 0 translate
+        part-back stroke grestore % back piece
+  0 inner-device-high acrylic-t add cut-dist add translate
 } if
 
 print-toppanel {
@@ -910,31 +935,6 @@ print-toppanel {
     grestore
   } if
   0 bed-w 2 acrylic-t mul add translate
-} if
-
-print-bottom {
-  0 acrylic-t translate   % to have space for the fingers
-  part-bottom
-  0 bed-w acrylic-t add cut-dist add translate
-} if
-
-print-bottom-drivetrain {
-  0 acrylic-t translate   % to have space for the fingers
-  part-motor-holder
-  gsave bed-w acrylic-t 2 mul add cut-dist add 0 translate part-bearing-holder grestore
-  0 28.2 mm cut-dist add translate
-} if
-
-print-front-back {
-  0 0 moveto part-front stroke % front-piece
-  gsave bed-w acrylic-t 2 mul add cut-dist add 0 translate
-        part-back stroke grestore % back piece
-  0 inner-device-high acrylic-t add cut-dist add translate
-} if
-
-print-sled {
-  part-sled
-  0 bed-w cut-dist add translate
 } if
 
 print-pcbframe {
