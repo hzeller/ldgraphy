@@ -1,5 +1,5 @@
 %!PS-Adobe-3.0
-%%BoundingBox: 0 0 860 1900
+%%BoundingBox: 0 0 760 2200
 
 % Choices what to selectively cut.
 /print-bottom true def
@@ -41,7 +41,7 @@
 % where the bed tray emerges.
 /front-cover-high bed-slide-high-bottom 1 mm sub def
 
-/drive-train-fingers 11 mm def   % finger distance for drive train
+/drive-train-fingers 11 mm def   % finger distance for drive train on sled
 /stepper-len 36 mm def
 /stepper-height 28.2 mm def       % nema11
 /stepper-mount-screw 11.5 mm def  % screw distance measured from center
@@ -52,7 +52,11 @@
 
 /drive-mount-pos stepper-len def  % stepper mount position seen from back
 /drive-screw-start 35 mm def      % axle to where acme screw starts
-/bearing-mount-pos stepper-len drive-screw-start add pcb-h add def  % acme bearing
+/bearing-mount-pos
+    stepper-len drive-screw-start add  % starting from here
+    pcb-h add                          % .. the amount we need to move
+    acrylic-t add                      % space for drive-train holder
+    def  % acme bearing
 
 % the corresponding assembly on the sled
 /bed-drive-screw-w acrylic-t def  % distance between driving holders
@@ -113,7 +117,7 @@
 
 % Linewidth doesn't do anything to the DXF output, it just makes it easier
 % to manually inspect in the PostScript viewer.
-0.5 setlinewidth
+1 setlinewidth
 
 /inner-cut {
     1 0 0 setrgbcolor
@@ -502,14 +506,15 @@
     show
 } def
 
-% height
+% height screw-r
 /slide-holes {
-    1 dict begin
+    2 dict begin
+    /sr exch def
     /center-height exch 2 div def
     inner-device-len slide-hole-count div 2 div
     inner-device-len slide-hole-count div
     inner-device-len {
-	center-height rod
+	center-height sr circle
     } for
     stroke
     end
@@ -606,9 +611,9 @@
       stroke
    grestore
 
-   bed-slide-high-bottom slide-holes
+   bed-slide-high-bottom screw-r slide-holes
    gsave 0 bed-slide-high-bottom 3 mm add translate
-   bed-slide-high-top slide-holes grestore
+   bed-slide-high-top screw-r slide-holes grestore
 } def
 
 /part-slide-rail-bottom {
@@ -632,11 +637,11 @@
     0 stepper-height slot-rlineto-v stroke
     end
 
-    bed-slide-high-bottom slide-holes stroke
+    bed-slide-high-bottom screw-r slide-holes stroke
 } def
 /part-slide-rail-top {
     0 0 moveto inner-device-len bed-slide-high-top box
-    bed-slide-high-top slide-holes
+    bed-slide-high-top screw-r slide-holes
     stroke
 } def
 
@@ -789,18 +794,20 @@
    stroke
   grestore
 
-  bed-h acrylic-t add cut-dist add bed-drive-w cut-dist add translate
-
-  % nut holder. That should be a separate sub-part.
-  bed-drive-wobble 0 moveto
-  bed-drive-h bed-drive-wobble sub bed-drive-w 2 mm rounded-corner-box
-
-  % Placing the nut.
   gsave
-   % The nut is a polygon that we need to turn a little. So move to the center
-   % and rotate our canvas.
-   bed-drive-screw-top bed-drive-w 2 div translate
-   0 0 moveto 360 12 div rotate inner-cut 6 bed-drive-screw-r n-polygon stroke
+   bed-h acrylic-t add cut-dist add bed-drive-w cut-dist add translate
+
+   % nut holder. That should be a separate sub-part.
+   bed-drive-wobble 0 moveto
+   bed-drive-h bed-drive-wobble sub bed-drive-w 2 mm rounded-corner-box
+
+   % Placing the nut.
+   gsave
+     % The nut is a polygon that we need to turn a little. So move to the center
+     % and rotate our canvas.
+     bed-drive-screw-top bed-drive-w 2 div translate
+     0 0 moveto 360 12 div rotate inner-cut 6 bed-drive-screw-r n-polygon stroke
+   grestore
   grestore
   end
 } def
@@ -855,6 +862,12 @@
   % mouting for bearing
   bearing-mount-pos 0 moveto
   0 bed-w slot-rlineto-v stroke
+
+  % finger holes to better access side screws
+  true {
+    25 mm 8 mm slide-holes stroke
+    gsave 0 bed-w translate -25 mm 8 mm slide-holes stroke grestore
+  } if
   end
 } def
 
@@ -920,7 +933,7 @@ print-sled {
 
 print-pcbframe {
   gsave
-  0 bed-w acrylic-t sub translate -90 rotate
+  0 bed-w acrylic-t sub 1 mm add translate -90 rotate
   part-pcb-frame
   % extra raiser board for the mirror. Use empty space in the area in the
   % middle. Since that often needs to be a thinner shim, this is perfect
