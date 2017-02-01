@@ -14,7 +14,9 @@
 
 /mm { 72 25.4 div mul } bind def
 
-/acrylic-t 3 mm def   % Material thickness.
+/acrylic-t 3 mm def        % Material thickness.
+/slot-thick acrylic-t def  % slot thickness for snug fit.
+
 /screw-r 3.1 mm 2 div def
 /rod-r 4.7 mm 2 div def
 /finger-len 20 mm def
@@ -370,7 +372,7 @@
 	pop
 	sdx sdy rmoveto
 	currentpoint
-	acrylic-t sdy box
+	slot-thick sdy box
 	moveto 0 sdy rmoveto
     } for
     end
@@ -398,7 +400,7 @@
 	pop
 	sdx sdy rmoveto
 	currentpoint
-	sdx acrylic-t box
+	sdx slot-thick box
 	moveto sdx 0 rmoveto
     } for
     end
