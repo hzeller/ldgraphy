@@ -2,12 +2,14 @@
 %%BoundingBox: 0 0 760 2200
 
 % Choices what to selectively cut.
-/print-bottom true def
-/print-toppanel true def     % The laser and rotating mirror are mounted here.
-/print-sidepanels true def   % Side panels framing device.
-/print-siderails true def    % The rails the sled is riding on.
-/print-front-back true def   % front and back parts of the case
-/print-sled true def         % The sled moving the PCB along
+/print-bottom true def           % Bottom pane, holding drive-train
+/print-bottom-drivetrain true def  % motor holder and bearing
+/print-toppanel true def         % The laser and rotating mirror mounted here.
+/print-sidepanels true def       % Side panels framing device.
+/print-siderails-bottom true def % The rails the sled is riding on.
+/print-siderails-top true def    % The rails the sled is riding on.
+/print-front-back true def       % front and back parts of the case
+/print-sled true def             % The sled moving the PCB along
 
 % Suggested to cut on thinner material (1mm acrylic)
 /print-pcbframe false def
@@ -815,36 +817,43 @@
 } def
 
 /subpart-drivetrain-base {
-    1 dict begin
+    2 dict begin
     0 0 moveto
     /finger-len drive-train-fingers def
-    bed-w 0 finger-rlineto-noscrew
+    /width bed-w acrylic-t 2 mul sub def
+    width 0 finger-rlineto-noscrew
 
     /finger-len 5 mm def
     0 stepper-height finger-rlineto-noscrew
-    bed-w neg 0 rlineto
+    width neg 0 rlineto
     0 stepper-height neg finger-rlineto-noscrew
     stroke
     end
 } def
 
 /part-motor-holder {
+    1 dict begin
+    /width bed-w acrylic-t 2 mul sub def
     subpart-drivetrain-base
-    bed-w 2 div stepper-height sub stepper-height 2 div 5 mm circle  % cable
+    width 2 div stepper-height sub stepper-height 2 div 5 mm circle  % cable
     gsave
     inner-cut
-    bed-w 2 div stepper-height 2 div translate
+    width 2 div stepper-height 2 div translate
     0 0 stepper-center-plate-dia 2 div circle stroke
     stepper-mount-screw stepper-mount-screw stepper-screw-dia 2 div circle stroke
     stepper-mount-screw neg stepper-mount-screw stepper-screw-dia 2 div circle stroke
     stepper-mount-screw neg stepper-mount-screw neg stepper-screw-dia 2 div circle stroke
     stepper-mount-screw stepper-mount-screw neg stepper-screw-dia 2 div circle stroke
     grestore
+    end
 } def
 
 /part-bearing-holder {
+    1 dict begin
+    /width bed-w acrylic-t 2 mul sub def
     subpart-drivetrain-base
-    bed-w 2 div stepper-height 2 div acme-dia 2 div circle stroke
+    width 2 div stepper-height 2 div acme-dia 2 div circle stroke
+    end
 } def
 
 /part-bottom {
@@ -885,10 +894,14 @@ print-sidepanels {
   0 side-cut-distance cut-dist add translate
 } if
 
-print-siderails {
+print-siderails-bottom {
   part-slide-rail-bottom
   0 bed-slide-high-bottom cut-dist add translate part-slide-rail-bottom
-  0 bed-slide-high-bottom cut-dist add translate part-slide-rail-top
+  0 bed-slide-high-bottom cut-dist add translate
+} if
+
+print-siderails-top {
+  part-slide-rail-top
   0 bed-slide-high-top cut-dist add translate part-slide-rail-top
   0 bed-slide-high-top cut-dist add translate
 } if
@@ -914,7 +927,7 @@ print-bottom {
   0 bed-w acrylic-t add cut-dist add translate
 } if
 
-print-bottom {
+print-bottom-drivetrain {
   0 acrylic-t translate   % to have space for the fingers
   part-motor-holder
   gsave bed-w acrylic-t 2 mul add cut-dist add 0 translate part-bearing-holder grestore
