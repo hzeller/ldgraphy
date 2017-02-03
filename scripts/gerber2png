@@ -1,0 +1,15 @@
+#!/bin/bash
+##
+
+if [ $# -ne 2 ] ; then
+   echo "usage: $0 <rsolution-dpi> <gerber-filename>"
+   echo "Output on stdout."
+   exit 1
+fi
+
+DPI=$1
+IN_GERBER=$2
+
+# TODO: fix gerbv to also have pnm output
+# TODO: can we provide a drill file to poke holes in the generated pixel-copper?
+gerbv --dpi=$DPI -b"#ffffff" -f"#000000ff" -xpng -o/dev/stdout "$IN_GERBER"
