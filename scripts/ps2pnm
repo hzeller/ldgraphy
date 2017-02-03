@@ -2,7 +2,7 @@
 # Output the postscript file as PNG.
 # For some reason, ghostscript can't just read the bounding box and output
 # an image that size. So we have to go the long way, determine the bounding
-# box, then re-create that with the size given.
+# box, then re-create that with the size and offset determined.
 ##
 
 if [ $# -ne 2 ] ; then
@@ -15,14 +15,21 @@ IN_PS=$2
 
 GS="gs -q -dNOPAUSE -dBATCH"
 
-# Adding a couple of points, as the bounding box fails to include line-thickness
-$GS -sDEVICE=bbox -sOutputFile=-
-
+# Extract offset and size. Offset we need to manually shift the content to the
+# origin (as gs does not seem to have an option for it). The size we need
+# to know exactly how many pixels need to be rendered.
+# Extracting both from the bounding-box run, returned as a "<RES>:<translate>"
+# tuple.
+#
+# Adding some border (3 point offset hence 6 point size), as the
+# pixel-size is rounded numbers, gs fails to generate negative offsets in
+# the bbox output and we want some space to reliably pnmcrop.
 EXTRACT=$($GS -sDEVICE=bbox -sOutputFile=- $IN_PS 2>&1 | \
 	   awk "/%HiResBoundingBox/ {
-                printf(\"%dx%d:%d %d translate\",
-                       $DPI * (\$4 - \$2 + 5) / 72, $DPI * (\$5 - \$3 + 5) / 72,
-                       -\$2, -\$3); }")
+                printf(\"%dx%d:%.1f %.1f translate\",
+                       $DPI * (\$4 - \$2 + 6) / 72, $DPI * (\$5 - \$3 + 6) / 72,
+                       -(\$2 - 3), -(\$3 - 3)); }")
+
 RES=$(echo "$EXTRACT" | awk -F: '{print $1}')
 TRANSLATE=$(echo "$EXTRACT" | awk -F: '{print $2}')
 
