@@ -16,7 +16,15 @@ IN_PS=$2
 GS="gs -q -dNOPAUSE -dBATCH"
 
 # Adding a couple of points, as the bounding box fails to include line-thickness
-RES=$($GS -sDEVICE=bbox -sOutputFile=- $IN_PS 2>&1 | awk "/%HiResBoundingBox/ { printf(\"%dx%d\", $DPI * (\$4 - \$2 + 5) / 72, $DPI * (\$5 - \$3 + 5) / 72); }")
+$GS -sDEVICE=bbox -sOutputFile=-
+
+EXTRACT=$($GS -sDEVICE=bbox -sOutputFile=- $IN_PS 2>&1 | \
+	   awk "/%HiResBoundingBox/ {
+                printf(\"%dx%d:%d %d translate\",
+                       $DPI * (\$4 - \$2 + 5) / 72, $DPI * (\$5 - \$3 + 5) / 72,
+                       -\$2, -\$3); }")
+RES=$(echo "$EXTRACT" | awk -F: '{print $1}')
+TRANSLATE=$(echo "$EXTRACT" | awk -F: '{print $2}')
 
 # Now the actual output, cropping to the actual thing.
-$GS -sDEVICE=pnm -sOutputFile=- -r${DPI}x${DPI} -g$RES $IN_PS | pnmcrop
+(echo "$TRANSLATE" ; cat "$IN_PS" ) | $GS -sDEVICE=pnm -sOutputFile=- -r${DPI}x${DPI} -g$RES - | pnmcrop
