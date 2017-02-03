@@ -1,0 +1,22 @@
+#!/bin/bash
+# Output the postscript file as PNG.
+# For some reason, ghostscript can't just read the bounding box and output
+# an image that size. So we have to go the long way, determine the bounding
+# box, then re-create that with the size given.
+##
+
+if [ $# -ne 2 ] ; then
+   echo "usage: $0 <rsolution-dpi> <filename>"
+   exit 1
+fi
+
+DPI=$1
+IN_PS=$2
+
+GS="gs -q -dNOPAUSE -dBATCH"
+
+# Adding a couple of points, as the bounding box fails to include line-thickness
+RES=$($GS -sDEVICE=bbox -sOutputFile=- $IN_PS 2>&1 | awk "/%HiResBoundingBox/ { printf(\"%dx%d\", $DPI * (\$4 - \$2 + 5) / 72, $DPI * (\$5 - \$3 + 5) / 72); }")
+
+# Now the actual output, cropping to the actual thing.
+$GS -sDEVICE=pnm -sOutputFile=- -r${DPI}x${DPI} -g$RES $IN_PS | pnmcrop
