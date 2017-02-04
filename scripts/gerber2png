@@ -1,15 +1,35 @@
 #!/bin/bash
 ##
 
-if [ $# -ne 2 ] ; then
-   echo "usage: $0 <rsolution-dpi> <gerber-filename>"
-   echo "Output on stdout."
+set -e
+
+# When hand-drilling, we want the holes small.
+SMALL_HOLES=1  # todo: make this a command line option
+
+if [ $# -lt 2 -o $# -gt 3 ] ; then
+   echo "usage: $0 <options> <rsolution-dpi> <gerber-filename> [<drillfile>]" > /dev/stderr
+   echo "Output on stdout." > /dev/stderr
    exit 1
 fi
 
 DPI=$1
 IN_GERBER=$2
+DRILL_FILE=$3
 
-# TODO: fix gerbv to also have pnm output
-# TODO: can we provide a drill file to poke holes in the generated pixel-copper?
-gerbv --dpi=$DPI -b"#ffffff" -f"#000000ff" -xpng -o/dev/stdout "$IN_GERBER"
+COPPER_LAYER="-f#000000ff $IN_GERBER"
+
+if [ ! -z "$DRILL_FILE" ] ; then
+   if [ $SMALL_HOLES -eq 0 ] ; then
+       DRILL_LAYER="-f#ffffffff $DRILL_FILE"
+   else
+       sed 's/^T[0-9]*C.*/;\0/' < $DRILL_FILE > /tmp/orig.$$.drl
+       ( for i in `seq 1 9` ; do echo "T0$i 0.01" ; done ) > /tmp/fake.$$.drl
+       DRILL_LAYER="-f#ffffffff /tmp/orig.$$.drl -t/tmp/fake.$$.drl"
+   fi
+fi
+
+
+# TODO: patch gerbv to also have pnm output
+gerbv --dpi=$DPI -xpng -o/dev/stdout -b"#ffffff" $DRILL_LAYER $COPPER_LAYER
+
+rm -f /tmp/*.$$.drl
