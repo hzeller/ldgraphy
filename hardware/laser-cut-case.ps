@@ -1,5 +1,5 @@
 %!PS-Adobe-3.0
-%%BoundingBox: 0 0 760 2200
+%%BoundingBox: 0 0 760 2300
 
 % Choices what to selectively cut. From bottom up.
 /print-bottom true def             % Bottom pane, holding drive-train
@@ -117,7 +117,7 @@
 % -- variables to place properly between cuts
 % distance between different cuts
 /cut-dist 1 mm def
-/side-cut-distance inner-device-high 2 mul mirror-holder-high add cut-dist add acrylic-t add def
+/side-cut-distance inner-device-high 2 mul mirror-holder-high add cut-dist add acrylic-t add 20 mm add def
 
 % Linewidth doesn't do anything to the DXF output, it just makes it easier
 % to manually inspect in the PostScript viewer.
@@ -409,6 +409,14 @@
     grestore
 } def
 
+/slot-lineto-h {  % need: (xt - x) (yt - y)
+    currentpoint  % xt yt x y
+    3 -1 roll exch sub  % xt yt x y -> xt x y yt -> xt x yt y -> xt x (yt - y)
+    3 1 roll sub  % dy dx
+    exch
+    slot-rlineto-h
+} def
+
 % r is the outer radius.
 % n r
 /n-polygon {
@@ -561,9 +569,9 @@
     false  % do not cut outline
     laser-slot-distance mirror-center-mount-from-slot sub bed-w 2 div rot-mirror-footprint stroke
 
-    % holes to mount the laser. Two holes in 20 mm distance
-    40 mm 17 mm screw
-    60 mm 17 mm screw stroke
+    % Holes to mount the laser. Two holes in 20 mm distance
+    35 mm 17 mm screw
+    55 mm 17 mm screw stroke
 
     % Laser slot
     laser-slot-distance laser-slot-h 2 div sub bed-w laser-slot-w sub 2 div moveto
@@ -580,23 +588,23 @@
 } def
 
 /part-sidepanel {
-    newpath
-    % bottom parth
+  newpath
+   % bottom parth
     0 0 moveto
     inner-device-len 0 lineto
 
    % up right side (back)
    1 dict begin
-      /finger-len 6 mm def
-     inner-device-len inner-device-high finger-lineto
+      /finger-len 10 mm def
+     inner-device-len inner-device-high down-mirror-high add groove-lineto
    end
 
-    % to start of mirror-holder
-    inner-device-len laser-slot-distance sub mirror-holder-r add inner-device-high groove-lineto
+    inner-device-len laser-slot-distance sub mirror-holder-r add
+    inner-device-high down-mirror-high add groove-lineto
 
     % Notch for mirror
-    0 down-mirror-high rlineto  % center of 45 degree mirror
-    inner-device-len laser-slot-distance sub inner-device-high down-mirror-high add mirror-holder-r 0 180 arc
+    inner-device-len laser-slot-distance sub
+    inner-device-high down-mirror-high add mirror-holder-r 0 180 arc
 
     % end of mirror holder, down to top panel again.
     inner-device-len laser-slot-distance sub mirror-holder-r sub inner-device-high lineto
@@ -607,7 +615,7 @@
    1 dict begin
       /finger-len 6 mm def
       0 inner-device-high inner-device-high front-cover-high sub sub lineto
-      0 0 finger-lineto
+      0 0 groove-lineto
     end
     stroke
 
@@ -622,6 +630,11 @@
    bed-slide-high-bottom screw-r slide-holes
    gsave 0 bed-slide-high-bottom 3 mm add translate
    bed-slide-high-top screw-r slide-holes grestore
+
+   % slots to hold top-panel
+   inner-device-len inner-device-high moveto
+   inner-device-len laser-slot-distance sub mirror-holder-r add inner-device-high slot-lineto-h
+
 } def
 
 /part-slide-rail-bottom {
@@ -659,18 +672,16 @@
    bed-w 0 lineto
 
    1 dict begin
-      /finger-len 6 mm def
-      bed-w inner-device-high groove-lineto   % up
+      /finger-len 10 mm def
+      bed-w inner-device-high down-mirror-high add finger-lineto   % up
+      bed-w neg 0 rlineto  % flat back for now.
+      0 0 finger-lineto   % down
    end
-
-   bed-w neg 0 groove-rlineto       % top accross
-
-   1 dict begin
-      /finger-len 6 mm def
-     0 0 groove-lineto   % down
-   end
-
    stroke
+
+   % Top-panel matching.
+   0 inner-device-high moveto
+   bed-w 0 slot-rlineto-h
 } def
 
 /part-front {
@@ -680,14 +691,14 @@
 
    1 dict begin
       /finger-len 6 mm def
-      bed-w front-cover-high groove-lineto   % up
+      bed-w front-cover-high finger-lineto   % up
    end
 
    bed-w neg 0 rlineto       % top accross
 
    1 dict begin
       /finger-len 6 mm def
-     0 0 groove-lineto   % down
+     0 0 finger-lineto   % down
    end
 
    stroke
@@ -898,7 +909,7 @@ print-siderails-bottom {
 
 print-sled {
   part-sled
-  0 bed-w cut-dist add translate
+  0 bed-w cut-dist 2 mul add translate
 } if
 
 print-siderails-top {
@@ -919,7 +930,7 @@ print-front-back {
   0 0 moveto part-front stroke % front-piece
   gsave bed-w acrylic-t 2 mul add cut-dist add 0 translate
         part-back stroke grestore % back piece
-  0 inner-device-high acrylic-t add cut-dist add translate
+  0 inner-device-high down-mirror-high add acrylic-t add cut-dist add translate
 } if
 
 print-toppanel {
