@@ -56,6 +56,6 @@ LibName26=opto
 LibName27=atmel
 LibName28=contrib
 LibName29=valves
-LibName30=lib/ldgraphy
+LibName30=../lib/ldgraphy
 [general]
 version=1
