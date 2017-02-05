@@ -36,6 +36,7 @@ public:
     }
 
     const uint8_t *buffer() const { return buffer_; }
+    int size() const { return N; }
 
 private:
     uint8_t buffer_[N+7/8];

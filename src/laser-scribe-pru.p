@@ -51,7 +51,7 @@
 #define MIRROR_CYCLES (SCANLINE_DATA_SIZE * 4)
 
 // Phase shift mirror clock so that a centered laser is in the center.
-#define MIRROR_OFFSET 380
+#define MIRROR_OFFSET 420
 
 // Mapping some fixed registers to named variables.
 // We have enough registers to keep things readable.

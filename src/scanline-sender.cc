@@ -88,6 +88,7 @@ bool ScanLineSender::Shutdown() {
     WaitUntil(queue_pos_, STATE_DONE);
     pru_.Shutdown();
     running_ = false;
+    fprintf(stderr, "Finished scanning.\n");
     return true;
 }
 

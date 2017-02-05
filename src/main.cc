@@ -42,9 +42,11 @@ constexpr float deg2rad = 2*M_PI/360;
 constexpr int kMirrorFaces = 6;
 constexpr float segment_angle = 2 * (360 / kMirrorFaces) * deg2rad;
 
-constexpr float kRadiusMM = 135.0;
+constexpr float kRadiusMM = 127.0;
 constexpr float bed_len = 160.0;
 constexpr float bed_width = 100.0;
+
+constexpr float line_frequency = 223.0;  // Hz
 
 volatile bool interrupt_received = false;
 static void InterruptHandler(int signo) {
@@ -60,6 +62,7 @@ static int usage(const char *progname, const char *errmsg = NULL) {
             "\t-d <val>   : DPI of input image. Default 600\n"
             "\t-s <spinup>: Warmup seconds of mirror spin (default 10)\n"
             "\t-i         : Inverse image: black becomes laser on\n"
+            "\t-M         : Inhibit move in x direction\n"
             "\t-F         : Run a focus round until the first Ctrl-C\n"
             "\t-n         : Dryrun. Do not do any scanning.\n"
             "\t-h         : This help\n");
@@ -131,10 +134,11 @@ int main(int argc, char *argv[]) {
     bool dryrun = false;
     bool invert = false;
     bool do_focus = false;
+    bool do_move = true;
     int spin_warmup_seconds = 10;
 
     int opt;
-    while ((opt = getopt(argc, argv, "Fhnid:s:")) != -1) {
+    while ((opt = getopt(argc, argv, "MFhnid:s:")) != -1) {
         switch (opt) {
         case 'h': return usage(argv[0]);
         case 'd':
@@ -152,6 +156,9 @@ int main(int argc, char *argv[]) {
         case 's':
             spin_warmup_seconds = atoi(optarg);
             break;
+        case 'M':
+            do_move = false;
+            break;
         }
     }
     if (argc <= optind)
@@ -168,20 +175,31 @@ int main(int argc, char *argv[]) {
 
     const float image_resolution_mm_per_pixel = 25.4f / input_dpi;
     const float sled_step_per_pixel = image_resolution_mm_per_pixel / kSledMMperStep;
+    const int scanlines = img->width() * sled_step_per_pixel;
 
     constexpr int SCAN_PIXELS = SCANLINE_DATA_SIZE * 8;
     std::vector<int> y_lookup = PrepareTangensLookup(kRadiusMM / image_resolution_mm_per_pixel,
                                                      bed_width / image_resolution_mm_per_pixel,
                                                      SCAN_PIXELS);
+    // Due to the tangens, we have worse resolution at the endges. So look at the
+    // beginning to report a worst-case
+    const int beginning_pixel = y_lookup.size() / 20;  // First 5%
+    const float laser_dots_per_pixel
+        = 1.0 * beginning_pixel / (y_lookup[beginning_pixel] - y_lookup[0]);
+    const float laser_dots_per_mm = laser_dots_per_pixel / image_resolution_mm_per_pixel;
     // Let's see what the range is we need to scan.
-    fprintf(stderr, "Exposure size: (%.1fmm, %.1fmm). "
-            "Sled step per pixel %.1f (%.0fmm x %.0fmm = %.0f x %.0f pixels)\n",
+    fprintf(stderr, "Exposure size: (%.1fmm long; %.1fmm wide).\n"
+            "For resolution of %d dpi: "
+            "%.1f sled steps per width-pixel; %s%.2f laser dots per height pixel. "
+            "%.3fmm dot resolution; %.1fkHz laser modulation.\n",
             img->width() * image_resolution_mm_per_pixel,
             img->height() * image_resolution_mm_per_pixel,
-            sled_step_per_pixel,
-            bed_len, bed_width,
-            bed_len / image_resolution_mm_per_pixel,
-            bed_width / image_resolution_mm_per_pixel);
+            input_dpi,
+            sled_step_per_pixel, laser_dots_per_pixel < 1.0 ? "only ":"",
+            laser_dots_per_pixel,
+            1 / laser_dots_per_mm,
+            line_frequency * SCAN_PIXELS / 1000.0);
+    fprintf(stderr, "Estimated time: %.0f seconds\n", scanlines / line_frequency);
 
     if (dryrun)
         return 0;
@@ -207,10 +225,13 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "FOCUS run. Actual exposure starts after Ctrl-C.\n");
         scan_bits.Clear();
         constexpr int ft = 4;  // focus thickness.
+        // One dot every centimeter
         for (int j = 0; j < 10; ++j) {
             for (int i = 0; i < ft; ++i) scan_bits.Set(j*y_lookup.size()/10+i, true);
         }
+        // mark center.
         for (int i = 0; i < 12; ++i) scan_bits.Set(y_lookup.size()/2+i, true);
+
         while (!interrupt_received) {
             line_sender.EnqueueNextData(scan_bits.buffer(), SCANLINE_DATA_SIZE, false);
         }
@@ -220,7 +241,6 @@ int main(int argc, char *argv[]) {
 
     fprintf(stderr, "Exposure. Cancel with Ctrl-C\n");
     const time_t start_t = time(NULL);
-    const int scanlines = img->width() * sled_step_per_pixel;
     int prev_percent = -1;
     int x_last_img_pos = -1;
     scan_bits.Clear();
@@ -245,7 +265,7 @@ int main(int argc, char *argv[]) {
             }
         }
         line_sender.EnqueueNextData(scan_bits.buffer(), SCANLINE_DATA_SIZE,
-                                    true);
+                                    do_move);
     }
 
     line_sender.Shutdown();
