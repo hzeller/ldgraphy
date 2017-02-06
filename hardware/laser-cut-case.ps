@@ -336,22 +336,22 @@
     end
 } def
 
-% xt yt
-/finger-lineto {  % need: (xt - x) (yt - y)
+% Given an absolute target coordinate, converts that to a relative call.
+% xt yt proc
+/lineto-to-rlineto-proc {  % need: (xt - x) (yt - y)
+    3 1 roll
     currentpoint  % xt yt x y
     3 -1 roll exch sub  % xt yt x y -> xt x y yt -> xt x yt y -> xt x (yt - y)
     3 1 roll sub  % dy dx
     exch
-    finger-rlineto
+    3 -1 roll exec
 } def
 
-/groove-lineto {  % need: (xt - x) (yt - y)
-    currentpoint  % xt yt x y
-    3 -1 roll exch sub  % xt yt x y -> xt x y yt -> xt x yt y -> xt x (yt - y)
-    3 1 roll sub  % dy dx
-    exch
-    groove-rlineto
-} def
+% Same finger/groove commands as above, but with lineto
+/finger-lineto { { finger-rlineto } lineto-to-rlineto-proc } def
+/groove-lineto {  { groove-rlineto } lineto-to-rlineto-proc } def
+/finger-lineto-noscrew {  { finger-rlineto-noscrew } lineto-to-rlineto-proc } def
+/groove-lineto-noscrew {  { groove-rlineto-noscrew } lineto-to-rlineto-proc } def
 
 % dx dy  TODO: this very is hacky. only works vertical
 /slot-rlineto-v {
@@ -540,13 +540,13 @@
     0 0 moveto
 
     % up to mirror slot
-    laser-slot-distance mirror-holder-r sub 0 finger-lineto
+    laser-slot-distance mirror-holder-r sub 0 finger-lineto-noscrew
 
     % mirror slot width
     mirror-holder-width 0 rlineto
 
     % to the end on the right.
-    inner-device-len 0 finger-lineto
+    inner-device-len 0 finger-lineto-noscrew
 
     % up. Either straight line or circular cut
     false {
@@ -558,11 +558,11 @@
        inner-device-len bed-w lineto
     } ifelse
 
-    laser-slot-distance mirror-holder-r add bed-w finger-lineto
+    laser-slot-distance mirror-holder-r add bed-w finger-lineto-noscrew
     mirror-holder-width neg 0 rlineto
 
-    0 bed-w finger-lineto
-    0 0 finger-lineto
+    0 bed-w finger-lineto-noscrew
+    0 0 finger-lineto-noscrew
     stroke
 
     % mounting holes for rotating mirror
