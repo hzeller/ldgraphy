@@ -30,7 +30,7 @@
 /pcb-w pcb-w-mm mm 2 mm add def
 /pcb-h pcb-h-mm mm 2 mm add def
 
-/bed-w pcb-w 16 mm add def    % (3 mm in the rails + 5 mm) on each side
+/bed-w pcb-w acrylic-t 2 mul add 10 mm add def    % rail + 5 mm extra on each edge
 /bed-h pcb-h 10 mm add def
 
 % derived from above.
@@ -550,12 +550,17 @@
 
     % up. Either straight line or circular cut
     false {
-       0 bed-w rlineto
+       0 bed-w rlineto   % boooring
     } {
-       inner-device-len bed-w 2 div
-       bed-w 2 div 10 mm sub
+       1 dict begin
+       /ease-in-r bed-w 10 div def
+       inner-device-len ease-in-r sub 0 ease-in-r 0 90 arc
+       inner-device-len ease-in-r sub          % center: on right edge
+       bed-w 2 div               % .. in the middle
+       bed-w 2 div ease-in-r sub     % radius a bit smaller. Will add a line
        270 90 arcn
-       inner-device-len bed-w lineto
+       inner-device-len ease-in-r sub bed-w ease-in-r 270 360 arc
+       end
     } ifelse
 
     laser-slot-distance mirror-holder-r add bed-w finger-lineto-noscrew
@@ -582,7 +587,7 @@
       laser-slot-distance laser-slot-h 2 div add bed-w 2 div moveto
       90 rotate
       /Courier findfont 22 mm scalefont setfont
-      0 -22 mm rmoveto
+      0 -18 mm rmoveto
       gsave (LDGraphy) center-show grestore
    grestore
 } def
@@ -879,8 +884,8 @@
 
   % finger holes to better access side screws
   true {
-    25 mm 8 mm slide-holes stroke
-    gsave 0 bed-w translate -25 mm 8 mm slide-holes stroke grestore
+    22 mm acrylic-t 2 mul add 8 mm slide-holes stroke
+    gsave 0 bed-w translate -22 mm acrylic-t 2 mul sub 8 mm slide-holes stroke grestore
   } if
   end
 } def
@@ -931,7 +936,7 @@ print-front-back {
   0 0 moveto part-front stroke % front-piece
   gsave bed-w acrylic-t 2 mul add cut-dist add 0 translate
         part-back stroke grestore % back piece
-  0 inner-device-high down-mirror-high add mirror-holder-r add acrylic-t add cut-dist add translate
+  0 inner-device-high down-mirror-high add mirror-holder-r add cut-dist add translate
 } if
 
 print-toppanel {
