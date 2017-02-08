@@ -4,9 +4,9 @@
 % Choices what to selectively cut. From bottom up.
 /print-bottom true def             % Bottom pane, holding drive-train
 /print-bottom-drivetrain true def  % motor holder and bearing
-/print-siderails-bottom true def   % The rails the sled is riding on.
+/print-slide-rail-bottom true def  % The rails the sled is riding on.
 /print-sled true def               % The sled moving the PCB along.
-/print-siderails-top true def      % The rails the sled is riding under.
+/print-slide-rail-top true def     % The rails the sled is riding under.
 /print-sidepanels true def         % Side panels framing of the outer case.
 /print-front-back true def         % Front and back parts of the case.
 /print-toppanel true def           % The laser and rotating mirror mounted here.
@@ -61,6 +61,13 @@
     pcb-h add                          % .. the amount we need to move
     acrylic-t add                      % space for drive-train holder
     def  % acme bearing
+
+% we are placing the switches as close as possible to the center of the
+% drive train to not have too much axial force (the microswitches in question
+% use a little force). Otherwise the corner would of course be nice.
+/end-switch-offset 0.28 bed-w mul def  % from center
+/end-switch-thick 8 mm def             % thickness of switch
+/end-switch-from-back-of-sled drive-mount-pos end-switch-thick add acrylic-t add def
 
 % the corresponding assembly on the sled
 /bed-drive-screw-w acrylic-t def      % distance between driving holders
@@ -133,16 +140,20 @@
     0 1 0 setrgbcolor
 } def
 
-% x y r
-/circle {
+% r
+/currentpoint-circle {
     1 dict begin
     /crr exch def
-    moveto
     currentpoint
     crr 0 rmoveto
     crr 0 360 arc
     crr neg 0 rmoveto
     end
+} def
+
+% x y r
+/circle {
+    3 1 roll moveto currentpoint-circle
 } def
 
 % Given a direction in delta coordinats and a length, return the new
@@ -439,6 +450,17 @@
     grestore
 } def
 
+/end-switch {
+    currentpoint
+    0 0 1 mul rmoveto 0.6 mm currentpoint-circle
+    0 5.02 mm rmoveto 0.6 mm currentpoint-circle
+    0 5.02 mm rmoveto 0.6 mm currentpoint-circle stroke
+    %moveto currentpoint
+    %engraving-cut -2.6 mm -2.6 mm rmoveto 5.2 mm 2.54 mm 6 mul box stroke
+    %outer-cut
+    moveto
+} def
+
 /screw {
     screw-r circle
 } def
@@ -449,6 +471,7 @@
     screw-r circle
 } def
 
+% make a box at current position with given width/height
 /box {
   2 dict begin
   /h exch def
@@ -572,8 +595,15 @@
 
     % mounting holes for rotating mirror
     false  % do not cut outline
-    laser-slot-distance mirror-center-mount-from-slot sub bed-w 2 div rot-mirror-footprint stroke
+    laser-slot-distance mirror-center-mount-from-slot sub
+    bed-w 2 div
+        rot-mirror-footprint stroke
 
+    laser-slot-distance mirror-center-mount-from-slot sub 5 mm sub
+    bed-w 12 mm sub moveto
+    12 mm 5 mm 2 mm rounded-corner-box stroke
+
+    18 mm 36 mm 3 mm circle   % polygon mirror wires
     % Holes to mount the laser. Two holes in 20 mm distance
     35 mm 17 mm screw
     55 mm 17 mm screw stroke
@@ -647,11 +677,17 @@
     0 acrylic-t translate
     1 dict begin
     /finger-len 15 mm def
+    % We make the top part with rounded corners, so that it is
+    % easier to slide on the top-case on the bottom base.
     0 0 moveto
     inner-device-len 0 finger-rlineto-noscrew
-    0 bed-slide-high-bottom rlineto
-    inner-device-len neg 0 rlineto
-    0 bed-slide-high-bottom neg rlineto
+    inner-device-len bed-slide-high-bottom   % towards top
+    0 bed-slide-high-bottom                  % towards left
+    5 mm arct   % rounded corner
+    0 bed-slide-high-bottom
+    0 0
+    5 mm arct
+    0 0 lineto
     stroke
 
     % see /subpart-drivetrain-base for corresponding fingers
@@ -666,6 +702,7 @@
 
     bed-slide-high-bottom screw-r slide-holes stroke
 } def
+
 /part-slide-rail-top {
     0 0 moveto inner-device-len bed-slide-high-top box
     bed-slide-high-top screw-r slide-holes
@@ -781,10 +818,19 @@
 } def
 
 /part-sled {
-  1 dict begin
-  /finger-len 6 mm def
-
+  2 dict begin
   0 0 moveto bed-h bed-w 3 mm rounded-corner-box  % the sled
+
+  /finger-len 3 mm def
+  /endswitch-len
+     bed-drive-pos acrylic-t add end-switch-thick sub
+     drive-mount-pos end-switch-thick add
+     sub def
+  end-switch-from-back-of-sled bed-w 2 div end-switch-offset add acrylic-t 2 div sub moveto
+  endswitch-len 0 slot-rlineto-h
+  stroke
+
+  /finger-len 6 mm def
 
   % slots on sled
   gsave
@@ -821,9 +867,21 @@
      0 0 moveto 360 12 div rotate inner-cut 6 bed-drive-screw-r n-polygon stroke
    grestore
   grestore
+
+  gsave
+     /finger-len 3 mm def
+     bed-h acrylic-t add 30 mm add cut-dist add bed-drive-w cut-dist add translate
+     newpath
+     15 mm 0 moveto
+     0 endswitch-len finger-rlineto-noscrew
+     -15 mm 0 rlineto
+     0 0 lineto
+     closepath stroke
+  grestore
   end
 } def
 
+% base for the inner parts that hold motor and bearing.
 /subpart-drivetrain-base {
     2 dict begin
     0 0 moveto
@@ -836,6 +894,8 @@
     width neg 0 rlineto
     0 stepper-height neg finger-rlineto-noscrew
     stroke
+    width 2 div end-switch-offset add
+    stepper-height 15 mm sub moveto end-switch stroke
     end
 } def
 
@@ -907,7 +967,7 @@ print-bottom-drivetrain {
   0 28.2 mm cut-dist add translate
 } if
 
-print-siderails-bottom {
+print-slide-rail-bottom {
   part-slide-rail-bottom
   0 bed-slide-high-bottom cut-dist add translate part-slide-rail-bottom
   0 bed-slide-high-bottom cut-dist add translate
@@ -918,7 +978,7 @@ print-sled {
   0 bed-w cut-dist 2 mul add translate
 } if
 
-print-siderails-top {
+print-slide-rail-top {
   part-slide-rail-top
   0 bed-slide-high-top cut-dist add translate part-slide-rail-top
   0 bed-slide-high-top cut-dist add translate
