@@ -17,6 +17,11 @@
 /mm { 72 25.4 div mul } bind def
 
 /acrylic-t 3 mm def        % Material thickness.
+
+% reliefs on inner edges for finger/slots.
+/do-reliefs true def
+/relief-r 0.6 mm def
+
 /slot-thick acrylic-t def  % slot thickness for snug fit.
 
 /screw-r 3.1 mm 2 div def
@@ -130,15 +135,9 @@
 % to manually inspect in the PostScript viewer.
 1 setlinewidth
 
-/inner-cut {
-    1 0 0 setrgbcolor
-} def
-/outer-cut {
-    0 0 0 setrgbcolor
-} def
-/engraving-cut {
-    0 1 0 setrgbcolor
-} def
+/inner-cut { 1 0 0 setrgbcolor } def
+/outer-cut { 0 0 0 setrgbcolor } def
+/engraving-cut { 0 1 0 setrgbcolor } def
 
 % r
 /currentpoint-circle {
@@ -186,12 +185,13 @@
 
 % dx dy thick
 /orth-segment {
-	3 dict begin
+	4 dict begin
        /thick exch  def
+       /is-outer thick 0 gt def
        /dy exch def
        /dx exch def
-       dx dy thick perpendicular rlineto
-       dx dy rlineto
+       dx dy thick perpendicular rlineto is-outer { relief-here } if
+       dx dy rlineto                     is-outer { relief-here } if
        dx dy thick neg perpendicular rlineto
        end
 } def
@@ -239,11 +239,11 @@
   end
 } def
 
-% x y thick do_hole { 0, 1, 2 }
+% x y thick
 /finger-groove-rlineto {
     12 dict begin
-    /do-hole exch def
     /thick exch def
+    /is-inner thick 0 lt def
     /dy exch def
     /dx exch def
     /len dx dx mul dy dy mul add sqrt def
@@ -259,8 +259,8 @@
     /sdy dy finger-len len div mul def
     1 1 segments {
 	pop
-	sdx sdy rlineto
-	sdx sdy thick orth-segment
+	sdx sdy rlineto            is-inner { relief-here } if
+	sdx sdy thick orth-segment is-inner { relief-here } if
     } for
     sdx sdy rlineto  % one extra bottom segment.
     dx extra-fraction mul dy extra-fraction mul rlineto
@@ -319,7 +319,7 @@
 % dx dy
 /finger-rlineto {
     2 copy t-slot-rlineto 2 copy neg exch neg exch rmoveto
-    acrylic-t neg 2 finger-groove-rlineto
+    acrylic-t neg finger-groove-rlineto
 } def
 
 /groove-rlineto {
@@ -328,13 +328,13 @@
     /dx exch def
     dx dy hole-rlineto dx neg dy neg rmoveto
     dx dy acrylic-t neg perpendicular rlineto
-    dx dy acrylic-t 1 finger-groove-rlineto
+    dx dy acrylic-t finger-groove-rlineto
     dx dy acrylic-t perpendicular rlineto
     end
 } def
 
 /finger-rlineto-noscrew {
-    acrylic-t neg 2 finger-groove-rlineto
+    acrylic-t neg finger-groove-rlineto
 } def
 
 /groove-rlineto-noscrew {
@@ -342,7 +342,7 @@
     /dy exch def
     /dx exch def
     dx dy acrylic-t neg perpendicular rlineto
-    dx dy acrylic-t 1 finger-groove-rlineto
+    dx dy acrylic-t finger-groove-rlineto
     dx dy acrylic-t perpendicular rlineto
     end
 } def
@@ -385,7 +385,7 @@
 	pop
 	sdx sdy rmoveto
 	currentpoint
-	slot-thick sdy box
+	slot-thick sdy relief-box
 	moveto 0 sdy rmoveto
     } for
     end
@@ -413,7 +413,7 @@
 	pop
 	sdx sdy rmoveto
 	currentpoint
-	sdx slot-thick box
+	sdx slot-thick relief-box
 	moveto sdx 0 rmoveto
     } for
     end
@@ -471,6 +471,10 @@
     screw-r circle
 } def
 
+/relief-here {
+    do-reliefs { relief-r currentpoint-circle } if
+} def
+
 % make a box at current position with given width/height
 /box {
   2 dict begin
@@ -481,6 +485,20 @@
   0 h rlineto
   w neg 0 rlineto
   0 h neg rlineto
+  closepath stroke
+  end
+} def
+
+% like box, but with corner reliefs.
+/relief-box {
+  2 dict begin
+  /h exch def
+  /w exch def
+
+  w 0 rlineto      relief-here
+  0 h rlineto      relief-here
+  w neg 0 rlineto  relief-here
+  0 h neg rlineto  relief-here
   closepath stroke
   end
 } def
@@ -821,6 +839,7 @@
   2 dict begin
   0 0 moveto bed-h bed-w 3 mm rounded-corner-box  % the sled
 
+  % endswitch trigger thing: slots in the sled.
   /finger-len 3 mm def
   /endswitch-len
      bed-drive-pos acrylic-t add end-switch-thick sub
@@ -832,7 +851,7 @@
 
   /finger-len 6 mm def
 
-  % slots on sled
+  % slots on sled for drive train.
   gsave
     bed-drive-pos bed-drive-screw-w 2 div sub acrylic-t sub
     bed-w 2 div bed-drive-w 2 div sub moveto
@@ -876,7 +895,7 @@
      0 endswitch-len finger-rlineto-noscrew
      -15 mm 0 rlineto
      0 0 lineto
-     closepath stroke
+     15 mm 0 lineto stroke
   grestore
   end
 } def
