@@ -11,8 +11,11 @@
 /print-front-back true def         % Front and back parts of the case.
 /print-toppanel true def           % The laser and rotating mirror mounted here.
 
-% Suggested to cut on thinner material (1mm acrylic)
-/print-pcbframe false def
+/print-pcbframe false def  % Suggested to cut on thinner material (1mm acrylic)
+
+% For testing while tweaking finger/slot output on your laser cutter.
+% Typical tweak parameters are /acrylic-t, /do-reliefs, /relief-r, /slot-thick
+/print-TEST-finger-slot false def
 
 /mm { 72 25.4 div mul } bind def
 
@@ -20,7 +23,7 @@
 
 % reliefs on inner edges for finger/slots.
 /do-reliefs true def
-/relief-r 0.6 mm def
+/relief-r 0.3 mm def
 
 /slot-thick acrylic-t def  % slot thickness for snug fit.
 
@@ -1045,6 +1048,52 @@ print-pcbframe {
   0 0 rot-mirror-footprint stroke
   grestore
   0 bed-w acrylic-t 2 mul sub cut-dist add translate
+} if
+
+print-TEST-finger-slot {
+    0 acrylic-t cut-dist add translate
+    1 dict begin
+
+    /Helvetica-Bold findfont 3 mm scalefont setfont
+    engraving-cut
+    5 mm 16 mm moveto (Slot Sample) show
+    12 mm 32 mm moveto (10 mm) show
+    8 mm 1 mm moveto (5 mm) show
+    outer-cut
+
+    outer-cut
+    /finger-len 5 mm def
+    0 0 moveto
+    55 mm 0 groove-rlineto-noscrew
+    0 35 mm rlineto
+
+    /finger-len 10 mm def
+    -55 mm 0 groove-rlineto
+    0 -35 mm rlineto
+    stroke
+
+    0 0 moveto
+    /finger-len 5 mm def
+    0 10 mm rmoveto
+    55 mm 0 slot-rlineto-h
+
+    0 0 moveto
+    /finger-len 10 mm def
+    0 20 mm rmoveto
+    55 mm 0 slot-rlineto-h
+
+    /Helvetica-Bold findfont 3 mm scalefont setfont
+    engraving-cut 65 mm 12 mm moveto (Finger Sample) show outer-cut
+
+    60 mm 0 moveto
+    /finger-len 10 mm def
+    55 mm 0 finger-rlineto
+    0 20 mm rlineto
+    /finger-len 5 mm def
+    -55 mm 0 finger-rlineto-noscrew
+    0 -20 mm rlineto
+    stroke
+    end
 } if
 
 stroke
