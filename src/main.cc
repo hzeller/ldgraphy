@@ -38,15 +38,16 @@
 constexpr float kSledMMperStep = (25.4 / 24) / 200 / 8;
 constexpr float deg2rad = 2*M_PI/360;
 
-// reflection: angle * 2
 constexpr int kMirrorFaces = 6;
-constexpr float segment_angle = 2 * (360 / kMirrorFaces) * deg2rad;
+// Reflection would cover 2*angle, but we only send data for the first
+// half.
+constexpr float segment_data_angle = (360 / kMirrorFaces) * deg2rad;
 
 constexpr float kRadiusMM = 127.0;
 constexpr float bed_len = 160.0;
 constexpr float bed_width = 100.0;
 
-constexpr float line_frequency = 223.0;  // Hz
+constexpr float line_frequency = 257.0;  // Hz. Measured with scope.
 
 volatile bool interrupt_received = false;
 static void InterruptHandler(int signo) {
@@ -60,7 +61,6 @@ static int usage(const char *progname, const char *errmsg = NULL) {
     fprintf(stderr, "Usage:\n%s [options] <image-file>\n", progname);
     fprintf(stderr, "Options:\n"
             "\t-d <val>   : DPI of input image. Default 600\n"
-            "\t-s <spinup>: Warmup seconds of mirror spin (default 10)\n"
             "\t-i         : Inverse image: black becomes laser on\n"
             "\t-M         : Inhibit move in x direction\n"
             "\t-F         : Run a focus round until the first Ctrl-C\n"
@@ -78,7 +78,7 @@ static std::vector<int> PrepareTangensLookup(float radius_pixels,
     std::vector<int> result;
     const float scan_angle_range = 2 * atan(scan_range_pixels/2 / radius_pixels);
     const float scan_angle_start = -scan_angle_range/2;
-    const float angle_step = segment_angle / num;  // Overall arc mapped to full
+    const float angle_step = segment_data_angle / num;  // Overall arc mapped to full
     const float scan_center = scan_range_pixels / 2;
     // only the values between -angle_range/2 .. angle_range/2
     for (size_t i = 0; i < num; ++i) {
@@ -135,10 +135,9 @@ int main(int argc, char *argv[]) {
     bool invert = false;
     bool do_focus = false;
     bool do_move = true;
-    int spin_warmup_seconds = 10;
 
     int opt;
-    while ((opt = getopt(argc, argv, "MFhnid:s:")) != -1) {
+    while ((opt = getopt(argc, argv, "MFhnid:")) != -1) {
         switch (opt) {
         case 'h': return usage(argv[0]);
         case 'd':
@@ -153,14 +152,12 @@ int main(int argc, char *argv[]) {
         case 'F':
             do_focus = true;
             break;
-        case 's':
-            spin_warmup_seconds = atoi(optarg);
-            break;
         case 'M':
             do_move = false;
             break;
         }
     }
+
     if (argc <= optind)
         return usage(argv[0], "Image file parameter expected.");
     if (argc > optind+1)
@@ -211,15 +208,8 @@ int main(int argc, char *argv[]) {
     signal(SIGTERM, InterruptHandler);
     signal(SIGINT, InterruptHandler);
 
-    fprintf(stderr, "Spinning up mirror and wait for it to be stable:\n");
-    const time_t finish_spinup = time(NULL) + spin_warmup_seconds;
-    while (time(NULL) < finish_spinup && !interrupt_received) {
-        fprintf(stderr, "\b\b\b\b%4d", (int) (finish_spinup - time(NULL)));
-        usleep(500 * 1000);
-    }
-    fprintf(stderr, "\b\b\b\bDone.\n");
-
     BitArray<SCAN_PIXELS> scan_bits;
+    scan_bits.SetOffset(100);
 
     if (do_focus) {
         fprintf(stderr, "FOCUS run. Actual exposure starts after Ctrl-C.\n");

@@ -24,11 +24,16 @@
 template <int N>
 class BitArray {
 public:
-    BitArray() { Clear(); }
+    BitArray() : offset_(0) { Clear(); }
 
     void Clear() {  bzero(buffer_, (N+7)/8); }
+
+    // Always set bits at an offset.
+    void SetOffset(int off) { offset_ = off; }
+
     void Set(int b, bool value) {
-        assert(b >= 0 && b < N);
+        b += offset_;
+        if (b < 0 || b >= N) return;
         if (value)
             buffer_[b / 8] |= 1 << (7 - b % 8);
         else
@@ -39,6 +44,7 @@ public:
     int size() const { return N; }
 
 private:
+    int offset_;
     uint8_t buffer_[N+7/8];
 };
 

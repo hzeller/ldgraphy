@@ -26,58 +26,79 @@
 #define PRU0_ARM_INTERRUPT 19
 #define CONST_PRUDRAM	   C24
 
+#define PRUSS_PRU_CTL      0x22000
+#define CYCLE_COUNTER_OFFSET  0x0C
+
 #define GPIO_0_BASE       0x44e07000
 #define GPIO_1_BASE       0x4804c000
 
 #define GPIO_OE           0x134
 #define GPIO_DATAOUT      0x13c
+#define GPIO_DATAIN       0x138
 
-#define LASER_DATA   5    // GPIO_0, PIN_P9_17
-#define MIRROR_CLOCK 4    // GPIO_0, PIN_P9_18
+#define GPIO_LASER_DATA   5    // GPIO_0, PIN_P9_17
+#define GPIO_MIRROR_CLOCK 4    // GPIO_0, PIN_P9_18
+#define GPIO_HSYNC_IN     30   // GPIO_0, PIN_P9_11
 
-//#define SLED_ENABLE 17 // GPIO_1, PIN_P9_23
-#define SLED_ENABLE 31 // GPIO_0, PIN_P9_13
+#define GPIO_MOTORS_ENABLE 31 // GPIO_0, PIN_P9_13
 
 // Not yet used. sled step is connected to mirror currently.
-#define SLED_DIR 16    // GPIO_1, PIN_P9_15
-#define SLED_STEP 18   // GPIO_1, PIN_P9_14
+#define GPIO_SLED_DIR 16    // GPIO_1, PIN_P9_15
+#define GPIO_SLED_STEP 18   // GPIO_1, PIN_P9_14
 
-// Time waited per data Laser bit. It also influences the motor speed.
-// Limited essentially by the bandwidth of the laser.
-#define DATA_SLEEP 100
+// Each line, hence mirror segment, is divided in 4096 cycles.
+// This is the rough number of CPU cycles between each of the steps.
+#define CYCLE_DELAY 150
 
-// Number of bits between each mirror clock toggle.
-// One cycle, two toggles.
-#define MIRROR_CYCLES (SCANLINE_DATA_SIZE * 4)
+// Significant bit in the global time that toggles the mirror. A full mirror
+// clock loop is 4096 cycles, so in the order of 250ish Hz.
+#define MIRROR_COUNT_BIT 11
 
-// Phase shift mirror clock so that a centered laser is in the center.
-#define MIRROR_OFFSET 420
+// Cycles to spin up mirror. roughly 1 second per 1 million.
+#define SPINUP_CYCLES 1000000
+#define END_OF_DATA_WAIT 2000000
 
 // Mapping some fixed registers to named variables.
 // We have enough registers to keep things readable.
 .struct Variables
 	;; Some convenient constants. 32 bit values cannot be given as
 	;; immediate, so we have to store them in registers.
+	.u32 gpio_0_read
 	.u32 gpio_0_write
 	.u32 gpio_1_write
+	.u32 start_sync_after	; constant: time after which we should start sync
+
+	.u32 global_time	; our cycle time.
+
 	.u32 ringbuffer_size
 	.u32 item_size
-	.u32 mirror_cyles
 
-	.u32 mirror_count
+	.u32 wait_countdown	; countdown used in states  for certain states to finish
+	.u32 hsync_time		; time when we have seen the hsync
+	.u32 last_hsync_time
+	.u32 sync_laser_on_time
+
 	.u32 gpio_out	   ; Stuff we write out to GPIO. Bits for motor and laser
-	.u32 laser_mask	   ; mask to write to GPIO0. Zero if laser disabled.
 
 	.u32 item_start	   ; Start position of current item in ringbuffer
 	.u32 item_pos		; position within item.
+	.u32 start_cpucycle
+
+	.u16 state		; Current state machine state.
 	.u8  needs_advancing	; flag: if this was not an empty run, advance
 	.u8  bit_loop		; bit loop
+	.u8  last_hsync_bit	; so that we can trigger on an edge
 .ends
-.assign Variables, r10, r20.w0, v
+.assign Variables, r10, r26.b0, v
 
 ;; Registers
 ;; r1 ... r9 : common use
 ;; r10 ... named variables
+
+;; Someting to keep our timing true.
+.macro NOP
+	MOV r1, r1
+.endm
 
 ;; uses r5
 .macro WaitLoop
@@ -88,9 +109,65 @@ SLEEP_LOOP:
 	QBNE SLEEP_LOOP, r5, 0
 .endm
 
-;; Someting to keep our timing true.
-.macro NOP
-	MOV r1, r1
+// 5 CPU cycles
+.macro set_gpio_bit
+.mparam which_bit, to_value
+	MOV r5, to_value
+	AND r5, r5, 1
+	LSL r5, r5, which_bit
+	CLR v.gpio_out, which_bit
+	OR v.gpio_out, v.gpio_out, r5
+.endm
+
+.macro branch_if_not_between
+.mparam to_label, value, min_cmp, max_cmp
+	MOV r5, min_cmp
+	MOV r6, max_cmp
+	QBLT to_label, r5, value
+	QBGT to_label, r6, value
+.endm
+
+// Sets hsync_time and jumps to label if hsync seen.
+.macro branch_if_hsync
+.mparam to_label
+	LBBO r5, v.gpio_0_read, 0, 4
+	QBBC bit_is_clear, r5, GPIO_HSYNC_IN
+	QBEQ no_hsync, v.last_hsync_bit, 1
+	MOV v.last_hsync_bit, 1
+	MOV v.hsync_time, v.global_time
+	JMP to_label
+bit_is_clear:
+	MOV v.last_hsync_bit, 0
+no_hsync:
+.endm
+
+// Using cpu cycle counter instead of IEP, so that we have
+// an easier time to transfer that to a simpler processor later.
+.macro start_cpu_cycle_counter
+	MOV r5, PRUSS_PRU_CTL
+	LBBO r6, r5, 0, 4
+
+	CLR r6, 3		; bit 3: disable
+	SBBO r6, r5, 0, 4
+
+	MOV r7, 0
+	SBBO r7, r5, CYCLE_COUNTER_OFFSET, 4 ; reset
+
+	SET r6, 3		; bit 3: enable
+	SBBO r6, r5, 0, 4
+.endm
+
+.macro wait_until_cpu_cycle
+.mparam value
+	MOV r5, PRUSS_PRU_CTL
+	MOV r6, value
+wait_loop:
+	LBBO r7, r5, CYCLE_COUNTER_OFFSET, 4
+	QBLT wait_loop, r6, r7
+
+	LBBO r6, r5, 0, 4
+	CLR r6, 3		; bit 3: disable
+	SBBO r6, r5, 0, 4
 .endm
 
 INIT:
@@ -100,126 +177,210 @@ INIT:
 	SBCO r0, C4, 4, 4
 
 	;; Populate some constants
+	MOV v.gpio_0_read, GPIO_0_BASE | GPIO_DATAIN
 	MOV v.gpio_0_write, GPIO_0_BASE | GPIO_DATAOUT
 	MOV v.gpio_1_write, GPIO_1_BASE | GPIO_DATAOUT
 	MOV v.item_size, SCANLINE_ITEM_SIZE
 	MOV v.ringbuffer_size, SCANLINE_ITEM_SIZE * QUEUE_LEN
 
+	;; switch the laser full on at this period so that we reliably hit the
+	;; hsync sensor.
+	MOV v.start_sync_after, 4096-100
+
 	;; Set GPIO bits to writable. Output bits need to be set to 0.
-	MOV r1, (0xffffffff ^ ((1<<SLED_ENABLE)|(1<<LASER_DATA)|(1<<MIRROR_CLOCK)))
+	MOV r1, (0xffffffff ^ ((1<<GPIO_MOTORS_ENABLE)|(1<<GPIO_LASER_DATA)|(1<<GPIO_MIRROR_CLOCK)))
 	MOV r2, GPIO_0_BASE | GPIO_OE
 	SBBO r1, r2, 0, 4
 
-	MOV r1, (0xffffffff ^ ((1<<SLED_DIR)|(1<<SLED_STEP)))
+	MOV r1, (0xffffffff ^ ((1<<GPIO_SLED_DIR)|(1<<GPIO_SLED_STEP)))
 	MOV r2, GPIO_1_BASE | GPIO_OE
 	SBBO r1, r2, 0, 4
 
+	MOV v.gpio_out, 0
+	SET v.gpio_out, GPIO_MOTORS_ENABLE ; negative logic, so motors off.
+
 	MOV v.item_start, 0		    ; Byte position in DRAM
-	MOV v.laser_mask, 0		    ; Laser off by default.
-	MOV v.mirror_cyles, MIRROR_CYCLES
-	MOV v.mirror_count, MIRROR_OFFSET
+	MOV v.state, STATE_IDLE
 
-NEXT_LINE:
-	LBCO r1.b0, CONST_PRUDRAM, v.item_start, 1
-	QBEQ FINISH, r1.b0, STATE_EXIT
+MAIN_LOOP:
+	start_cpu_cycle_counter
 
-	;; If we don't get data, we still need to continue with an empty
-	;; run to keep the mirror rotating. But we switch off the laser
-	QBEQ DATA_RUN, r1.b0, STATE_SCAN_DATA
+	/* for now, as we don't send data */
+	LBCO r1.b0, CONST_PRUDRAM, v.item_start, 1 ; read header
+	QBEQ FINISH, r1.b0, CMD_EXIT
+	/* end debug */
 
-	;; For what is coming, we don't want the sled to move
-	SET v.gpio_out, v.gpio_out, SLED_ENABLE ; negative logic
+	JMP v.state		; switch/case with direct jump :)
 
-	;; For focusing the laser etc, we want the stepper disabled.
-	QBEQ DATA_RUN_NO_SLED, r1.b0, STATE_SCAN_DATA_NO_SLED
+	;; Waiting for Data to arrive
+STATE_IDLE:
+	LBCO r1.b0, CONST_PRUDRAM, v.item_start, 1 ; read header
+	QBEQ FINISH, r1.b0, CMD_EXIT
+	QBEQ MAIN_LOOP_NEXT, r1.b0, CMD_EMPTY
+	MOV v.global_time, 0	; have monotone increasing time for 1h or so
+	MOV v.wait_countdown, SPINUP_CYCLES
+	MOV v.state, STATE_SPINUP
+	CLR v.gpio_out, GPIO_MOTORS_ENABLE ; negative logic
 
-EMPTY_RUN:
-	MOV v.laser_mask, 0
-	MOV v.needs_advancing, 0 ; no buffer advancing
-	CLR v.gpio_out, v.gpio_out, LASER_DATA
-	JMP SCAN_LINE
-
-DATA_RUN:
-	CLR v.gpio_out, v.gpio_out, SLED_ENABLE ; negative logic
-DATA_RUN_NO_SLED:
-	MOV v.laser_mask, (1<<LASER_DATA)
-	MOV v.needs_advancing, 1
-	NOP
-
-SCAN_LINE:
+	;; prepare data
 	MOV v.item_pos, SCANLINE_HEADER_SIZE 		; Start after header
-DATA_LOOP:
+	MOV v.bit_loop, 7
+
+	JMP MAIN_LOOP_NEXT
+
+	;; Spinup. The mirror takes a second or so until it is ready,
+	;; don't switch on the laser quite yet.
+STATE_SPINUP:
+	SUB v.wait_countdown, v.wait_countdown, 1
+	QBEQ spinup_done, v.wait_countdown, 0
+	JMP MAIN_LOOP_NEXT
+spinup_done:
+	set_gpio_bit GPIO_LASER_DATA, 1
+	MOV v.state, STATE_WAIT_STABLE
+	JMP MAIN_LOOP_NEXT
+
+	;; Switch on the laser the full time and wait until we get it within
+	;; some acceptable margin. Sometimes, mirrors have a harder time
+	;; synchronizing in the beginning. We wait until we are stable.
+STATE_WAIT_STABLE:
+	branch_if_hsync wait_stable_hsync_seen
+	JMP MAIN_LOOP_NEXT	; todo: account for cpu-cycles
+wait_stable_hsync_seen:
+	SUB r1, v.hsync_time, v.last_hsync_time
+	MOV v.last_hsync_time, v.hsync_time
+	branch_if_not_between wait_stable_not_synced_yet, r1, 4096-50, 4096+50
+	CLR v.gpio_out, GPIO_LASER_DATA   ; laser off for now
+	ADD v.sync_laser_on_time, v.hsync_time, v.start_sync_after ; laser on then
+	MOV v.state, STATE_CONFIRM_STABLE
+	JMP MAIN_LOOP_NEXT
+wait_stable_not_synced_yet:
+	JMP MAIN_LOOP_NEXT
+
+	;; We got synchronization and know when it is time to switch on
+	;; the laser to get the next synchronization. Let's see if we can repeat
+	;; this.
+STATE_CONFIRM_STABLE:
+	QBLT MAIN_LOOP_NEXT, v.sync_laser_on_time, v.global_time
+	SET v.gpio_out, GPIO_LASER_DATA
+confirm_stable_test_for_hsync:
+	branch_if_hsync confirm_stable_hsync_seen
+	JMP MAIN_LOOP_NEXT
+confirm_stable_hsync_seen:
+	CLR v.gpio_out, GPIO_LASER_DATA ; hsync finished.
+	ADD v.sync_laser_on_time, v.hsync_time, v.start_sync_after
+	/* todo: test if in between expected range, otherwise state wait stable */
+	MOV v.state, STATE_DATA_RUN
+	JMP MAIN_LOOP_NEXT
+
+	;; Sync step between data lines.
+STATE_DATA_WAIT_FOR_SYNC:
+	QBLT MAIN_LOOP_NEXT, v.sync_laser_on_time, v.global_time ; not yet
+	SET v.gpio_out, GPIO_LASER_DATA		; expect hsync soon
+wait_for_sync:
+	branch_if_hsync wait_for_sync_hsync_seen
+	JMP MAIN_LOOP_NEXT
+wait_for_sync_hsync_seen:
+	CLR v.gpio_out, GPIO_LASER_DATA ; hsync finished.
+	ADD v.sync_laser_on_time, v.hsync_time, v.start_sync_after
+
+	;; we step at the end of a data line, so here we should reset.
+	MOV r1, 0		; clear motor step
+	SBBO r1, v.gpio_1_write, 0, 4
+
+	MOV v.state, STATE_DATA_RUN
+	JMP MAIN_LOOP_NEXT
+
+	;; Loop to send all the data. We go through each byte, and within that
+	;; through each bit, once per state.
+STATE_DATA_RUN:
+	MOV r1, v.item_size
+	QBLT data_run_data_output, r1, v.item_pos
+	MOV v.state, STATE_ADVANCE_RINGBUFFER
+	JMP MAIN_LOOP_NEXT
+data_run_data_output:
+	;; super lazy, we read the full byte every time, but there is
+	;; enough time.
 	MOV r2, v.item_start
 	ADD r2, r2, v.item_pos
 	LBCO r1.b0, CONST_PRUDRAM, r2, 1
 
-	MOV v.bit_loop, 7		; Bit loop
-LASER_BITS_LOOP:
-	QBBS LASER_SET_ON, r1.b0, v.bit_loop
+	LSR r1.b0, r1.b0, v.bit_loop
+	set_gpio_bit GPIO_LASER_DATA, r1.b0
 
-LASER_SET_OFF:
-	CLR v.gpio_out, v.gpio_out, LASER_DATA
-	JMP LASER_DATA_SET
-
-LASER_SET_ON:
-	OR v.gpio_out, v.gpio_out, v.laser_mask
-	NOP
-
-LASER_DATA_SET:
-	SBBO v.gpio_out, v.gpio_0_write, 0, 4
-	WaitLoop DATA_SLEEP
-
-MIRROR_TOGGLE_IF:
-	ADD v.mirror_count, v.mirror_count, 1
-	QBGE MIRROR_TOGGLE, v.mirror_cyles, v.mirror_count
-
-	NOP
-	NOP
-	JMP MIRROR_TOGGLE_ENDIF
-
-MIRROR_TOGGLE:
-	;; The mirror clock toggles with every other line.
-	MOV r2, (1<<MIRROR_CLOCK)
-	XOR v.gpio_out, v.gpio_out, r2
-	MOV v.mirror_count, 0
-
-MIRROR_TOGGLE_ENDIF:
-
-	QBEQ LASER_BITS_LOOP_DONE, v.bit_loop, 0 ; that was the last bit
+	QBEQ data_run_next_byte, v.bit_loop, 0
 	SUB v.bit_loop, v.bit_loop, 1
-	;; Make up time-difference to byte access we only do every 8 bits
-	NOP			; time for: add v.item_pos, v.item_pos, 1
-	NOP			; time for: mov r2.v.item_start
-	NOP			; time for: ADD r2, r2 v.item_pos
-	NOP			; time for: LBCO r1.b0 ...
-	NOP			; time for: MOV v.bit_loop, 7
-	JMP LASER_BITS_LOOP
+	JMP MAIN_LOOP_NEXT
+data_run_next_byte:
+	ADD v.item_pos, v.item_pos, 1
+	MOV v.bit_loop, 7
+	JMP MAIN_LOOP_NEXT
 
-LASER_BITS_LOOP_DONE:
-	ADD v.item_pos, v.item_pos, 1		; next data byte
-	QBLT DATA_LOOP, v.item_size, v.item_pos ; item_pos < item_size
+	;;  not really necessary to be its own state.
+STATE_ADVANCE_RINGBUFFER:
+	CLR v.gpio_out, GPIO_LASER_DATA ; not needed now.
 
-	QBEQ NEXT_LINE, v.needs_advancing, 0	; Empty run, stay at buffer pos
-
-	;; We are done with this scan line. Tell the host.
-	MOV r1.b0, STATE_EMPTY
+	;; check if we need to advance stepper
+	LBCO r1.b0, CONST_PRUDRAM, v.item_start, 1
+	QBEQ advance_sled_done, r1.b0, CMD_SCAN_DATA_NO_SLED
+	MOV r1, 0		; clear motor step
+	SET r1, GPIO_SLED_STEP
+	SBBO r1, v.gpio_1_write, 0, 4
+advance_sled_done:
+	;; signal host that we're done with this item.
+	MOV r1.b0, CMD_EMPTY
 	SBCO r1.b0, CONST_PRUDRAM, v.item_start, 1
 	MOV R31.b0, PRU0_ARM_INTERRUPT+16 ; tell that status changed.
 
 	ADD v.item_start, v.item_start, v.item_size ; advance in ringbuffer
-
-	QBLT NEXT_LINE, v.ringbuffer_size, v.item_start ; item_start < rb_size
-
+	QBLT rb_advanced, v.ringbuffer_size, v.item_start ; item_start < rb_sizes
 	MOV v.item_start, 0		; Wrap around
-	JMP NEXT_LINE
+rb_advanced:
+	MOV v.wait_countdown, END_OF_DATA_WAIT
+	MOV v.state, STATE_AWAIT_MORE_DATA
+	JMP MAIN_LOOP_NEXT
+
+STATE_AWAIT_MORE_DATA:
+	SUB v.wait_countdown, v.wait_countdown, 1
+	QBNE active_data_wait, v.wait_countdown, 0
+	;; ok, we waited too long, let's switch off motors and go back
+	;; to idle.
+	SET v.gpio_out, GPIO_MOTORS_ENABLE ; negative logic
+	MOV v.state, STATE_IDLE
+	JMP MAIN_LOOP_NEXT
+
+active_data_wait:
+	LBCO r1.b0, CONST_PRUDRAM, v.item_start, 1 ; read header
+	QBEQ FINISH, r1.b0, CMD_EXIT
+	QBEQ MAIN_LOOP_NEXT, r1.b0, CMD_EMPTY
+
+	MOV v.item_pos, SCANLINE_HEADER_SIZE 		; Start after header
+	MOV v.bit_loop, 7
+
+	MOV v.state, STATE_DATA_WAIT_FOR_SYNC
+	JMP MAIN_LOOP_NEXT
+
+MAIN_LOOP_NEXT:
+	wait_until_cpu_cycle CYCLE_DELAY
+
+	;; Global time update.
+	ADD v.global_time, v.global_time, 1
+
+	;; Extract the counting bit and send to gpio.
+	LSR r1, v.global_time, MIRROR_COUNT_BIT
+	set_gpio_bit GPIO_MIRROR_CLOCK, r1
+
+	;; GPIO out, once per loop.
+	SBBO v.gpio_out, v.gpio_0_write, 0, 4
+
+	JMP MAIN_LOOP
 
 FINISH:
 	MOV r1, 0		; Switch off all GPIO bits.
-	SET r1, r1, SLED_ENABLE ; Well, and the motor ~enable
+	SET r1, r1, GPIO_MOTORS_ENABLE ; Well, and the motor ~enable
 	SBBO r1, v.gpio_0_write, 0, 4
 
-	;; Tell host that we've seen the STATE_EXIT and acknowledge with DONE
-	MOV r1.b0, STATE_DONE
+	;; Tell host that we've seen the CMD_EXIT and acknowledge with CMD_DONE
+	MOV r1.b0, CMD_DONE
 	SBCO r1.b0, CONST_PRUDRAM, v.item_start, 1
 	MOV R31.b0, PRU0_ARM_INTERRUPT+16 ; Tell that we're done.
 
