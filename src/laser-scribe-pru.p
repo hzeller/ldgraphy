@@ -46,16 +46,20 @@
 #define GPIO_SLED_DIR 16    // GPIO_1, PIN_P9_15
 #define GPIO_SLED_STEP 18   // GPIO_1, PIN_P9_14
 
-// Each line, hence mirror segment, is divided in 4096 cycles.
+// Each mirror segment, we divide int number of ticks.
+#define TICK_PER_SEGMENT (2*8*SCANLINE_DATA_SIZE)
+#define JITTER_ALLOW (TICK_PER_SEGMENT/100)
+
+// Each line, hence mirror segment, is divided in 8192 cycles.
 // This is the rough number of CPU cycles between each of the steps.
-#define CYCLE_DELAY 150
+#define TICK_DELAY 70
 
 // Significant bit in the global time that toggles the mirror. A full mirror
-// clock loop is 4096 cycles, so in the order of 250ish Hz.
-#define MIRROR_COUNT_BIT 11
+// clock loop is 8192 cycles, so in the order of 250ish Hz.
+#define MIRROR_COUNT_BIT 12
 
 // Cycles to spin up mirror. roughly 1 second per 1 million.
-#define SPINUP_CYCLES 1000000
+#define SPINUP_TICKS 1000000
 #define END_OF_DATA_WAIT 2000000
 
 // Mapping some fixed registers to named variables.
@@ -185,7 +189,7 @@ INIT:
 
 	;; switch the laser full on at this period so that we reliably hit the
 	;; hsync sensor.
-	MOV v.start_sync_after, 4096-100
+	MOV v.start_sync_after, TICK_PER_SEGMENT - 2*JITTER_ALLOW
 
 	;; Set GPIO bits to writable. Output bits need to be set to 0.
 	MOV r1, (0xffffffff ^ ((1<<GPIO_MOTORS_ENABLE)|(1<<GPIO_LASER_DATA)|(1<<GPIO_MIRROR_CLOCK)))
@@ -218,7 +222,7 @@ STATE_IDLE:
 	QBEQ FINISH, r1.b0, CMD_EXIT
 	QBEQ MAIN_LOOP_NEXT, r1.b0, CMD_EMPTY
 	MOV v.global_time, 0	; have monotone increasing time for 1h or so
-	MOV v.wait_countdown, SPINUP_CYCLES
+	MOV v.wait_countdown, SPINUP_TICKS
 	MOV v.state, STATE_SPINUP
 	CLR v.gpio_out, GPIO_MOTORS_ENABLE ; negative logic
 
@@ -248,7 +252,7 @@ STATE_WAIT_STABLE:
 wait_stable_hsync_seen:
 	SUB r1, v.hsync_time, v.last_hsync_time
 	MOV v.last_hsync_time, v.hsync_time
-	branch_if_not_between wait_stable_not_synced_yet, r1, 4096-50, 4096+50
+	branch_if_not_between wait_stable_not_synced_yet, r1, TICK_PER_SEGMENT-JITTER_ALLOW, TICK_PER_SEGMENT+JITTER_ALLOW
 	CLR v.gpio_out, GPIO_LASER_DATA   ; laser off for now
 	ADD v.sync_laser_on_time, v.hsync_time, v.start_sync_after ; laser on then
 	MOV v.state, STATE_CONFIRM_STABLE
@@ -360,7 +364,7 @@ active_data_wait:
 	JMP MAIN_LOOP_NEXT
 
 MAIN_LOOP_NEXT:
-	wait_until_cpu_cycle CYCLE_DELAY
+	wait_until_cpu_cycle TICK_DELAY
 
 	;; Global time update.
 	ADD v.global_time, v.global_time, 1

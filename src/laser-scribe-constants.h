@@ -25,8 +25,8 @@
 #define CMD_EXIT    3
 #define CMD_DONE    4
 
-#define SCANLINE_HEADER_SIZE 1   // A single byte containting the state.
-#define SCANLINE_DATA_SIZE 256   // Bytes that follow. We have 8x the pixels.
+#define SCANLINE_HEADER_SIZE 1   // A single byte containing the command.
+#define SCANLINE_DATA_SIZE 512   // Bytes that follow. We have 8x the pixels.
 
 #define SCANLINE_ITEM_SIZE (SCANLINE_HEADER_SIZE + SCANLINE_DATA_SIZE)
 

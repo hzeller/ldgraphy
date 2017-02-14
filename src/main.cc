@@ -43,7 +43,7 @@ constexpr int kMirrorFaces = 6;
 // half.
 constexpr float segment_data_angle = (360 / kMirrorFaces) * deg2rad;
 
-constexpr float kRadiusMM = 127.0;
+constexpr float kRadiusMM = 130.0;
 constexpr float bed_len = 160.0;
 constexpr float bed_width = 100.0;
 
