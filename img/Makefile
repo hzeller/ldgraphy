@@ -1,2 +1,2 @@
-test-pattern-1200dpi.png: test-pattern.ps
-	../scripts/ps2pnm 1200 $< | pnmtopng > $@
+test-pattern-1270dpi.png: test-pattern.ps
+	../scripts/ps2pnm 1270 $< | pnmtopng > $@

@@ -1,8 +1,15 @@
 %!PS-Adobe-3.0
 %%BoundingBox: 0 0 90 90
-% cat sample.ps | gs -q -sDEVICE=pnm -sOutputFile=- -r600x600 -g800x800 - | pnmcrop | pnmtopng > /tmp/x.png
+% Use ../scripts/ps2pnm to convert into an image.
 
 /mm { 72 25.4 div mul } bind def
+/mil { 72 mul 1000.0 div } bind def
+/export-resolution 1270 def
+
+% Looks like ghostscript overstates the thickness of pixels
+% in lines when rendering and errs on too-thick. Let's correct for that.
+% (empirical, might totally break in different resolutions)
+/pixel-correction 72 export-resolution div def
 
 /box {
   /h exch def
@@ -37,9 +44,14 @@
     rr 0 360 arc
 } def
 
+% Fix linewidth as described above.
+/correct-setlinewidth {
+    pixel-correction sub setlinewidth
+} def
+
 1 mm 1 mm translate
 
-0.25 mm setlinewidth
+0.25 mm correct-setlinewidth
 
  0 mm 0 mm moveto 10 mm 10 mm box
 10 mm 0 mm moveto 10 mm 10 mm box
@@ -81,40 +93,45 @@ stroke
 stroke
 
 % Bottom left
-5 mm 5 mm 0.5 mm circle
-5 mm 5 mm 1 mm circle
-5 mm 5 mm 1.5 mm circle
-5 mm 5 mm 2 mm circle
-5 mm 5 mm 2.5 mm circle
-5 mm 5 mm 3 mm circle
-5 mm 5 mm 3.5 mm circle
-5 mm 5 mm 4 mm circle
-5 mm 5 mm 4.5 mm circle
+gsave
+/circle-dist 0.2 mm def
+circle-dist 2 div correct-setlinewidth
+1 1 5 mm circle-dist div {
+5 mm 5 mm circle-dist 4 -1 roll mul circle
+} for
+stroke
+grestore
 stroke
 
 /Helvetica-Bold findfont 1.5 mm scalefont setfont
-/triple {
+% thick position len count
+/line-group {
+    3 dict begin
+    /count exch def
     /len exch def
     moveto
     /thick exch def
-    thick setlinewidth
+    thick correct-setlinewidth
     len 0 rlineto
-    len neg thick 2 mul rmoveto len 0 rlineto
-    len neg thick 2 mul rmoveto len 0 rlineto
+    1 1 count {
+      pop
+      len neg thick 2 mul rmoveto len 0 rlineto
+    } for
     len neg 0.3 mm rmoveto
     show
     stroke
+    end
 } def
 
-/triple-line {
-  (0.2 mm) 0.2 mm 1 mm 7.5 mm 8 mm triple
-  (0.3 mm) 0.3 mm 1 mm 4.5 mm 8 mm triple
-  (0.4 mm) 0.4 mm 1 mm 0.8 mm 8 mm triple
+/line-samples {
+  (0.1 mm)  0.1 mm 1 mm 7.4 mm 8 mm 5 line-group
+  (0.006")  6 mil 1 mm 4.2 mm 8 mm 5 line-group
+  (0.2 mm)  0.2 mm 1 mm 0.5 mm 8 mm 5 line-group
 } def
 
 % Top right
 gsave
-20 mm 20 mm translate triple-line
+20 mm 20 mm translate line-samples
 grestore
 
 % Bottom right
@@ -122,7 +139,7 @@ grestore
 gsave
 30 mm 0 mm translate
 90 rotate
-triple-line
+line-samples
 grestore
 
 % top center
@@ -131,9 +148,9 @@ gsave
 15 mm 25 mm translate
 45 rotate
 -8 mm -5 mm translate
-() 0.2 mm 1 mm 7.5 mm 15 mm triple
-() 0.3 mm 1 mm 4.5 mm 15 mm triple
-() 0.4 mm 1 mm 0.8 mm 15 mm triple
+() 0.1 mm 1 mm 7.5 mm 15 mm 12 line-group
+() 6 mil 1 mm 4.5 mm 15 mm 8 line-group
+() 0.2 mm 1 mm 0.8 mm 15 mm 8 line-group
 grestore
 
 % bottom center
@@ -142,9 +159,9 @@ gsave
 15 mm 5 mm translate
 135 rotate
 -8 mm -5 mm translate
-() 0.2 mm 1 mm 7.5 mm 15 mm triple
-() 0.3 mm 1 mm 4.5 mm 15 mm triple
-() 0.4 mm 1 mm 0.8 mm 15 mm triple
+() 0.1 mm 1 mm 7.5 mm 15 mm 12 line-group
+() 6 mil 1 mm 4.5 mm 15 mm 8 line-group
+() 0.2 mm 1 mm 0.8 mm 15 mm 8 line-group
 grestore
 
 % right center. Solder pads.
