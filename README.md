@@ -13,6 +13,7 @@ Uses
   * stepper motor for linear axis.
   * Beaglebone Black to control it all (using the PRU to generate precise
     timings for mirror and laser).
+  * Possibly later some simpler set-up with Cortex M4 or so.
 
 Build
 -----
@@ -40,6 +41,8 @@ Usage:
 Options:
         -d <val>   : DPI of input image. Default 600
         -i         : Inverse image: black becomes laser on
+        -M         : Inhibit move in x direction
+        -F         : Run a focus round until the first Ctrl-C
         -n         : Dryrun. Do not do any scanning.
         -h         : This help
 ```
@@ -50,16 +53,19 @@ There is [work-in-progress](./hardware) to make a case that does not need
 extruded aluminum which was used for the first test, but rather a simple
 laser-cut acrylic case.
 
-Setup
------
-![Initial setup](./img/setup.jpg)
+![Case](./img/sample-case.jpg)
 
-First Light
------------
+This was the first experiment
+-------------------------------
+
+## First Light
+
+   Setup               | Result
+-----------------------|---------------------------------
+![](./img/setup.jpg)   | ![](./img/firstexposure.jpg)
+
 Somewhat crappy first result, but has potential. Exposure time for this 30 mm
 long patch was around 90 seconds.
-
-![First light](./img/firstexposure.jpg)
 
 (for reference: on the right is how the geometry _should_ look like).
 
