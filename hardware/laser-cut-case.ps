@@ -473,7 +473,9 @@
     hsync-len hsync-w box
 } def
 
+% x y
 /photo-diode-cutout {
+    inner-cut
     moveto
     0 2.5 mm rlineto
     -3.7 mm 0 rlineto
@@ -486,7 +488,7 @@
     closepath
     currentpoint
     stroke
-    moveto inner-cut hsync-slot stroke
+    moveto hsync-slot stroke
     outer-cut
 } def
 
@@ -1127,6 +1129,10 @@ print-TEST-finger-slot {
     0 20 mm rmoveto
     55 mm 0 slot-rlineto-h
 
+    33 mm 29 mm photo-diode-cutout
+    10 mm 29 mm moveto hsync-slot
+
+    % Finger sample
     /Helvetica-Bold findfont 3 mm scalefont setfont
     engraving-cut 65 mm 12 mm moveto (Finger Sample) show outer-cut
 
