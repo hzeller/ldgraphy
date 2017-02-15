@@ -95,6 +95,10 @@
 /laser-slot-h 10 mm def
 /laser-slot-w pcb-w 2 mm add def
 
+% Hsync diffusor
+/hsync-len laser-slot-h def
+/hsync-w 2 mm def
+
 /rot-mirror-high 33 mm 2 div def  % center of the laser
 /rot-mirror-w 44 mm def
 /rot-mirror-h 60 mm def
@@ -464,6 +468,28 @@
     moveto
 } def
 
+/hsync-slot {
+    0 hsync-w 2 div neg rmoveto
+    hsync-len hsync-w box
+} def
+
+/photo-diode-cutout {
+    moveto
+    0 2.5 mm rlineto
+    -3.7 mm 0 rlineto
+    0 0.5 mm rlineto
+    -1.1 mm 0 rlineto
+    0 -6.0 mm rlineto
+    1.1 mm 0 rlineto
+    0 0.5 mm rlineto
+    3.7 mm 0 rlineto
+    closepath
+    currentpoint
+    stroke
+    moveto inner-cut hsync-slot stroke
+    outer-cut
+} def
+
 /screw {
     screw-r circle
 } def
@@ -628,6 +654,11 @@
     % Holes to mount the laser. Two holes in 20 mm distance
     35 mm 17 mm screw
     55 mm 17 mm screw stroke
+
+    % hsync photo diode
+    laser-slot-distance laser-slot-h 2 div sub
+    bed-w bed-w laser-slot-w sub 2 div sub 1.5 hsync-w mul add
+    photo-diode-cutout
 
     % Laser slot
     laser-slot-distance laser-slot-h 2 div sub bed-w laser-slot-w sub 2 div moveto
@@ -874,6 +905,7 @@
    stroke
   grestore
 
+  % Moving part holding the nut
   gsave
    bed-h acrylic-t add cut-dist add bed-drive-w cut-dist add translate
 
@@ -890,6 +922,7 @@
    grestore
   grestore
 
+  % Endswitch trigger block, plugged into the sled.
   gsave
      /finger-len 3 mm def
      bed-h acrylic-t add 30 mm add cut-dist add bed-drive-w cut-dist add translate
@@ -899,6 +932,18 @@
      -15 mm 0 rlineto
      0 0 lineto
      15 mm 0 lineto stroke
+  grestore
+
+  % since this is fluorescent material, cut out the hsync collector here.
+  gsave
+     % more fudging with moving to a free space...
+     bed-h 30 mm add bed-w 20 mm sub translate
+     0 0 moveto hsync-len hsync-w box
+     0 hsync-w cut-dist add moveto hsync-len hsync-w box
+     % ... do it a couple of times, as some will fall through the cracks :)
+     0 hsync-w cut-dist add 2 mul moveto hsync-len hsync-w box
+     0 hsync-w cut-dist add 3 mul moveto hsync-len hsync-w box
+     stroke
   grestore
   end
 } def
