@@ -1,5 +1,5 @@
 #!/bin/bash
-# Output the postscript file as PNM.
+# Output the postscript file as black and white PNG.
 # For some reason, ghostscript can't just read the bounding box and output
 # an image that size. So we have to go the long way, determine the bounding
 # box, then re-create that with the size and offset determined.
@@ -21,17 +21,17 @@ GS="gs -q -dNOPAUSE -dBATCH"
 # Extracting both from the bounding-box run, returned as a "<RES>:<translate>"
 # tuple.
 #
-# Adding some border (3 point offset hence 6 point size), as the
+# Adding some border (0.5 point offset hence 1 point size), as the
 # pixel-size is rounded numbers, gs fails to generate negative offsets in
 # the bbox output and we want some space to reliably pnmcrop.
 EXTRACT=$($GS -sDEVICE=bbox -sOutputFile=- $IN_PS 2>&1 | \
 	   awk "/%HiResBoundingBox/ {
                 printf(\"%dx%d:%.1f %.1f translate\",
-                       $DPI * (\$4 - \$2 + 6) / 72, $DPI * (\$5 - \$3 + 6) / 72,
-                       -(\$2 - 3), -(\$3 - 3)); }")
+                       $DPI * (\$4 - \$2 + 1) / 72, $DPI * (\$5 - \$3 + 1) / 72,
+                       -(\$2 - 0.5), -(\$3 - 0.5)); }")
 
 RES=$(echo "$EXTRACT" | awk -F: '{print $1}')
 TRANSLATE=$(echo "$EXTRACT" | awk -F: '{print $2}')
 
 # Now the actual output, cropping to the actual thing.
-(echo "$TRANSLATE" ; cat "$IN_PS" ) | $GS -sDEVICE=pnm -sOutputFile=- -r${DPI}x${DPI} -g$RES - | pnmcrop
+(echo "$TRANSLATE" ; cat "$IN_PS" ) | $GS -sDEVICE=pngmono -sOutputFile=- -r${DPI}x${DPI} -g$RES -

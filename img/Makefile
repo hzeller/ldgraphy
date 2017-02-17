@@ -1,2 +1,4 @@
-test-pattern-1270dpi.png: test-pattern.ps
-	../scripts/ps2pnm 1270 $< | pnmtopng > $@
+all : test-pattern-1500dpi.png resolution-snake-1500dpi.png
+
+%-1500dpi.png: %.ps
+	../scripts/ps2bwpng 1500 $< > $@

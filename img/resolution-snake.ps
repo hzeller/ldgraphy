@@ -1,0 +1,108 @@
+%!PS-Adobe-3.0
+%%BoundingBox: 0 0 90 90
+% Use ../scripts/ps2pnm to convert into an image.
+
+/mm { 72 25.4 div mul } bind def
+/mil { 72 mul 1000.0 div } bind def
+
+% Looks like ghostscript overstates the thickness of pixels
+% in lines when rendering and errs on too-thick. Let's correct for that.
+% (empirical, might totally break in different resolutions)
+/export-resolution 1500 def
+/pixel-correction 72 export-resolution div def
+
+% Fix linewidth as described above.
+/correct-setlinewidth {
+    pixel-correction sub setlinewidth
+} def
+
+/box {
+  /h exch def
+  /w exch def
+
+  w 0 rlineto
+  0 h rlineto
+  w neg 0 rlineto
+  0 h neg rlineto
+  closepath
+  stroke
+} def
+
+% width height line-thick
+/snake {
+    2 dict begin
+    /thickness exch def
+    /height exch def
+    /width exch def
+    gsave
+    currentpoint translate
+    thickness correct-setlinewidth
+
+    0 thickness 4 mul height {
+       0 exch moveto
+       width 0 rlineto
+       currentpoint thickness add
+       thickness 270 90 arc
+       width neg 0 rlineto
+       currentpoint thickness add
+       stroke
+       % we place the trailing arc after the stroke
+       % so that it is not drawn if it is last one (no stroke following)
+       thickness 90 270 arc
+   } for
+   grestore
+} def
+
+/Helvetica findfont 2.5 mm scalefont setfont
+
+%0 0 moveto 70 mm 100 mm box
+
+1 mm  0 moveto 8 mm 95 mm 8 mil snake   1 mm 96 mm moveto (0.008") show
+10 mm 0 moveto 8 mm 95 mm 6 mil snake   10 mm 96 mm moveto (0.006") show
+19 mm 0 moveto 8 mm 95 mm 0.1 mm snake  19 mm 96 mm moveto (0.1 mm) show
+
+% show text
+/diagonal-snakes {
+  1 dict begin
+  /show-text exch def
+  gsave
+  0 mm 0 mm translate -45 rotate
+  0 12 mm moveto 10 mm 40 mm 6 mil snake
+  show-text { 1 mm -2.5 mm rmoveto (0.006") show } if
+  grestore
+  gsave
+  16 mm 0 mm translate -45 rotate
+  0 12 mm moveto 10 mm 18 mm 8 mil snake
+  show-text { 1 mm -2.5 mm rmoveto (0.008") show } if
+  grestore
+  gsave
+  0 mm 16 mm translate -45 rotate
+  0 12 mm moveto 10 mm 18 mm 0.1 mm snake
+  show-text { 1 mm -2.5 mm rmoveto (0.1 mm) show } if
+  grestore
+  end
+} def
+
+gsave 20 mm 0 mm translate true diagonal-snakes grestore
+gsave 20 mm 100 mm translate 1 -1 scale false diagonal-snakes grestore
+
+gsave
+30 mm 46 mm translate -90 rotate
+0 0 moveto 7 mm 30 mm 8 mil snake
+grestore
+
+gsave
+30 mm 54 mm translate -90 rotate
+0 0 moveto 7 mm 30 mm 6 mil snake
+grestore
+
+gsave
+30 mm 62 mm translate -90 rotate
+0 0 moveto 7 mm 30 mm 0.1 mm snake
+grestore
+
+gsave
+65 mm 35 mm translate 90 rotate
+0 0 moveto (Testing #3 | HZ Feb 2017) show
+grestore
+showpage
