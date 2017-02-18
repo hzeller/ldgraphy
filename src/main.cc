@@ -104,8 +104,9 @@ SimpleImage *LoadPNGImage(const char *filename, bool invert, double *dpi) {
 
     if (color_type == PNG_COLOR_TYPE_RGB ||
         color_type == PNG_COLOR_TYPE_PALETTE) {
-        png_set_rgb_to_gray(png, PNG_ERROR_ACTION_NONE,
-                            PNG_RGB_TO_GRAY_DEFAULT, PNG_RGB_TO_GRAY_DEFAULT);
+        png_set_rgb_to_gray(png, 1 /*PNG_ERROR_ACTION_NONE*/,
+                            -1 /*PNG_RGB_TO_GRAY_DEFAULT*/,
+                            -1 /*PNG_RGB_TO_GRAY_DEFAULT*/);
     }
 
     const int width = png_get_image_width(png, info);
