@@ -20,6 +20,7 @@
 #define LDGRAPHY_CONTAINERS_H
 
 #include <strings.h>
+#include <stdio.h>
 
 template <int N>
 class BitArray {
@@ -61,6 +62,12 @@ public:
     char &at(int x, int y) {
         if (x < 0 || x >= width_ || y < 0 || y >= height_) return buffer_[0];
         return buffer_[width_ * y + x];
+    }
+
+    void ToPGM(FILE *file) {
+        fprintf(file, "P5\n%d %d\n255\n", width_, height_);
+        fwrite(buffer_, 1, width_ * height_, file);
+        fclose(file);
     }
 
 private:

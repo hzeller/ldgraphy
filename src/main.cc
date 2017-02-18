@@ -22,13 +22,15 @@
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 #include <time.h>
 #include <unistd.h>
 
+#include <png.h>
+
 #include <vector>
-#include <Magick++.h>
 
 #include "laser-scribe-constants.h"
 #include "containers.h"
@@ -58,15 +60,89 @@ static int usage(const char *progname, const char *errmsg = NULL) {
     if (errmsg) {
         fprintf(stderr, "\n%s\n\n", errmsg);
     }
-    fprintf(stderr, "Usage:\n%s [options] <image-file>\n", progname);
+    fprintf(stderr, "Usage:\n%s [options] <png-image-file>\n", progname);
     fprintf(stderr, "Options:\n"
-            "\t-d <val>   : DPI of input image. Default 600\n"
+            "\t-d <val>   : DPI of input image. Default -1\n"
             "\t-i         : Inverse image: black becomes laser on\n"
             "\t-M         : Inhibit move in x direction\n"
             "\t-F         : Run a focus round until the first Ctrl-C\n"
             "\t-n         : Dryrun. Do not do any scanning.\n"
             "\t-h         : This help\n");
     return errmsg ? 1 : 0;
+}
+
+SimpleImage *LoadPNGImage(const char *filename, bool invert, double *dpi) {
+    FILE *fp = fopen(filename, "rb");
+    if (!fp) {
+        perror("Opening image");
+        return NULL;
+    }
+    const png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING,
+                                                   NULL, NULL, NULL);
+    if (!png) return NULL;
+
+    const png_infop info = png_create_info_struct(png);
+    if (!info) return NULL;
+
+    png_init_io(png, fp);
+    png_read_info(png, info);
+
+    const png_byte bit_depth = png_get_bit_depth(png, info);
+    if (bit_depth == 16)
+        png_set_strip_16(png);
+
+    const png_byte color_type = png_get_color_type(png, info);
+    if (color_type == PNG_COLOR_TYPE_PALETTE)
+        png_set_palette_to_rgb(png);
+
+    // PNG_COLOR_TYPE_GRAY_ALPHA is always 8 or 16bit depth.
+    if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
+        png_set_expand_gray_1_2_4_to_8(png);
+
+    if (png_get_valid(png, info, PNG_INFO_tRNS))
+        png_set_tRNS_to_alpha(png);
+
+    if (color_type == PNG_COLOR_TYPE_RGB ||
+        color_type == PNG_COLOR_TYPE_PALETTE) {
+        png_set_rgb_to_gray(png, PNG_ERROR_ACTION_NONE,
+                            PNG_RGB_TO_GRAY_DEFAULT, PNG_RGB_TO_GRAY_DEFAULT);
+    }
+
+    const int width = png_get_image_width(png, info);
+    const int height = png_get_image_height(png, info);
+
+    png_uint_32 res_x, res_y;
+    int unit;
+    png_get_pHYs(png, info, &res_x, &res_y, &unit);
+    *dpi = (unit == PNG_RESOLUTION_METER) ? res_x / (1000 / 25.4) : res_x;
+
+    png_read_update_info(png, info);
+    png_bytep *const row_pointers = new png_bytep[height];
+    const int rowbytes = png_get_rowbytes(png, info);
+    png_byte *const data = new png_byte[height * rowbytes];
+    for (int y = 0; y < height; y++) {
+        row_pointers[y] = data + rowbytes * y;
+    }
+
+    png_read_image(png, row_pointers);
+
+    fprintf(stderr, "Reading %dx%d image.\n", width, height);
+    fflush(stderr);
+    const int bytes_per_pixel = rowbytes / width;
+    png_byte *pixel = data;
+    SimpleImage *result = new SimpleImage(width, height);
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            result->at(x, y) = ((*pixel > 128) ^ invert) ? 255 : 0;
+            pixel += bytes_per_pixel;
+        }
+    }
+
+    delete [] data;
+    delete [] row_pointers;
+
+    fclose(fp);
+    return result;
 }
 
 // Radius is given in pixels; output is a vector given a data position shows
@@ -88,49 +164,15 @@ static std::vector<int> PrepareTangensLookup(float radius_pixels,
             break;
         result.push_back(y_pixel);
     }
-    fprintf(stderr, "Last pixel was %d, using %d out of %d. scan angle: %.2f\n", result.back(),
-            result.size(), num, scan_angle_range / deg2rad);
-    return result;
-}
-
-// Load image and pre-process to be in a SimpleImage structure. Reading pixels
-// from a generic image is incredibly slow in Magick::Image in particular on
-// a Beaglebone, so this will save some time later in the scan loop.
-static SimpleImage *LoadImage(const char *filename, bool invert) {
-    std::vector<Magick::Image> bundle;
-    try {
-        fprintf(stderr, "Decode image %s\n", filename);
-        readImages(&bundle, filename);
-    } catch (std::exception& e) {
-        fprintf(stderr, "%s: %s\n", filename, e.what());
-        return NULL;
-    }
-    if (bundle.size() == 0) {
-        fprintf(stderr, "%s: Couldn't load image", filename);
-        return NULL;
-    }
-    if (bundle.size() > 1) {
-        fprintf(stderr, "%s contains more than one image. Using first.\n",
-                filename);
-    }
-    const Magick::Image &img = bundle[0];
-    fprintf(stderr, "Convert %dx%d image to bitmap. ",
-            (int)img.columns(), (int)img.rows());
-    fflush(stderr);
-    SimpleImage *result = new SimpleImage(img.columns(), img.rows());
-    for (size_t y = 0; y < img.rows(); ++y) {
-        for (size_t x = 0; x < img.columns(); ++x) {
-            const double gray = img.pixelColor(x, y).intensity();
-            result->at(x, y) = ((gray >= 0.5) ^ invert) ? 1 : 0;
-        }
-    }
-    fprintf(stderr, "Done.\n");
+    fprintf(stderr, "%d pixels in Y direction "
+            "(Nerd-info: using %d out of %d. scan angle: %.2f)\n",
+            result.back(), (int)result.size(),
+            (int)num, scan_angle_range / deg2rad);
     return result;
 }
 
 int main(int argc, char *argv[]) {
-    Magick::InitializeMagick(*argv);
-    int input_dpi = 600;
+    double input_dpi = -1;
     bool dryrun = false;
     bool invert = false;
     bool do_focus = false;
@@ -141,7 +183,7 @@ int main(int argc, char *argv[]) {
         switch (opt) {
         case 'h': return usage(argv[0]);
         case 'd':
-            input_dpi = atoi(optarg);
+            input_dpi = atof(optarg);
             break;
         case 'n':
             dryrun = true;
@@ -162,13 +204,14 @@ int main(int argc, char *argv[]) {
         return usage(argv[0], "Image file parameter expected.");
     if (argc > optind+1)
         return usage(argv[0], "Exactly one image file expected");
-    if (input_dpi < 100 || input_dpi > 20000)
-        return usage(argv[0], "DPI is somewhat out of usable range.");
 
     const char *filename = argv[optind];
-    SimpleImage *img = LoadImage(filename, invert);
+    SimpleImage *img = LoadPNGImage(filename, invert, &input_dpi);
     if (img == NULL)
         return 1;
+
+    if (input_dpi < 100 || input_dpi > 20000)
+        return usage(argv[0], "Couldn't extract usable DPI from image. Please provide -d <dpi>");
 
     const float image_resolution_mm_per_pixel = 25.4f / input_dpi;
     const float sled_step_per_pixel = image_resolution_mm_per_pixel / kSledMMperStep;
@@ -186,16 +229,13 @@ int main(int argc, char *argv[]) {
     const float laser_dots_per_mm = laser_dots_per_pixel / image_resolution_mm_per_pixel;
     // Let's see what the range is we need to scan.
     fprintf(stderr, "Exposure size: (%.1fmm long; %.1fmm wide).\n"
-            "For resolution of %d dpi: "
-            "%.1f sled steps per width-pixel; %s%.2f laser dots per height pixel. "
+            "Resolution %.0fdpi: "
+            "%.1f sled steps per width-pixel; %.2f laser dots per height pixel. "
             "%.3fmm dot resolution; %.1fkHz laser modulation.\n",
             img->width() * image_resolution_mm_per_pixel,
             img->height() * image_resolution_mm_per_pixel,
-            input_dpi,
-            sled_step_per_pixel, laser_dots_per_pixel < 1.0 ? "only ":"",
-            laser_dots_per_pixel,
-            1 / laser_dots_per_mm,
-            line_frequency * SCAN_PIXELS / 1000.0);
+            input_dpi, sled_step_per_pixel, laser_dots_per_pixel,
+            1 / laser_dots_per_mm, line_frequency * SCAN_PIXELS / 1000.0);
     fprintf(stderr, "Estimated time: %.0f seconds\n", scanlines / line_frequency);
 
     if (dryrun)
