@@ -173,7 +173,7 @@ static std::vector<int> PrepareTangensLookup(float radius_pixels,
 }
 
 int main(int argc, char *argv[]) {
-    double input_dpi = -1;
+    double commandline_dpi = -1;
     bool dryrun = false;
     bool invert = false;
     bool do_focus = false;
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
         switch (opt) {
         case 'h': return usage(argv[0]);
         case 'd':
-            input_dpi = atof(optarg);
+            commandline_dpi = atof(optarg);
             break;
         case 'n':
             dryrun = true;
@@ -207,9 +207,13 @@ int main(int argc, char *argv[]) {
         return usage(argv[0], "Exactly one image file expected");
 
     const char *filename = argv[optind];
+    double input_dpi = -1;
     SimpleImage *img = LoadPNGImage(filename, invert, &input_dpi);
     if (img == NULL)
         return 1;
+
+    if (input_dpi < 100 || input_dpi > 20000)
+        input_dpi = commandline_dpi;
 
     if (input_dpi < 100 || input_dpi > 20000)
         return usage(argv[0], "Couldn't extract usable DPI from image. Please provide -d <dpi>");
