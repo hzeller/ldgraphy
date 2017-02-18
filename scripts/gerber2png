@@ -29,7 +29,14 @@ if [ ! -z "$DRILL_FILE" ] ; then
 fi
 
 
-# TODO: patch gerbv to also have pnm output
-gerbv --dpi=$DPI -xpng -o/dev/stdout -b"#ffffff" $DRILL_LAYER $COPPER_LAYER
+# gerbv can't export the DPI in the png output file (working on it, requires
+# patches to Cairo and gerbv). Till then, export first as PostScript, then
+# generate PNG from it with proper DPI settings.
 
-rm -f /tmp/*.$$.drl
+# .. generate PostScript
+gerbv -xps -o/tmp/gerbvtmp.$$.ps -b"#ffffff" $DRILL_LAYER $COPPER_LAYER
+
+# .. convert to PNG, set DPI.
+`dirname $0`/ps2bwpng $DPI /tmp/gerbvtmp.$$.ps
+
+rm -f /tmp/*.$$.drl /tmp/gerbvtmp.$$.ps
