@@ -111,7 +111,7 @@ SimpleImage *LoadPNGImage(const char *filename, bool invert, double *dpi) {
     const int width = png_get_image_width(png, info);
     const int height = png_get_image_height(png, info);
 
-    png_uint_32 res_x, res_y;
+    png_uint_32 res_x = 0, res_y = 0;
     int unit;
     png_get_pHYs(png, info, &res_x, &res_y, &unit);
     *dpi = (unit == PNG_RESOLUTION_METER) ? res_x / (1000 / 25.4) : res_x;
@@ -126,7 +126,7 @@ SimpleImage *LoadPNGImage(const char *filename, bool invert, double *dpi) {
 
     png_read_image(png, row_pointers);
 
-    fprintf(stderr, "Reading %dx%d image.\n", width, height);
+    fprintf(stderr, "Reading %dx%d image (res=%.f).\n", width, height, *dpi);
     fflush(stderr);
     const int bytes_per_pixel = rowbytes / width;
     png_byte *pixel = data;
