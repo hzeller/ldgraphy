@@ -23,7 +23,7 @@
 
 % reliefs on inner edges for finger/slots.
 /do-reliefs true def
-/relief-r 0.3 mm def
+/relief-r 0.15 mm def
 
 /slot-thick acrylic-t def  % slot thickness for snug fit.
 
@@ -226,7 +226,7 @@
   sdx sdy -0.5 mm perpendicular rmoveto
   sdx sdy connect-screw-len perpendicular rlineto
   sdx sdy -1 mm colinear rlineto
-  currentpoint 0.2 mm circle
+  relief-here
   sdx sdy 1.6 mm perpendicular rlineto
   sdx sdy 1 mm colinear rlineto
   sdx sdy connect-screw-len 2 div perpendicular rlineto
@@ -235,7 +235,7 @@
   sdx sdy 1 mm colinear rlineto
   sdx sdy -1.6 mm perpendicular rlineto
   currentpoint stroke moveto
-  currentpoint 0.2 mm circle
+  relief-here
   sdx sdy -1 mm colinear rlineto
   sdx sdy connect-screw-len neg perpendicular rlineto
   currentpoint stroke moveto
