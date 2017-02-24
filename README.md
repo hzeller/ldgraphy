@@ -3,9 +3,9 @@ LDgraphy - Laser Direct Lithography
 
 Or Laser Direct Imaging, whatever you prefer.
 
-(work in progress, nothing to see here yet)
+_(work in progress, nothing to see here yet)_
 
-Simple implementation of direct photo resist exposure using a 405nm laser.
+Simple implementation of photo resist exposure directly using a 405nm laser.
 
 Uses
   * 500mW 405nm laser
@@ -21,11 +21,11 @@ Build
 git clone --recursive https://github.com/hzeller/ldgraphy.git
 ```
 
-Install relevant packages. We are reading images as input, so we need a library
-that helps us with that:
+Install relevant packages. We are reading png-images as input, so we need the
+library that helps us with that (probably already installed on your system):
 ```
 sudo apt-get update
-sudo apt-get install libgraphicsmagick++-dev libwebp-dev -y
+sudo apt-get install libpng-dev -y
 ```
 
 Then compile:
@@ -49,41 +49,29 @@ Options:
 
 Case
 ----
-There is [work-in-progress](./hardware) to make a case that does not need
-extruded aluminum which was used for the first test, but rather a simple
-laser-cut acrylic case.
+The first test-device was put together with extruded aluminum
+(see below). There is [work-in-progress](./hardware) to make a case out of
+laser-cut acrylic to have it cheap and simple to build for everyone who has
+access to a laser cutter (hint: your local Hackerspace might have one).
 
 ![Case](./img/sample-case.jpg)
 
 This was the first experiment
 -------------------------------
 
-## First Light
+#### First Light
 
    Setup               | Result
 -----------------------|---------------------------------
 ![](./img/setup.jpg)   | ![](./img/firstexposure.jpg)
 
 Somewhat crappy first result, but has potential. Exposure time for this 30 mm
-long patch was around 90 seconds.
+long patch was around 90 seconds (for reference: on the right is how the
+geometry _should_ look like).
 
-(for reference: on the right is how the geometry _should_ look like).
+As you can see, the early stages had some issues, e.g. you can't trust the "PLL"
+of the mirror to properly lock - it has a phase drift over
+time (hence the 'curve'). Overall the [progress] after that improved various
+issues seen up to the point where it starts to be usable for PCB work.
 
-There are a couple of known problems:
-
-  * Focus: the focus of the laser is not optimized yet. The lens that is mounted
-    to the laser is pretty fiddely and wobbles around a lot in its socket. That
-    needs to be fixed before real PCB exposure.
-  * Distortion: Looks like there was some initial distortion due to mirror
-    timing that got better over time. I suspect the slow speed I am driving
-    the mirror (250 lines/s) makes the its PLL unhappy and creates some drift
-    initially.
-    (I can't drive it much faster right now as that will give
-    bandwidth trouble in the laser. Probably this means the laser driver needs
-    to be redone).
-  * I am missing a ACME nut for my X-axis: the sled was pulled with
-    shapelock-formed nut, pulled on some electric tape :). So, uhm, that needs
-    improvement.
-
-So, given the known problems and this was essentially the first run with the
-initial software, this is not _too_ bad.
+[progress]: https://plus.google.com/u/0/+HennerZeller/posts/FeqdPoEZ3AT
