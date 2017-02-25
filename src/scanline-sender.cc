@@ -110,7 +110,7 @@ void PRUScanLineSender::WaitUntil(int pos, int state) {
     }
 }
 
-DummyScanLineSender::DummyScanLineSender() {
+DummyScanLineSender::DummyScanLineSender() : lines_enqueued_(0) {
     fprintf(stderr, "Dry-run, including rough timing simulation.\n");
 }
 

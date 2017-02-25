@@ -22,6 +22,12 @@
 #include "uio-pruss-interface.h"
 #include <stdint.h>
 
+#if __GNUC__ == 4 && __GNUC_MINOR__ < 7
+// Stupid old compiler on beaglebone black does not understand
+// this one yet.
+#  define override
+#endif
+
 class ScanLineSender {
 public:
     virtual ~ScanLineSender() {}
@@ -71,7 +77,7 @@ public:
     bool Shutdown() override;
 
 private:
-    int lines_enqueued_ = 0;
+    int lines_enqueued_;
 };
 
 #endif  // LDGRAPHY_SCANLINESENDER_H
