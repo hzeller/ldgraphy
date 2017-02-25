@@ -22,57 +22,31 @@
 #include <strings.h>
 #include <stdio.h>
 
-template <int N>
 class BitArray {
 public:
-    BitArray() : offset_(0) { Clear(); }
+    BitArray(size_t size)
+        : size_(size), buffer_(new uint8_t[(size+7)/8]) {
+        Clear();
+    }
+    ~BitArray() { delete [] buffer_; }
 
-    void Clear() {  bzero(buffer_, (N+7)/8); }
+    void Clear() {  bzero(buffer_, (size_+7)/8); }
 
-    // Always set bits at an offset.
-    void SetOffset(int off) { offset_ = off; }
-
-    void Set(int b, bool value) {
-        b += offset_;
-        if (b < 0 || b >= N) return;
+    void Set(int bit, bool value) {
+        if (bit < 0 || bit >= size_) return;
         if (value)
-            buffer_[b / 8] |= 1 << (7 - b % 8);
+            buffer_[bit / 8] |= 1 << (7 - bit % 8);
         else
-            buffer_[b / 8] &= ~(1 << (7 - b % 8));
+            buffer_[bit / 8] &= ~(1 << (7 - bit % 8));
     }
 
     const uint8_t *buffer() const { return buffer_; }
-    int size() const { return N; }
+    int size() const { return size_; }
 
 private:
-    int offset_;
-    uint8_t buffer_[N+7/8];
+    const int size_;
+    uint8_t *const buffer_;
 };
 
-// An Image .. 2D container essentially.
-class SimpleImage {
-public:
-    SimpleImage(int width, int height)
-        : width_(width), height_(height), buffer_(new char [width * height]) {}
-    ~SimpleImage() { delete [] buffer_; }
-
-    int width() const { return width_; }
-    int height() const { return height_; }
-
-    char &at(int x, int y) {
-        if (x < 0 || x >= width_ || y < 0 || y >= height_) return buffer_[0];
-        return buffer_[width_ * y + x];
-    }
-
-    void ToPGM(FILE *file) {
-        fprintf(file, "P5\n%d %d\n255\n", width_, height_);
-        fwrite(buffer_, 1, width_ * height_, file);
-        fclose(file);
-    }
-
-private:
-    const int width_, height_;
-    char *const buffer_;
-};
 
 #endif // LDGRAPHY_CONTAINERS_H

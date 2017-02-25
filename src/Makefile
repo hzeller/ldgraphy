@@ -21,7 +21,7 @@ INCDIR_APP_LOADER?=$(AM335_BASE)/pru_sw/app_loader/include
 # environment variable.
 LDGRAPHY_OPT_CFLAGS?=-O3
 
-CFLAGS+=-Wall -Wno-unused-function -I$(INCDIR_APP_LOADER) -D_XOPEN_SOURCE=500 $(ARM_COMPILE_FLAGS) $(LDGRAPHY_OPT_CFLAGS)
+CFLAGS+=-Wall -W -Wno-unused-function -I$(INCDIR_APP_LOADER) -D_XOPEN_SOURCE=500 $(ARM_COMPILE_FLAGS) $(LDGRAPHY_OPT_CFLAGS)
 
 # We use c++11, but it looks like that even the latest
 # bone-debian-7.11-lxde-4gb-armhf-2016-06-16-4gb image has an ancient 4.6.3
@@ -35,7 +35,7 @@ PRUSS_LIBS=$(LIBDIR_APP_LOADER)/libprussdrv.a
 # Assembled binary from *.p file.
 PRU_BIN=laser-scribe-pru_bin.h
 
-OBJECTS=uio-pruss-interface.o scanline-sender.o
+OBJECTS=uio-pruss-interface.o scanline-sender.o image-processing.o ldgraphy-scanner.o
 MAIN_OBJECTS=main.o
 TARGETS=ldgraphy
 

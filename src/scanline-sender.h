@@ -22,23 +22,38 @@
 #include "uio-pruss-interface.h"
 #include <stdint.h>
 
-// Sends scan lines to the ring-buffer in the PRU.
 class ScanLineSender {
 public:
-    ScanLineSender();
-    ~ScanLineSender();
-
-    // Initialize and return if successful.
-    bool Init();
+    virtual ~ScanLineSender() {}
 
     // Enqueue next scanline. Blocks until there is space in the ring buffer.
-    void EnqueueNextData(const uint8_t *data, size_t size, bool sled_on);
+    // If "sled_on" == true, then advances the sled after this line.
+    virtual void EnqueueNextData(const uint8_t *data, size_t size,
+                                 bool sled_on) = 0;
 
     // Shutdown the system.
-    bool Shutdown();
+    virtual bool Shutdown() = 0;
+};
+
+// Lower-level interface with the hardware: send scan lines to the ring-buffer
+// in the PRU.
+class PRUScanLineSender : public ScanLineSender {
+public:
+    virtual ~PRUScanLineSender();
+
+    // Create and initialize hardware (which might fail). Return non-null
+    // object if successful.
+    static ScanLineSender *Create();
+
+    // -- ScanLineSender interface
+    void EnqueueNextData(const uint8_t *data, size_t size, bool sled_on) override;
+    bool Shutdown() override;
 
 private:
-    class QueueElement;
+    PRUScanLineSender();
+    bool Init();
+
+    struct QueueElement;
 
     void WaitUntil(int pos, int state);
 
@@ -46,6 +61,17 @@ private:
     bool running_;
     int queue_pos_;
     UioPrussInterface pru_;
+};
+
+class DummyScanLineSender : public ScanLineSender {
+public:
+    DummyScanLineSender();
+
+    void EnqueueNextData(const uint8_t *data, size_t size, bool sled_on) override;
+    bool Shutdown() override;
+
+private:
+    int lines_enqueued_ = 0;
 };
 
 #endif  // LDGRAPHY_SCANLINESENDER_H

@@ -20,6 +20,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "laser-scribe-constants.h"
 
@@ -34,20 +35,29 @@ static void unaligned_memcpy(volatile void *dest, const void *src, size_t size) 
   }
 }
 
-struct ScanLineSender::QueueElement {
+struct PRUScanLineSender::QueueElement {
     volatile uint8_t state;
     volatile uint8_t data[SCANLINE_DATA_SIZE];
 };
 
-ScanLineSender::ScanLineSender() : running_(false), queue_pos_(0) {
+PRUScanLineSender::PRUScanLineSender() : running_(false), queue_pos_(0) {
     // Make sure that things are packed the way we think it is.
-    assert(sizeof(struct QueueElement) == SCANLINE_ITEM_SIZE);
+    assert(sizeof(QueueElement) == SCANLINE_ITEM_SIZE);
 }
-ScanLineSender::~ScanLineSender() {
+PRUScanLineSender::~PRUScanLineSender() {
     if (running_) pru_.Shutdown();
 }
 
-bool ScanLineSender::Init() {
+ScanLineSender *PRUScanLineSender::Create() {
+    PRUScanLineSender *result = new PRUScanLineSender();
+    if (!result->Init()) {
+        delete result;
+        return nullptr;
+    }
+    return result;
+}
+
+bool PRUScanLineSender::Init() {
     if (running_) {
         fprintf(stderr, "Already running. Init() has no effect\n");
         return false;
@@ -69,8 +79,8 @@ bool ScanLineSender::Init() {
     return running_;
 }
 
-void ScanLineSender::EnqueueNextData(const uint8_t *data, size_t size,
-                                     bool sled_on) {
+void PRUScanLineSender::EnqueueNextData(const uint8_t *data, size_t size,
+                                        bool sled_on) {
     assert(size == SCANLINE_DATA_SIZE);  // We only accept full lines :)
     WaitUntil(queue_pos_, CMD_EMPTY);
     unaligned_memcpy(ring_buffer_[queue_pos_].data, data, size);
@@ -83,7 +93,7 @@ void ScanLineSender::EnqueueNextData(const uint8_t *data, size_t size,
     queue_pos_ %= QUEUE_LEN;
 }
 
-bool ScanLineSender::Shutdown() {
+bool PRUScanLineSender::Shutdown() {
     WaitUntil(queue_pos_, CMD_EMPTY);
     ring_buffer_[queue_pos_].state = CMD_EXIT;
     // PRU will set it to empty again when actually halted.
@@ -94,8 +104,21 @@ bool ScanLineSender::Shutdown() {
     return true;
 }
 
-void ScanLineSender::WaitUntil(int pos, int state) {
+void PRUScanLineSender::WaitUntil(int pos, int state) {
     while (ring_buffer_[pos].state != state) {
         pru_.WaitEvent();
     }
+}
+
+DummyScanLineSender::DummyScanLineSender() {
+    fprintf(stderr, "Dry-run, including rough timing simulation.\n");
+}
+
+void DummyScanLineSender::EnqueueNextData(const uint8_t *, size_t, bool) {
+    lines_enqueued_++;
+    usleep(1000000 / 257);  // rough simulation of scan; see line_frequency
+}
+bool DummyScanLineSender::Shutdown() {
+    fprintf(stderr, "Dry-run: total %d lines sent\n", lines_enqueued_);
+    return true;
 }
