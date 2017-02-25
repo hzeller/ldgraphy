@@ -41,7 +41,7 @@ constexpr int kMirrorFaces = 6;
 // half.
 constexpr float segment_data_angle = (360 / kMirrorFaces) * deg2rad;
 
-constexpr float kRadiusMM = 130.0;   // distance between rot-mirror -> PCB
+constexpr float kRadiusMM = 133.0;   // distance between rot-mirror -> PCB
 //constexpr float bed_len = 160.0;
 constexpr float bed_width = 100.0;   // Width of the laser to throw.
 
