@@ -23,8 +23,7 @@
 #include <stdint.h>
 
 #if __GNUC__ == 4 && __GNUC_MINOR__ < 7
-// Stupid old compiler on beaglebone black does not understand
-// this one yet.
+// Default ompiler on beaglebone black does not understand this one yet.
 #  define override
 #endif
 
