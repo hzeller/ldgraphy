@@ -37,13 +37,14 @@
 
 % Show measurement lines and descriptions. Switch these off before generating
 % the DXF to save space (there are more gaps for the measurements)
-/print-measures true def
+/print-measures false def
 
 % For testing while tweaking finger/slot output on your laser cutter.
 % Typical tweak parameters are /acrylic-t, /do-reliefs, /relief-r, /slot-thick
 /print-TEST-finger-slot false def
 
 /mm { 72 25.4 div mul } bind def
+/max { 1 index 1 index lt { exch pop } { pop } ifelse } def
 
 /acrylic-t 3 mm def        % Material thickness.
 /pcb-w-mm 100 def          % Size of PCB
@@ -88,7 +89,7 @@
 /acme-dia 5 mm def            % acme screw diameter
 
 /drive-mount-pos stepper-len def  % stepper mount position seen from back
-/drive-screw-start 35 mm def      % axle to where acme screw starts. Coupler
+/drive-screw-start 35 mm 10 mm max def      % axle to where acme screw starts. Coupler
 /bearing-mount-pos
     stepper-len drive-screw-start add  % starting from here
     pcb-h add                          % .. the amount we need to move
@@ -162,8 +163,12 @@
     polygon-mirror-r 2 mul add def
 
 % We want to be at least half pcb sled longer so that we are supported
-% at center of gravity.
-/inner-device-len laser-slot-distance bed-h 2 div add def
+% at center of gravity. However, the mechanics might require to be longer.
+/inner-device-len
+   laser-slot-distance bed-h 2 div add
+   bearing-mount-pos acrylic-t add 5 mm add
+   max
+   def
 /inner-device-high bed-slide-high-bottom bed-slide-high-top add acrylic-t add def
 
 /mirror-holder-width 20 mm def  % width of the 45 degree down mirror holder
