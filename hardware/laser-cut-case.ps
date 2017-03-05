@@ -13,6 +13,8 @@
 
 /print-pcbframe false def  % Suggested to cut on thinner material (1mm acrylic)
 
+/print-measures false def   % Show measurement lines.
+
 % For testing while tweaking finger/slot output on your laser cutter.
 % Typical tweak parameters are /acrylic-t, /do-reliefs, /relief-r, /slot-thick
 /print-TEST-finger-slot false def
@@ -135,12 +137,123 @@
 
 % -- variables to place properly between cuts
 % distance between different cuts
-/cut-dist 1 mm def
+/cut-dist print-measures { 6 mm } { 1 mm } ifelse def
 /side-cut-distance inner-device-high 2 mul mirror-holder-high add cut-dist add acrylic-t add 35 mm add def
 
 % Linewidth doesn't do anything to the DXF output, it just makes it easier
 % to manually inspect in the PostScript viewer.
 1 setlinewidth
+
+%%-- measureline.ps
+
+% Measure-line features. It is a little hard to get things PostScript files
+% included depending on context. So we include it here manually.
+/measure-fontsize 5 mm def
+/measure-font /Courier-Bold findfont measure-fontsize scalefont def
+/measure-dict << >> def
+/measure-col { 0.7 0.7 0.7 setrgbcolor } def
+
+% x y
+/measure-to {
+    2 copy atan rotate
+    dup mul exch dup mul add sqrt /len exch def
+    /offset exch def
+    /display-len len 72 div 25.4 mul 100 mul round 100 div def
+    %0 offset moveto len offset lineto
+
+    % Without offset, add at least a little measurement stub.
+    offset 0 eq {
+      0 offset -0.5 mm add moveto   0 offset 0.5 mm add lineto
+      len offset -0.5 mm add moveto len offset 0.5 mm add lineto
+    } if
+
+    % Arrow between lines
+    0 offset moveto 0.5 mm offset 0.5 mm add lineto
+    0 offset moveto 0.5 mm offset -0.5 mm add lineto
+
+    len offset moveto len 0.5 mm sub offset 0.5 mm add lineto
+    len offset moveto len 0.5 mm sub offset -0.5 mm add lineto
+
+    0 0 moveto 0 offset lineto
+    len 0 moveto len offset lineto
+
+    display-len (         ) cvs
+    dup stringwidth pop ( mm) stringwidth pop add 2 div /text-w-half exch def
+
+    0 offset moveto len 2 div text-w-half sub 0.5 mm sub offset lineto
+
+    len 2 div text-w-half sub         % x
+    offset measure-fontsize 3 div sub moveto
+    show ( mm) show
+    len 2 div text-w-half add 0.5 mm add offset moveto
+    len offset lineto
+    stroke
+} def
+
+/measure-line {
+    4 2 roll
+    2 copy translate
+    % 2=20 20 1=20 10
+    3 -1 roll exch  % 20 20 10 20
+    sub        % 20 20 dx
+    3 1 roll sub % dx dy
+    measure-to
+} def
+
+% pos-x pos-y
+/measure-A {
+    userdict /current-measure [0  0 0  0 0] put  % global variable
+    current-measure 1 3 index put   % x
+    current-measure 2 2 index put   % y
+} def
+/current-measure-A {
+    currentpoint measure-A pop pop
+} def
+
+% pos-x pos-y [optional-array-with-offset]
+/measure-B {
+    dup type (arraytype) eq {
+	0 get   % get offset
+	current-measure 0 3 -1 roll put
+    } if
+    current-measure 3 3 index put   % x
+    current-measure 4 2 index put   % y
+    measure-dict measure-dict length current-measure put  % now append at end.
+} def
+/current-measure-B {
+    count 0 gt {
+      dup type (arraytype) eq {
+	0 get   % get offset
+	current-measure 0 3 -1 roll put
+      } if
+    } if
+    currentpoint measure-B pop pop
+} def
+
+/clear-measures {
+    userdict /measure-dict << >> put
+} def
+
+/flush-measures {
+    stroke   % Flush whatever is to be drawn, otherwise ghostscript does it twice
+    print-measures {
+      gsave
+      0.5 setlinewidth
+      measure-col
+      measure-font setfont
+      measure-dict {
+        gsave
+        aload pop   % put array content on stack. Get rid of array
+        measure-line
+        grestore
+        pop         % get rid of dict key.
+      } forall
+      grestore
+    } if
+    clear-measures
+} def
+
+%%-- measureline.ps
 
 /inner-cut { 1 0 0 setrgbcolor } def
 /outer-cut { 0 0 0 setrgbcolor } def
@@ -513,6 +626,7 @@
 } def
 
 % make a box at current position with given width/height
+% w h -> -
 /box {
   2 dict begin
   /h exch def
@@ -523,6 +637,19 @@
   w neg 0 rlineto
   0 h neg rlineto
   closepath stroke
+  end
+} def
+
+% Like box, but just take the measurements from the stack without drawing
+% the box.
+% w h -> w h
+/measure-box {
+  2 dict begin
+  /h 1 index def
+  /w 2 index def
+
+  current-measure-A currentpoint exch w add exch [-3 mm] measure-B pop pop
+  current-measure-A currentpoint h add [3 mm] measure-B pop pop
   end
 } def
 
@@ -548,6 +675,7 @@
    /width exch def
 
    currentpoint
+   stroke   % need to flush state before gsave/grestore
    gsave
    translate
    0 radius add 0 moveto
@@ -570,6 +698,7 @@
 % Boolean if outline should be printed
 % bool x y
 /rot-mirror-footprint {
+    stroke
     gsave
     translate
     0 0 moveto
@@ -616,6 +745,7 @@
     % bottom area
     newpath
     0 0 moveto
+    current-measure-A
 
     % up to mirror slot
     laser-slot-distance mirror-holder-r sub 0 finger-lineto-noscrew
@@ -625,6 +755,8 @@
 
     % to the end on the right.
     inner-device-len 0 finger-lineto-noscrew
+
+    [-5 mm] current-measure-B
 
     % up. Either straight line or circular cut
     false {
@@ -654,11 +786,14 @@
     bed-w 2 div
         rot-mirror-footprint stroke
 
+    % Wire hole for polygon mirror
     laser-slot-distance mirror-center-mount-from-slot sub 5 mm sub
     bed-w 12 mm sub moveto
     12 mm 5 mm 2 mm rounded-corner-box stroke
 
-    18 mm 36 mm 3 mm circle   % polygon mirror wires
+    % laser wires
+    18 mm 36 mm 3 mm circle
+
     % Holes to mount the laser. Two holes in 20 mm distance
     35 mm 17 mm screw
     55 mm 17 mm screw stroke
@@ -670,7 +805,7 @@
 
     % Laser slot
     laser-slot-distance laser-slot-h 2 div sub bed-w laser-slot-w sub 2 div moveto
-    laser-slot-h laser-slot-w 3 mm rounded-corner-box
+    laser-slot-h laser-slot-w measure-box 3 mm rounded-corner-box
 
     gsave
       engraving-cut
@@ -680,18 +815,21 @@
       0 -18 mm rmoveto
       gsave (LDGraphy) center-show grestore
    grestore
+   flush-measures
 } def
 
 /part-sidepanel {
   newpath
-   % bottom parth
-    0 0 moveto
-    inner-device-len 0 lineto
+   % bottom part
+   0 0 moveto current-measure-A
+   inner-device-len 0 lineto [-3 mm] current-measure-B
 
    % up right side (back)
+   current-measure-A
    1 dict begin
       /finger-len 12 mm def
      inner-device-len inner-device-high down-mirror-high add mirror-holder-r add acrylic-t sub groove-lineto
+     [-8 mm] current-measure-B
    end
 
     inner-device-len laser-slot-distance sub
@@ -708,10 +846,12 @@
     0 inner-device-high groove-lineto-noscrew
 
    % down left side (front)
+   current-measure-A
    1 dict begin
       /finger-len 9 mm def
       0 inner-device-high inner-device-high front-cover-high sub sub lineto
       0 0 groove-lineto
+      [-6 mm] current-measure-B
     end
     stroke
 
@@ -776,7 +916,9 @@
 
    1 dict begin
       /finger-len 12 mm def
+      current-measure-A
       bed-w inner-device-high down-mirror-high add mirror-holder-r add acrylic-t sub finger-lineto   % up
+      [-6 mm] current-measure-B
       bed-w neg 0 rlineto  % flat back for now.
       0 0 finger-lineto   % down
    end
@@ -785,16 +927,19 @@
    % Top-panel matching.
    0 inner-device-high moveto
    bed-w 0 slot-rlineto-h stroke
+   flush-measures
 } def
 
 /part-front {
    newpath
-   0 0 moveto
-   bed-w 0 lineto
+   0 0 moveto current-measure-A
+   bed-w 0 lineto [-3 mm] current-measure-B
 
+   current-measure-A
    1 dict begin
       /finger-len 9 mm def
       bed-w front-cover-high finger-lineto   % up
+      [-6 mm] current-measure-B
    end
 
    bed-w neg 0 rlineto       % top accross
@@ -805,6 +950,7 @@
    end
 
    stroke
+   flush-measures
 } def
 
 /part-pcb-frame {
@@ -862,7 +1008,9 @@
   gsave
   0 0 moveto
   bed-drive-h 0 rlineto
+  current-measure-A
   0 bed-drive-w rlineto
+  [-3 mm] current-measure-B
   bed-drive-h neg 0 rlineto
   0 bed-drive-w neg finger-rlineto-noscrew
   stroke
@@ -879,7 +1027,9 @@
 
 /part-sled {
   2 dict begin
-  0 0 moveto bed-h bed-w 3 mm rounded-corner-box  % the sled
+  0 0 moveto bed-h bed-w measure-box 3 mm rounded-corner-box  % the sled
+  flush-measures
+  stroke
 
   % endswitch trigger thing: slots in the sled.
   /finger-len 3 mm def
@@ -908,8 +1058,10 @@
 
   % drive holder. this should be a separate sub-part
   gsave
-   bed-h cut-dist add acrylic-t add 0 translate subpart-drive-holder
-   bed-drive-h cut-dist add 6 mm add 0 translate subpart-drive-holder
+   bed-h cut-dist add acrylic-t add 0 translate
+   subpart-drive-holder flush-measures
+   bed-drive-h cut-dist add 6 mm add 0 translate
+   subpart-drive-holder clear-measures
    stroke
   grestore
 
@@ -919,7 +1071,8 @@
 
    % nut holder. That should be a separate sub-part.
    bed-drive-wobble 0 moveto
-   bed-drive-h bed-drive-wobble sub bed-drive-w 2 mm rounded-corner-box
+   bed-drive-h bed-drive-wobble sub bed-drive-w measure-box 2 mm rounded-corner-box
+   flush-measures
 
    % Placing the nut.
    gsave
@@ -945,7 +1098,7 @@
   % since this is fluorescent material, cut out the hsync collector here.
   gsave
      % more fudging with moving to a free space...
-     bed-h 30 mm add bed-w 20 mm sub translate
+     bed-h 30 mm add cut-dist 2 mul add    bed-w 20 mm sub translate
      0 0 moveto hsync-len hsync-w box
      0 hsync-w cut-dist add moveto hsync-len hsync-w box
      % ... do it a couple of times, as some will fall through the cracks :)
@@ -1001,7 +1154,7 @@
 
 /part-bottom {
   acrylic-t neg acrylic-t neg moveto
-  inner-device-len acrylic-t 2 mul add bed-w acrylic-t 2 mul add box
+  inner-device-len acrylic-t 2 mul add bed-w acrylic-t 2 mul add measure-box box
 
   1 dict begin
   /finger-len 15 mm def
@@ -1023,6 +1176,7 @@
     gsave 0 bed-w translate -22 mm acrylic-t 2 mul sub 8 mm slide-holes stroke grestore
   } if
   end
+  flush-measures
 } def
 
 %% Assembly
@@ -1061,8 +1215,9 @@ print-slide-rail-top {
 
 print-sidepanels {
   % Two side-panels, turned around and printed in place
-  part-sidepanel
-  gsave inner-device-len side-cut-distance translate 180 rotate part-sidepanel grestore
+  part-sidepanel flush-measures
+  gsave inner-device-len side-cut-distance translate 180 rotate part-sidepanel
+  clear-measures grestore
   % move up
   0 side-cut-distance cut-dist add translate
 } if
