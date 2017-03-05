@@ -13,7 +13,7 @@
 
 /print-pcbframe false def  % Suggested to cut on thinner material (1mm acrylic)
 
-/print-measures false def   % Show measurement lines.
+/print-measures false def   % Show measurement lines and descriptions
 
 % For testing while tweaking finger/slot output on your laser cutter.
 % Typical tweak parameters are /acrylic-t, /do-reliefs, /relief-r, /slot-thick
@@ -317,12 +317,14 @@
 
 % (description) x y
 /describe {
-    -gsave
-    /Helvetica findfont 8 mm scalefont setfont
-    measure-col
-    moveto
-    show
-    grestore
+    print-measures {
+      -gsave
+      /Helvetica findfont 8 mm scalefont setfont
+      measure-col
+      moveto
+      show
+      grestore
+    } if
 } def
 
 % r
