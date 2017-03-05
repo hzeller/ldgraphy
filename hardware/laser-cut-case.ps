@@ -1141,14 +1141,15 @@
   end-switch-trigger-len 0 slot-rlineto
   stroke
 
+  % measurement endswitch trigger
   end-switch-from-back-of-sled
   bed-w 2 div end-switch-offset add measure-A pop pop
   end-switch-from-back-of-sled bed-w [-30 mm] measure-B pop pop
 
-  /finger-len 6 mm def
-
   0 bed-w 2 div measure-A pop pop
   bed-drive-pos bed-w 2 div [-40 mm (bed-drive-pos)] measure-B pop pop
+
+  /finger-len 6 mm def
 
   % slots on sled for drive train.
   gsave
@@ -1170,6 +1171,7 @@
   1 dict begin
   % drive holder. this should be a separate sub-part
   gsave
+   /finger-len 6 mm def
    acrylic-t 0 translate
    subpart-drive-holder flush-measures
    bed-drive-h cut-dist add 6 mm add 0 translate
