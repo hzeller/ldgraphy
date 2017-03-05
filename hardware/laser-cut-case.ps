@@ -13,7 +13,7 @@
 
 /print-pcbframe false def  % Suggested to cut on thinner material (1mm acrylic)
 
-/print-measures true def   % Show measurement lines and descriptions
+/print-measures false def   % Show measurement lines and descriptions
 
 % For testing while tweaking finger/slot output on your laser cutter.
 % Typical tweak parameters are /acrylic-t, /do-reliefs, /relief-r, /slot-thick
@@ -1072,6 +1072,21 @@
    flush-measures
 } def
 
+/pcbframe-alignment-holes {
+   bed-pcb-off-h 2 div
+   bed-pcb-off-w acrylic-t add 2 div 0.5 mm circle
+
+   bed-pcb-off-h 2 div
+   bed-w bed-pcb-off-w acrylic-t add 2 div sub 0.5 mm circle
+
+   bed-h bed-pcb-off-h 2 div sub
+   bed-pcb-off-w acrylic-t add 2 div 0.5 mm circle
+
+   bed-h bed-pcb-off-h 2 div sub
+   bed-w bed-pcb-off-w acrylic-t add 2 div sub 0.5 mm circle
+   stroke
+} def
+
 /part-pcbframe {
   (PCB Frame) 30 mm 20 mm describe
   % Frame to place PCB in.
@@ -1079,6 +1094,8 @@
    % Outer frame
    0 acrylic-t moveto
    bed-h bed-w acrylic-t 2 mul sub box
+
+   pcbframe-alignment-holes
 
    bed-pcb-off-h bed-pcb-off-w measure-A pop pop
    bed-pcb-off-h bed-pcb-off-w pcb-w add [-6 mm (pcb-w)] measure-B pop pop
@@ -1157,6 +1174,10 @@
   3 dict begin
   0 0 moveto bed-h bed-w 3 mm rounded-corner-box  % the sled
   stroke
+
+  pcbframe-alignment-holes
+
+  %gsave part-pcbframe grestore  % testing
 
   0 0 measure-A pop pop
   bed-h 0 [6 mm (bed-h)] measure-B pop pop
