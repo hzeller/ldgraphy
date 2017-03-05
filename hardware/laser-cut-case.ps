@@ -191,9 +191,13 @@
 % x y
 /measure-to {
     2 copy atan rotate
+    5 dict begin
     dup mul exch dup mul add sqrt /len exch def
     /offset exch def
     /display-len len 72 div 25.4 mul 100 mul round 100 div def
+    /arrow-len 3 mm def
+    /arrow-w 1 mm def
+
     %0 offset moveto len offset lineto
 
     % Without offset, add at least a little measurement stub.
@@ -203,11 +207,11 @@
     } if
 
     % Arrow between lines
-    0 offset moveto 0.5 mm offset 0.5 mm add lineto
-    0 offset moveto 0.5 mm offset -0.5 mm add lineto
+    0 offset moveto arrow-len offset arrow-w add lineto
+    0 offset moveto arrow-len offset arrow-w neg add lineto
 
-    len offset moveto len 0.5 mm sub offset 0.5 mm add lineto
-    len offset moveto len 0.5 mm sub offset -0.5 mm add lineto
+    len offset moveto len arrow-len sub offset arrow-w add lineto
+    len offset moveto len arrow-len sub offset arrow-w neg add lineto
 
     0 0 moveto 0 offset lineto
     len 0 moveto len offset lineto
@@ -222,6 +226,7 @@
     show ( mm) show
     len 2 div text-w-half add 0.5 mm add offset moveto
     len offset lineto
+    end
     stroke
 } def
 
