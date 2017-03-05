@@ -523,36 +523,8 @@
 /finger-lineto-noscrew {  { finger-rlineto-noscrew } lineto-to-rlineto-proc } def
 /groove-lineto-noscrew {  { groove-rlineto-noscrew } lineto-to-rlineto-proc } def
 
-% dx dy  TODO: this very is hacky. only works vertical
-/slot-rlineto-v {
-    gsave
-    inner-cut
-    9 dict begin
-    /dy exch def
-    /dx exch def
-    /len dx dx mul dy dy mul add sqrt def
-    /segments
-         len finger-len sub  % we want one finger len at the end
-	 finger-len 2 mul    % number of low and up segments
-	 div floor cvi def
-    /extra-fraction len finger-len sub
-         segments finger-len 2 mul mul sub len div 2 div def
-    dx extra-fraction mul dy extra-fraction mul rmoveto
-    /sdx dx finger-len len div mul def
-    /sdy dy finger-len len div mul def
-    1 1 segments {
-	pop
-	sdx sdy rmoveto
-	currentpoint
-	slot-thick sdy relief-box
-	moveto 0 sdy rmoveto
-    } for
-    end
-    grestore
-} def
-
-% this is very hacky.
-/slot-rlineto-h {
+% dx dy
+/slot-rlineto {
     gsave
     inner-cut   % inside kerf correction.
     9 dict begin
@@ -565,6 +537,11 @@
 	 div floor cvi def
     /extra-fraction len finger-len sub
          segments finger-len 2 mul mul sub len div 2 div def
+
+    currentpoint translate dy dx atan rotate
+
+    /dx len def
+    /dy 0 def
     dx extra-fraction mul dy extra-fraction mul rmoveto
     /sdx dx finger-len len div mul def
     /sdy dy finger-len len div mul def
@@ -575,16 +552,18 @@
 	sdx slot-thick relief-box
 	moveto sdx 0 rmoveto
     } for
+    stroke
+    print-measures { measure-col 0 0 moveto len 0 lineto stroke } if
     end
     grestore
 } def
 
-/slot-lineto-h {  % need: (xt - x) (yt - y)
+/slot-lineto {  % need: (xt - x) (yt - y)
     currentpoint  % xt yt x y
     3 -1 roll exch sub  % xt yt x y -> xt x y yt -> xt x yt y -> xt x (yt - y)
     3 1 roll sub  % dy dx
     exch
-    slot-rlineto-h
+    slot-rlineto
 } def
 
 % r is the outer radius.
@@ -907,9 +886,12 @@
    bed-slide-high-top screw-r slide-holes grestore
 
    % slots to hold top-panel
-   inner-device-len inner-device-high moveto
-   inner-device-len laser-slot-distance sub mirror-holder-r add inner-device-high slot-lineto-h
+   inner-device-len laser-slot-distance sub mirror-holder-r add
+   inner-device-high moveto
+   inner-device-len inner-device-high slot-lineto
 
+   inner-device-len inner-device-high measure-A pop pop
+   inner-device-len 0 [-6 mm] measure-B pop pop
 } def
 
 /part-slide-rail-bottom {
@@ -931,12 +913,12 @@
 
     % see /subpart-drivetrain-base for corresponding fingers
     /finger-len 5 mm def
-    drive-mount-pos 0 moveto
-    0 stepper-height slot-rlineto-v stroke
+    drive-mount-pos stepper-height moveto
+    0 stepper-height neg slot-rlineto stroke
 
     % mouting for bearing
-    bearing-mount-pos 0 moveto
-    0 stepper-height slot-rlineto-v stroke
+    bearing-mount-pos stepper-height moveto
+    0 stepper-height neg slot-rlineto stroke
     end
 
     bed-slide-high-bottom screw-r slide-holes stroke
@@ -964,8 +946,9 @@
    stroke
 
    % Top-panel matching.
-   0 inner-device-high moveto
-   bed-w 0 slot-rlineto-h stroke
+   0 inner-device-high moveto current-measure-A
+   bed-w 0 slot-rlineto stroke
+   0 0 [12 mm] measure-B pop pop
    flush-measures
 } def
 
@@ -1077,22 +1060,22 @@
      drive-mount-pos end-switch-thick add
      sub def
   end-switch-from-back-of-sled bed-w 2 div end-switch-offset add acrylic-t 2 div sub moveto
-  endswitch-len 0 slot-rlineto-h
+  endswitch-len 0 slot-rlineto
   stroke
 
   /finger-len 6 mm def
 
   % slots on sled for drive train.
   gsave
-    bed-drive-pos bed-drive-screw-w 2 div sub acrylic-t sub
+    bed-drive-pos bed-drive-screw-w 2 div sub
     bed-w 2 div bed-drive-w 2 div sub moveto
-    0 bed-drive-w slot-rlineto-v stroke
+    0 bed-drive-w slot-rlineto stroke
   grestore
 
   gsave
-    bed-drive-pos bed-drive-screw-w 2 div add
+    bed-drive-pos bed-drive-screw-w 2 div add acrylic-t add
     bed-w 2 div bed-drive-w 2 div sub moveto
-    0 bed-drive-w slot-rlineto-v stroke
+    0 bed-drive-w slot-rlineto stroke
   grestore
 
   % drive holder. this should be a separate sub-part
@@ -1197,17 +1180,18 @@
 
   1 dict begin
   /finger-len 15 mm def
-  0 0 moveto inner-device-len 0 slot-rlineto-h stroke
-  0 bed-w acrylic-t sub moveto inner-device-len 0 slot-rlineto-h stroke
+
+  0 0 moveto inner-device-len 0 slot-rlineto stroke  % lower part
+  inner-device-len bed-w moveto inner-device-len neg 0 slot-rlineto stroke
 
   /finger-len drive-train-fingers def
   % mounting for motor
-  drive-mount-pos 0 moveto
-  0 bed-w slot-rlineto-v stroke
+  drive-mount-pos bed-w moveto
+  0 bed-w neg slot-rlineto stroke
 
   % mouting for bearing
-  bearing-mount-pos 0 moveto
-  0 bed-w slot-rlineto-v stroke
+  bearing-mount-pos bed-w moveto
+  0 bed-w neg slot-rlineto stroke
 
   % finger holes to better access side screws
   true {
@@ -1322,12 +1306,12 @@ print-TEST-finger-slot {
     0 0 moveto
     /finger-len 5 mm def
     0 10 mm rmoveto
-    55 mm 0 slot-rlineto-h
+    55 mm 0 slot-rlineto
 
     0 0 moveto
     /finger-len 10 mm def
     0 20 mm rmoveto
-    55 mm 0 slot-rlineto-h
+    55 mm 0 slot-rlineto
 
     33 mm 29 mm photo-diode-cutout
     10 mm 29 mm moveto hsync-slot
