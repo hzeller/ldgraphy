@@ -13,7 +13,7 @@
 
 /print-pcbframe false def  % Suggested to cut on thinner material (1mm acrylic)
 
-/print-measures false def   % Show measurement lines and descriptions
+/print-measures true def   % Show measurement lines and descriptions
 
 % For testing while tweaking finger/slot output on your laser cutter.
 % Typical tweak parameters are /acrylic-t, /do-reliefs, /relief-r, /slot-thick
@@ -108,15 +108,19 @@
 /hsync-len laser-slot-h def
 /hsync-w 2 mm def
 
-/rot-mirror-high 33 mm 2 div def  % center of the laser
-/rot-mirror-w 44 mm def
-/rot-mirror-h 60 mm def
-/rot-mirror-diameter 30 mm def
+/polygon-mirror-high 33 mm 2 div def  % center of the laser
+/polygon-mirror-w 44 mm def
+/polygon-mirror-h 60 mm def
+/polygon-mirror-r 35 mm 2 div def
+
+% The UV laser case
+/laser-width 33 mm def
+/laser-length 55 mm def
 
 % The down mirror is elevated above the top plate, so we need the acrylic
 % thickness to be on the same level as the rot mirror that is mounted on
 % the top plate.
-/down-mirror-high rot-mirror-high acrylic-t add def
+/down-mirror-high polygon-mirror-high acrylic-t add def
 /down-mirror-w 10 mm def
 /down-mirror-t 4.5 mm def
 
@@ -130,8 +134,8 @@
 % have set up the laser-slot-distance and the grooves and fingers, so let's go with
 % that first.
 /mirror-center-mount-from-slot
-    arc-radius rot-mirror-high sub bed-slide-high-top sub
-    rot-mirror-diameter add def
+    arc-radius polygon-mirror-high sub bed-slide-high-top sub
+    polygon-mirror-r 2 mul add def
 
 % We want to be at least half pcb sled longer so that we are supported
 % at center of gravity.
@@ -749,9 +753,10 @@
    end
 } def
 
+% Origin is rotation axis
 % Boolean if outline should be printed
 % bool x y
-/rot-mirror-footprint {
+/polygon-mirror-footprint {
     stroke
     gsave
     translate
@@ -763,14 +768,43 @@
     41.6 mm 2 div neg -18.5 mm screw
     stroke
 
+    print-measures { measure-col 0 0 polygon-mirror-r circle stroke } if % demo
+
+    outer-cut
     48 mm 2 div neg -24 mm translate
 
     % should we print the outline ?
-    { 0 0 moveto 48 mm 68 mm box  } if % cuts the outer of the mirror
+    { 0 0 moveto 48 mm 68 mm box } if % cuts the outer of the mirror
 
-    48 mm 15 mm sub 2 div 0 moveto 15 mm 5 mm box
+    48 mm 15 mm sub 2 div 0 moveto 15 mm 5 mm box  %  sensor protrusion cutout
     stroke
+
     grestore
+} def
+
+% Laser footprint at current position. Origin is the laser exit
+/laser-footprint {
+    currentpoint
+    gsave
+    translate
+    print-measures {
+      measure-col  % outline colors
+      laser-length neg laser-width 2 div neg moveto
+      laser-length laser-width box                         % Metal box of laser
+      laser-length 12 mm add neg laser-width 2 div 2 mm sub neg moveto
+      12 mm laser-width 4 mm sub box                       % Cooling fan
+
+      0 0 moveto 60 mm 0 rlineto   % demo laser direction
+      stroke
+    } if
+
+    inner-cut
+    -7.85 mm 0 screw
+    laser-length neg 7.85 mm add 0 screw
+    -16 mm 0 screw
+    -36 mm 0 screw stroke
+    grestore
+    outer-cut
 } def
 
 % (text)
@@ -863,19 +897,15 @@
     false  % do not cut outline
     laser-slot-distance mirror-center-mount-from-slot sub
     bed-w 2 div
-        rot-mirror-footprint stroke
+        polygon-mirror-footprint stroke
 
     % Wire hole for polygon mirror
     laser-slot-distance mirror-center-mount-from-slot sub 5 mm sub
     bed-w 12 mm sub moveto
     12 mm 5 mm 2 mm rounded-corner-box stroke
 
-    % laser wires
-    18 mm 36 mm 3 mm circle
-
-    % Holes to mount the laser. Two holes in 20 mm distance
-    35 mm 17 mm screw
-    55 mm 17 mm screw stroke
+    70 mm 18 mm moveto laser-footprint  % Mounting the laser
+    10 mm 36 mm 3 mm circle stroke      % laser wires
 
     % hsync photo diode
     laser-slot-distance laser-slot-h 2 div sub
@@ -1387,7 +1417,7 @@ print-toppanel {
     inner-device-len 11 mm sub bed-w 2 div translate 90 rotate
     (Extra raiser) -20 mm 0 describe
     true  % cut outline
-    0 0 rot-mirror-footprint stroke
+    0 0 polygon-mirror-footprint stroke
     grestore
   } if
   0 bed-w 2 acrylic-t mul add translate
@@ -1403,7 +1433,7 @@ print-pcbframe {
   % as this is typically printed on 1mm
   pcb-h 25 mm sub pcb-w 20 mm sub translate 90 rotate
   true  % cut outline
-  0 0 rot-mirror-footprint stroke
+  0 0 polygon-mirror-footprint stroke
   grestore
   0 bed-w acrylic-t 2 mul sub cut-dist add translate
 } if
