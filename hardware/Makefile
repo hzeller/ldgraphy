@@ -6,7 +6,7 @@ all : $(ALL_TARGETS)
 	pstoedit -psarg "-r600x600" -mergetext -dt -f "dxf_s:-mm -ctl" $< $@
 
 %.png : %.ps
-	../scripts/ps2pnm 60 $< | pnmtopng > $@
+	../scripts/ps2pnm 240 $< | pnmscale 0.25 | pnmtopng > $@
 
 %.stl: %.scad
 	openscad -o $@ -d $@.deps $<

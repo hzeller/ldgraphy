@@ -15,7 +15,7 @@ laser can blind you!
 The file covers several parts, and depending on which you can fit
 on your acrylic sheet and/or which you have to re-do, you can choose the ones
 to be output in the first section that defines the
-[`/print-...`](./laser-cut-case.ps#L4) boolean variables.
+[`/print-...`](./laser-cut-case.ps#L28) boolean variables.
 
 The Makefile can create a dxf file that is then usable in any laser cutter, just
 call `make`.

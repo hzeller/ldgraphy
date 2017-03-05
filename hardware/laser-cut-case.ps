@@ -1,7 +1,30 @@
 %!PS-Adobe-3.0
-%%BoundingBox: 0 0 760 2600
+%%BoundingBox: 0 0 800 2600
+
+% Bounding box widths for comparison with real-world acrylic
+% 850 for 30 cm wide material
+% 867 for 12" wide material
+
+%
+% (c) 2017 Henner Zeller <h.zeller@acm.org>
+%
+% This file is part of LDGraphy http://github.com/hzeller/ldgraphy
+%
+% LDGraphy is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+%
+% LDGraphy is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with LDGraphy.  If not, see <http://www.gnu.org/licenses/>.
 
 % Choices what to selectively cut. From bottom up.
+% Use black or dark red transparent for all of these except the sled.
 /print-bottom true def             % Bottom pane, holding drive-train
 /print-bottom-drivetrain true def  % motor holder and bearing
 /print-slide-rail-bottom true def  % The rails the sled is riding on.
@@ -10,10 +33,11 @@
 /print-sidepanels true def         % Side panels framing of the outer case.
 /print-front-back true def         % Front and back parts of the case.
 /print-toppanel true def           % The laser and rotating mirror mounted here.
+/print-pcbframe true def           % frame around sled.
 
-/print-pcbframe false def  % Suggested to cut on thinner material (1mm acrylic)
-
-/print-measures false def   % Show measurement lines and descriptions
+% Show measurement lines and descriptions. Switch these off before generating
+% the DXF to save space (there are more gaps for the measurements)
+/print-measures true def
 
 % For testing while tweaking finger/slot output on your laser cutter.
 % Typical tweak parameters are /acrylic-t, /do-reliefs, /relief-r, /slot-thick
@@ -22,6 +46,8 @@
 /mm { 72 25.4 div mul } bind def
 
 /acrylic-t 3 mm def        % Material thickness.
+/pcb-w-mm 100 def          % Size of PCB
+/pcb-h-mm 160 def
 
 % reliefs on inner edges for finger/slots.
 /do-reliefs true def
@@ -33,9 +59,6 @@
 /rod-r 4.7 mm 2 div def
 /finger-len 20 mm def
 /connect-screw-len 4.5 mm def
-
-/pcb-w-mm 100 def
-/pcb-h-mm 160 def
 
 /pcb-w pcb-w-mm mm 2 mm add def
 /pcb-h pcb-h-mm mm 2 mm add def
@@ -69,7 +92,8 @@
 /bearing-mount-pos
     stepper-len drive-screw-start add  % starting from here
     pcb-h add                          % .. the amount we need to move
-    acrylic-t add                      % space for drive-train holder
+    acrylic-t 1.5 mul add              % space for drive-train holder
+    8 mm add                           % Provide a little more room
     def  % acme bearing
 
 % the corresponding assembly on the sled
@@ -100,7 +124,7 @@
     sub def
 
 % TODO: calculate laser slot distance from angle, pcb-w, laser height etc.
-/laser-slot-distance 160 mm def
+/laser-slot-distance pcb-h bed-h pcb-h sub 2 div add 3 mm add def
 /laser-slot-h 10 mm def
 /laser-slot-w pcb-w 2 mm add def
 
