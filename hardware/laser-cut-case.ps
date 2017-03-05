@@ -788,6 +788,8 @@
 
 /part-toppanel {
     (Toppanel) 30 mm 5 mm describe
+    /ldgraphy-font-size 22 mm laser-slot-w mul 104 mm div def
+
     % bottom area
     newpath
     0 0 moveto
@@ -804,9 +806,31 @@
 
     [-6 mm (inner-device-len)] current-measure-B
 
-    % up. Either straight line or circular cut
-    false {
-       0 bed-w rlineto   % boooring
+    % up. Curved or with circles.
+    true {
+       3 dict begin
+       /distance-from-end
+           inner-device-len
+	   laser-slot-distance sub
+	   laser-slot-h 2 div sub
+	   ldgraphy-font-size sub % TODO: remove when text placed differently
+	   def
+       /ease-in-fraction 0.2 def
+       /center-pull 1.1 def
+
+       inner-device-len distance-from-end sub bed-w 2 div measure-A pop pop
+       inner-device-len bed-w 2 div measure-B pop pop
+
+       inner-device-len bed-w ease-in-fraction mul % control #1
+       inner-device-len distance-from-end sub bed-w center-pull bed-w mul sub %#2
+       inner-device-len distance-from-end sub bed-w 2 div  % center
+       curveto
+
+       inner-device-len distance-from-end sub bed-w center-pull mul % control #1
+       inner-device-len bed-w 1 ease-in-fraction sub mul            % control #2
+       inner-device-len bed-w
+       curveto
+       end
     } {
        1 dict begin
        /ease-in-r bed-w 10 div def
@@ -854,11 +878,14 @@
     laser-slot-h laser-slot-w measure-box 3 mm rounded-corner-box
 
     gsave
+      % LDGraphy text. Right now in front of the slot, but should be placed
+      % on a panel covering the front part (not there yet)
       engraving-cut
-      laser-slot-distance laser-slot-h 2 div add bed-w 2 div moveto
+      laser-slot-distance laser-slot-h 2 div add  % right of laser slot
+      bed-w 2 div moveto
       90 rotate
-      /Courier findfont 22 mm scalefont setfont
-      0 -18 mm rmoveto
+      /Courier findfont ldgraphy-font-size scalefont setfont
+      0 ldgraphy-font-size 0.8 mul neg rmoveto
       gsave (LDGraphy) center-show grestore
    grestore
    flush-measures
@@ -1200,6 +1227,8 @@
     width neg 0 rlineto
     0 stepper-height neg finger-rlineto-noscrew
     stroke
+
+    % Endswitch
     width 2 div end-switch-offset add
     stepper-height 15 mm sub moveto current-measure-A
     end-switch stroke
@@ -1232,9 +1261,8 @@
     subpart-drivetrain-base
     width 2 div stepper-height 2 div acme-dia 2 div circle stroke
 
-
-    width 10 mm sub
-    stepper-height 2 div 4 mm add 3 mm circle stroke %cable
+    width 2 div end-switch-offset add 8 mm add
+    stepper-height 2 div 4 mm add 2.5 mm circle stroke %cable
     end
 } def
 
