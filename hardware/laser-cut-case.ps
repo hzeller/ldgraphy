@@ -65,25 +65,21 @@
 /acme-dia 5 mm def            % acme screw diameter
 
 /drive-mount-pos stepper-len def  % stepper mount position seen from back
-/drive-screw-start 35 mm def      % axle to where acme screw starts
+/drive-screw-start 35 mm def      % axle to where acme screw starts. Coupler
 /bearing-mount-pos
     stepper-len drive-screw-start add  % starting from here
     pcb-h add                          % .. the amount we need to move
     acrylic-t add                      % space for drive-train holder
     def  % acme bearing
 
-% we are placing the switches as close as possible to the center of the
-% drive train to not have too much axial force (the microswitches in question
-% use a little force). Otherwise the corner would of course be nice.
-/end-switch-offset 0.30 bed-w mul def  % from center
-/end-switch-thick 8 mm def             % thickness of switch
-/end-switch-from-back-of-sled drive-mount-pos end-switch-thick add acrylic-t add def
-
 % the corresponding assembly on the sled
 /bed-drive-screw-w acrylic-t def      % distance between driving holders
 /bed-drive-screw-r 10.6 2 div mm def  % outer radius of nut driving the thing.
 
 /bed-drive-wobble 0.5 mm def  % amount of 'wobble' we should give the drive screw
+
+% TODO: the following foremost needs to also take into account where the board
+% hits the slot.
 /bed-drive-pos stepper-len drive-screw-start add def  % where the drive position relative from back.
 /bed-drive-screw-top
      bed-slide-high-bottom stepper-height sub  % amount hovering about stepper
@@ -91,6 +87,17 @@
      def
 /bed-drive-w bed-w 2 div def
 /bed-drive-h bed-drive-screw-top bed-drive-screw-r add 2 mm add def
+
+% we are placing the switches as close as possible to the center of the
+% drive train to not have too much axial force (the microswitches in question
+% use a little force). Otherwise the corner would of course be nice.
+/end-switch-offset 0.30 bed-w mul def  % from center
+/end-switch-thick 8 mm def             % thickness of switch
+/end-switch-from-back-of-sled drive-mount-pos end-switch-thick add acrylic-t add def
+/end-switch-trigger-len                %  plastic trigger on sled
+    bed-drive-pos acrylic-t add end-switch-thick sub
+    drive-mount-pos end-switch-thick add
+    sub def
 
 % TODO: calculate laser slot distance from angle, pcb-w, laser height etc.
 /laser-slot-distance 160 mm def
@@ -1040,28 +1047,28 @@
   % Frame to place PCB in.
   gsave
    % Outer frame
-   acrylic-t 0 moveto bed-w acrylic-t 2 mul sub bed-h box
+   0 acrylic-t moveto
+   bed-h bed-w acrylic-t 2 mul sub box
+
+   bed-pcb-off-h bed-pcb-off-w measure-A pop pop
+   bed-pcb-off-h bed-pcb-off-w pcb-w add [-6 mm (pcb-w)] measure-B pop pop
+   bed-pcb-off-h bed-pcb-off-w measure-A pop pop
+   bed-pcb-off-h pcb-h add bed-pcb-off-w [10 mm (pcb-h)] measure-B pop pop
 
    % Inner frame
-   bed-pcb-off-w bed-pcb-off-h translate
-   0 0 moveto pcb-w pcb-h box
-
-   0 0 measure-A pop pop
-   0 pcb-h [-6 mm (pcb-h)] measure-B pop pop
-   0 0 measure-A pop pop
-   pcb-w 0 [10 mm (pcb-w)] measure-B pop pop
-   flush-measures
+   bed-pcb-off-h bed-pcb-off-w translate
+   0 0 moveto pcb-h pcb-w box
 
    % Corner reliefs
    0 0 0.8 mm circle
-   pcb-w 0 0.8 mm circle
-   0 pcb-h 0.8 mm circle
-   pcb-w pcb-h 0.8 mm circle
+   pcb-h 0 0.8 mm circle
+   0 pcb-w 0.8 mm circle
+   pcb-h pcb-w 0.8 mm circle
    stroke
 
    engraving-cut
-   pcb-w 0 translate  % bottom left corner as origin for measurements
    /Courier findfont 2.5 mm scalefont setfont
+   pcb-h pcb-w translate 90 rotate
    0 1 pcb-w-mm {
        1 dict begin
        /i exch def
@@ -1076,6 +1083,7 @@
        } if
       end
    } for
+
    0 1 pcb-h-mm {
        1 dict begin
        /i exch def
@@ -1116,7 +1124,7 @@
 
 /part-sled {
   (Sled) 90 mm 60 mm describe
-  2 dict begin
+  3 dict begin
   0 0 moveto bed-h bed-w 3 mm rounded-corner-box  % the sled
   stroke
 
@@ -1126,29 +1134,21 @@
   0 0 measure-A pop pop
   0 bed-w [-6 mm (bed-w)] measure-B pop pop
 
-  flush-measures
-
   % endswitch trigger thing: slots in the sled.
   /finger-len 3 mm def
-  /endswitch-len
-     bed-drive-pos acrylic-t add end-switch-thick sub
-     drive-mount-pos end-switch-thick add
-     sub def
   end-switch-from-back-of-sled
   bed-w 2 div end-switch-offset add acrylic-t 2 div sub moveto
-  endswitch-len 0 slot-rlineto
+  end-switch-trigger-len 0 slot-rlineto
   stroke
 
   end-switch-from-back-of-sled
   bed-w 2 div end-switch-offset add measure-A pop pop
   end-switch-from-back-of-sled bed-w [-30 mm] measure-B pop pop
-  flush-measures
 
   /finger-len 6 mm def
 
   0 bed-w 2 div measure-A pop pop
   bed-drive-pos bed-w 2 div [-40 mm (bed-drive-pos)] measure-B pop pop
-  flush-measures
 
   % slots on sled for drive train.
   gsave
@@ -1162,10 +1162,15 @@
     bed-w 2 div bed-drive-w 2 div sub moveto
     0 bed-drive-w slot-rlineto stroke
   grestore
+  end
+} def
 
+/part-sled-misc {
+  (Sled Misc) 0 0 describe
+  1 dict begin
   % drive holder. this should be a separate sub-part
   gsave
-   bed-h cut-dist add acrylic-t add 0 translate
+   acrylic-t 0 translate
    subpart-drive-holder flush-measures
    bed-drive-h cut-dist add 6 mm add 0 translate
    subpart-drive-holder clear-measures
@@ -1174,7 +1179,7 @@
 
   % Moving part holding the nut
   gsave
-   bed-h acrylic-t add cut-dist add bed-drive-w cut-dist add translate
+   acrylic-t bed-drive-w cut-dist add translate
 
    % nut holder. That should be a separate sub-part.
    bed-drive-wobble 0 moveto
@@ -1193,10 +1198,10 @@
   % Endswitch trigger block, plugged into the sled.
   gsave
      /finger-len 3 mm def
-     bed-h acrylic-t add 30 mm add cut-dist add bed-drive-w cut-dist add translate
+     acrylic-t 30 mm add cut-dist add bed-drive-w cut-dist add translate
      newpath
      15 mm 0 moveto
-     0 endswitch-len finger-rlineto-noscrew
+     0 end-switch-trigger-len finger-rlineto-noscrew
      -15 mm 0 rlineto
      0 0 lineto
      15 mm 0 lineto stroke
@@ -1205,12 +1210,12 @@
   % since this is fluorescent material, cut out the hsync collector here.
   gsave
      % more fudging with moving to a free space...
-     bed-h 30 mm add cut-dist 2 mul add    bed-w 20 mm sub translate
+     30 mm cut-dist 2 mul add    bed-w hsync-w sub translate
      0 0 moveto hsync-len hsync-w box
-     0 hsync-w cut-dist add moveto hsync-len hsync-w box
+     0 hsync-w cut-dist add neg moveto hsync-len hsync-w box
      % ... do it a couple of times, as some will fall through the cracks :)
-     0 hsync-w cut-dist add 2 mul moveto hsync-len hsync-w box
-     0 hsync-w cut-dist add 3 mul moveto hsync-len hsync-w box
+     0 hsync-w cut-dist add 2 mul neg moveto hsync-len hsync-w box
+     0 hsync-w cut-dist add 3 mul neg moveto hsync-len hsync-w box
      stroke
   grestore
   end
@@ -1268,6 +1273,13 @@
     end
 } def
 
+/sled-range-visual {
+  gsave part-sled grestore
+  part-pcbframe
+  gsave bearing-mount-pos acrylic-t 1.5 mul sub bed-drive-pos sub 0 translate part-sled grestore
+  clear-measures
+} def
+
 /part-bottom {
   (Bottom) 40 mm 10 mm describe
   acrylic-t neg acrylic-t neg moveto
@@ -1300,6 +1312,12 @@
     gsave 0 bed-w translate -22 mm acrylic-t 2 mul sub 8 mm slide-holes stroke grestore
   } if
   end
+
+  %sled-range-visual
+
+  bed-drive-pos bed-w 2 div measure-A pop pop
+  bearing-mount-pos acrylic-t 1.5 mul sub bed-w 2 div [0 mm (sled range)] measure-B pop pop
+
   flush-measures
 } def
 
@@ -1328,7 +1346,8 @@ print-slide-rail-bottom {
 } if
 
 print-sled {
-  part-sled
+  part-sled flush-measures
+  gsave bed-h cut-dist add 0 translate part-sled-misc grestore
   0 bed-w cut-dist 2 mul add translate
 } if
 
@@ -1358,10 +1377,13 @@ print-toppanel {
   0 acrylic-t translate   % to have space for the fingers
   0 0 moveto part-toppanel
 
+  %sled-range-visual
+
   true {
      % extra raiser board for the mirror
     gsave
-    inner-device-len 10 mm sub 49 mm translate
+    inner-device-len 11 mm sub bed-w 2 div translate 90 rotate
+    (Extra raiser) -20 mm 0 describe
     true  % cut outline
     0 0 rot-mirror-footprint stroke
     grestore
@@ -1371,12 +1393,13 @@ print-toppanel {
 
 print-pcbframe {
   gsave
-  0 bed-w acrylic-t sub 1 mm add translate -90 rotate
-  part-pcbframe
+  part-pcbframe flush-measures
+
+  %% somewhat unrelated
   % extra raiser board for the mirror. Use empty space in the area in the
   % middle. Since that often needs to be a thinner shim, this is perfect
   % as this is typically printed on 1mm
-  70 mm 90 mm translate
+  pcb-h 25 mm sub pcb-w 20 mm sub translate 90 rotate
   true  % cut outline
   0 0 rot-mirror-footprint stroke
   grestore
