@@ -144,6 +144,41 @@
 % to manually inspect in the PostScript viewer.
 1 setlinewidth
 
+
+% Like currentpoint but returns a boolean to describe if there was a point.
+% Apparantly, PostScript does not have a predicate to ask for a current path,
+% so we have to tap into the error message.
+% currentpoint? x y true   % if there is a current point
+% currentpoint? false      % if there isn't
+/currentpoint? {
+    2 dict begin
+      /has-currentpoint true def
+      /old-handler errordict /nocurrentpoint get def
+      errordict /nocurrentpoint { pop /has-currentpoint false def} put
+      currentpoint
+      has-currentpoint
+      errordict /nocurrentpoint currentdict /old-handler get put
+    end
+} def
+
+/-gsave /gsave load def
+/gsave {
+    currentpoint? {
+	% Ideally, we never reach this, but all paths are properly stroke'd
+	% when gsave is called. But it is hard to find mis-uses in the
+	% stack-trace gs provides. So just do the right thing and stroke
+	% here to repair the situation.
+	% (also, perfectly benign to have something with no path just a point)
+	% The following will help debug it
+	%-gsave /Helvetica findfont 10 scalefont setfont (<- Here not properly stroked) show grestore
+	stroke
+        -gsave
+	moveto
+    } {
+	-gsave
+    } ifelse
+} def
+
 %%-- measureline.ps
 
 % Measure-line features. It is a little hard to get things PostScript files
@@ -202,7 +237,8 @@
 
 % pos-x pos-y
 /measure-A {
-    userdict /current-measure [0  0 0  0 0] put  % global variable
+    % array stores [line-offset x1 y1 x2 y2]
+    userdict /current-measure [0  0 0  0 0] put
     current-measure 1 3 index put   % x
     current-measure 2 2 index put   % y
 } def
@@ -242,10 +278,8 @@
       measure-col
       measure-font setfont
       measure-dict {
-        gsave
         aload pop   % put array content on stack. Get rid of array
-        measure-line
-        grestore
+        gsave measure-line grestore
         pop         % get rid of dict key.
       } forall
       grestore
