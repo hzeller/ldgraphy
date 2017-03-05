@@ -75,7 +75,7 @@
 % we are placing the switches as close as possible to the center of the
 % drive train to not have too much axial force (the microswitches in question
 % use a little force). Otherwise the corner would of course be nice.
-/end-switch-offset 0.28 bed-w mul def  % from center
+/end-switch-offset 0.30 bed-w mul def  % from center
 /end-switch-thick 8 mm def             % thickness of switch
 /end-switch-from-back-of-sled drive-mount-pos end-switch-thick add acrylic-t add def
 
@@ -184,19 +184,22 @@
 % Measure-line features. It is a little hard to get things PostScript files
 % included depending on context. So we include it here manually.
 /measure-fontsize 5 mm def
-/measure-font /Courier-Bold findfont measure-fontsize scalefont def
+/measure-font /Helvetica-Bold findfont measure-fontsize scalefont def
+/measure-desc-font /Helvetica findfont 4 mm scalefont def
 /measure-dict << >> def
 /measure-col { 0.7 0.7 0.7 setrgbcolor } def
 
-% x y
+% (desc) measure-offset dx dy
 /measure-to {
     2 copy atan rotate
     5 dict begin
     dup mul exch dup mul add sqrt /len exch def
     /offset exch def
+    /desc-text exch def
     /display-len len 72 div 25.4 mul 100 mul round 100 div def
     /arrow-len 3 mm def
     /arrow-w 1 mm def
+    /measure-unit () def   % mm took too much space
 
     %0 offset moveto len offset lineto
 
@@ -217,19 +220,23 @@
     len 0 moveto len offset lineto
 
     display-len (         ) cvs
-    dup stringwidth pop ( mm) stringwidth pop add 2 div /text-w-half exch def
+    dup stringwidth pop measure-unit stringwidth pop add 2 div /text-w-half exch def
 
     0 offset moveto len 2 div text-w-half sub 0.5 mm sub offset lineto
 
     len 2 div text-w-half sub         % x
-    offset measure-fontsize 3 div sub moveto
-    show ( mm) show
+    offset measure-fontsize 3 div sub moveto show measure-unit show
     len 2 div text-w-half add 0.5 mm add offset moveto
     len offset lineto
+
+    measure-desc-font setfont
+    len 2 div desc-text stringwidth pop 2 div sub offset measure-fontsize sub moveto
+    desc-text show
     end
     stroke
 } def
 
+% (desc) measure-offset x1 y1 x2 y2
 /measure-line {
     4 2 roll
     2 copy translate
@@ -242,10 +249,10 @@
 
 % pos-x pos-y
 /measure-A {
-    % array stores [line-offset x1 y1 x2 y2]
-    userdict /current-measure [0  0 0  0 0] put
-    current-measure 1 3 index put   % x
-    current-measure 2 2 index put   % y
+    % array stores [(desc) line-offset x1 y1 x2 y2]
+    userdict /current-measure [() 0  0 0  0 0] put
+    current-measure 2 3 index put   % x
+    current-measure 3 2 index put   % y
 } def
 /current-measure-A {
     currentpoint measure-A pop pop
@@ -254,18 +261,28 @@
 % pos-x pos-y [optional-array-with-offset]
 /measure-B {
     dup type (arraytype) eq {
-	0 get   % get offset
-	current-measure 0 3 -1 roll put
+	dup 0 get   % get offset
+	current-measure 1 3 -1 roll put
+	dup length 1 gt {  % get description string if available
+	    dup 1 get
+ 	    current-measure 0 3 -1 roll put
+	} if
+	pop
     } if
-    current-measure 3 3 index put   % x
-    current-measure 4 2 index put   % y
+    current-measure 4 3 index put   % x
+    current-measure 5 2 index put   % y
     measure-dict measure-dict length current-measure put  % now append at end.
 } def
 /current-measure-B {
     count 0 gt {
       dup type (arraytype) eq {
-	0 get   % get offset
-	current-measure 0 3 -1 roll put
+	dup 0 get   % get offset
+	current-measure 1 3 -1 roll put
+	dup length 1 gt {  % get description string if available
+	    dup 1 get
+ 	    current-measure 0 3 -1 roll put
+	} if
+	pop
       } if
     } if
     currentpoint measure-B pop pop
@@ -774,7 +791,7 @@
     % to the end on the right.
     inner-device-len 0 finger-lineto-noscrew
 
-    [-5 mm] current-measure-B
+    [-6 mm (inner-device-len)] current-measure-B
 
     % up. Either straight line or circular cut
     false {
@@ -840,7 +857,7 @@
   newpath
    % bottom part
    0 0 moveto current-measure-A
-   inner-device-len 0 lineto [-3 mm] current-measure-B
+   inner-device-len 0 lineto [6 mm (inner-device-len)] current-measure-B
 
    % up right side (back)
    current-measure-A
@@ -891,7 +908,7 @@
    inner-device-len inner-device-high slot-lineto
 
    inner-device-len inner-device-high measure-A pop pop
-   inner-device-len 0 [-6 mm] measure-B pop pop
+   inner-device-len 0 [-6 mm (inner-device-high    )] measure-B pop pop
 } def
 
 /part-slide-rail-bottom {
@@ -1049,9 +1066,16 @@
 
 /part-sled {
   2 dict begin
-  0 0 moveto bed-h bed-w measure-box 3 mm rounded-corner-box  % the sled
-  flush-measures
+  0 0 moveto bed-h bed-w 3 mm rounded-corner-box  % the sled
   stroke
+
+  0 0 measure-A pop pop
+  bed-h 0 [6 mm (bed-h)] measure-B pop pop
+
+  0 0 measure-A pop pop
+  0 bed-w [-6 mm (bed-w)] measure-B pop pop
+
+  flush-measures
 
   % endswitch trigger thing: slots in the sled.
   /finger-len 3 mm def
@@ -1059,11 +1083,21 @@
      bed-drive-pos acrylic-t add end-switch-thick sub
      drive-mount-pos end-switch-thick add
      sub def
-  end-switch-from-back-of-sled bed-w 2 div end-switch-offset add acrylic-t 2 div sub moveto
+  end-switch-from-back-of-sled
+  bed-w 2 div end-switch-offset add acrylic-t 2 div sub moveto
   endswitch-len 0 slot-rlineto
   stroke
 
+  end-switch-from-back-of-sled
+  bed-w 2 div end-switch-offset add measure-A pop pop
+  end-switch-from-back-of-sled bed-w [-30 mm] measure-B pop pop
+  flush-measures
+
   /finger-len 6 mm def
+
+  0 bed-w 2 div measure-A pop pop
+  bed-drive-pos bed-w 2 div [-40 mm (bed-drive-pos)] measure-B pop pop
+  flush-measures
 
   % slots on sled for drive train.
   gsave
@@ -1134,10 +1168,10 @@
 % base for the inner parts that hold motor and bearing.
 /subpart-drivetrain-base {
     2 dict begin
-    0 0 moveto
+    0 0 moveto  current-measure-A
     /finger-len drive-train-fingers def
     /width bed-w acrylic-t 2 mul sub def
-    width 0 finger-rlineto-noscrew
+    width 0 finger-rlineto-noscrew [-6 mm] current-measure-B
 
     /finger-len 5 mm def
     0 stepper-height finger-rlineto-noscrew
@@ -1145,7 +1179,9 @@
     0 stepper-height neg finger-rlineto-noscrew
     stroke
     width 2 div end-switch-offset add
-    stepper-height 15 mm sub moveto end-switch stroke
+    stepper-height 15 mm sub moveto current-measure-A
+    end-switch stroke
+    bed-w acrylic-t sub stepper-height 15 mm sub [-10 mm ] measure-B pop pop flush-measures
     end
 } def
 
@@ -1189,9 +1225,15 @@
   drive-mount-pos bed-w moveto
   0 bed-w neg slot-rlineto stroke
 
+  0 bed-w 2 div measure-A pop pop
+  drive-mount-pos bed-w 2 div [20 mm (drive-mount-pos)] measure-B pop pop
+
   % mouting for bearing
   bearing-mount-pos bed-w moveto
   0 bed-w neg slot-rlineto stroke
+
+  0 bed-w 2 div measure-A pop pop
+  bearing-mount-pos bed-w 2 div [-20 mm (bearing-mount-pos)] measure-B pop pop
 
   % finger holes to better access side screws
   true {
