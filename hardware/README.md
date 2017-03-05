@@ -25,6 +25,7 @@ set-up in the laser cutter:
   * the 'black layer'. Cut with outward kerf correction (laser cuts outside).
   * the 'red layer'. Cut with inside kerf correction (laser cuts inside).
   * the 'green layer'. Set to engraving.
+  * the 'gray layer' (if `/print-measures` true). Don't cut. Just FYI with measurements and help-lines.
 
 ### Note
 This is pretty much work in progress, the drive and angle of laser mount etc.

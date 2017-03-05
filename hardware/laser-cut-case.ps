@@ -1,5 +1,5 @@
 %!PS-Adobe-3.0
-%%BoundingBox: 0 0 760 2400
+%%BoundingBox: 0 0 760 2600
 
 % Choices what to selectively cut. From bottom up.
 /print-bottom true def             % Bottom pane, holding drive-train
@@ -314,6 +314,16 @@
 /inner-cut { 1 0 0 setrgbcolor } def
 /outer-cut { 0 0 0 setrgbcolor } def
 /engraving-cut { 0 1 0 setrgbcolor } def
+
+% (description) x y
+/describe {
+    -gsave
+    /Helvetica findfont 8 mm scalefont setfont
+    measure-col
+    moveto
+    show
+    grestore
+} def
 
 % r
 /currentpoint-circle {
@@ -777,6 +787,7 @@
 %---- end help procedures, start parts.
 
 /part-toppanel {
+    (Toppanel) 30 mm 5 mm describe
     % bottom area
     newpath
     0 0 moveto
@@ -856,6 +867,7 @@
 /part-sidepanel {
   newpath
    % bottom part
+   (Sidepanel) 35 mm 8 mm describe
    0 0 moveto current-measure-A
    inner-device-len 0 lineto [6 mm (inner-device-len)] current-measure-B
 
@@ -948,6 +960,7 @@
 } def
 
 /part-back {
+   (Back) 30 mm 5 mm describe
    newpath
    0 0 moveto
    bed-w 0 lineto
@@ -965,11 +978,12 @@
    % Top-panel matching.
    0 inner-device-high moveto current-measure-A
    bed-w 0 slot-rlineto stroke
-   0 0 [12 mm] measure-B pop pop
+   0 0 [20 mm (inner-device-high)] measure-B pop pop
    flush-measures
 } def
 
 /part-front {
+   (Front) 30 mm 5 mm describe
    newpath
    0 0 moveto current-measure-A
    bed-w 0 lineto [-3 mm] current-measure-B
@@ -992,7 +1006,8 @@
    flush-measures
 } def
 
-/part-pcb-frame {
+/part-pcbframe {
+  (PCB Frame) 30 mm 20 mm describe
   % Frame to place PCB in.
   gsave
    % Outer frame
@@ -1001,6 +1016,12 @@
    % Inner frame
    bed-pcb-off-w bed-pcb-off-h translate
    0 0 moveto pcb-w pcb-h box
+
+   0 0 measure-A pop pop
+   0 pcb-h [-6 mm (pcb-h)] measure-B pop pop
+   0 0 measure-A pop pop
+   pcb-w 0 [10 mm (pcb-w)] measure-B pop pop
+   flush-measures
 
    % Corner reliefs
    0 0 0.8 mm circle
@@ -1065,6 +1086,7 @@
 } def
 
 /part-sled {
+  (Sled) 90 mm 60 mm describe
   2 dict begin
   0 0 moveto bed-h bed-w 3 mm rounded-corner-box  % the sled
   stroke
@@ -1186,6 +1208,7 @@
 } def
 
 /part-motor-holder {
+   (Motor) 5 mm 5 mm describe
     1 dict begin
     /width bed-w acrylic-t 2 mul sub def
     subpart-drivetrain-base
@@ -1203,14 +1226,20 @@
 } def
 
 /part-bearing-holder {
+   (Bearing) 10 mm 5 mm describe
     1 dict begin
     /width bed-w acrylic-t 2 mul sub def
     subpart-drivetrain-base
     width 2 div stepper-height 2 div acme-dia 2 div circle stroke
+
+
+    width 10 mm sub
+    stepper-height 2 div 4 mm add 3 mm circle stroke %cable
     end
 } def
 
 /part-bottom {
+  (Bottom) 40 mm 10 mm describe
   acrylic-t neg acrylic-t neg moveto
   inner-device-len acrylic-t 2 mul add bed-w acrylic-t 2 mul add measure-box box
 
@@ -1262,6 +1291,7 @@ print-bottom-drivetrain {
 } if
 
 print-slide-rail-bottom {
+  (Slide Rail Bottom) 50 mm 8 mm describe
   part-slide-rail-bottom
   0 bed-slide-high-bottom cut-dist add translate part-slide-rail-bottom
   0 bed-slide-high-bottom cut-dist add translate
@@ -1312,11 +1342,11 @@ print-toppanel {
 print-pcbframe {
   gsave
   0 bed-w acrylic-t sub 1 mm add translate -90 rotate
-  part-pcb-frame
+  part-pcbframe
   % extra raiser board for the mirror. Use empty space in the area in the
   % middle. Since that often needs to be a thinner shim, this is perfect
   % as this is typically printed on 1mm
-  40 mm 40 mm translate
+  70 mm 90 mm translate
   true  % cut outline
   0 0 rot-mirror-footprint stroke
   grestore
