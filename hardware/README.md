@@ -27,6 +27,19 @@ set-up in the laser cutter:
   * the 'green layer'. Set to engraving.
   * the 'gray layer' (if `/print-measures` true). Don't cut. Just FYI with measurements and help-lines.
 
+### Customization
+If you have a different size PCB that you want to expose, you can customize
+the values in the PostScript file an generate a new DXF that should fit your
+use-case. Be aware that wider boards means wider exposure angle which in
+turn means more variation in focus distance (i.e. on average less sharp image).
+
+Start with modifying `/pcb-w-mm` and `/pcb-h-mm`, watch the PostScript file in
+a viewer (e.g. okular). It helps to switch on `/print-measures` while doing
+these modifications for more information.
+Now, modify the `/scan-angle` so that the polygon mirror fits on the top panel.
+You might also need to change `/scan-redirect-mirror-distance` to have the
+redirect mirror or its reflected beam not conflict with any object.
+
 ### Note
 This is pretty much work in progress, the drive and angle of laser mount etc.
 are still beeing tweaked, there is no cover yet, or a place to mount the

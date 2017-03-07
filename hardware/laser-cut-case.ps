@@ -49,15 +49,25 @@
 /max { 1 index 1 index lt { exch pop } { pop } ifelse } bind def
 /tan { dup sin exch cos div } bind def
 
+% User modifiable parameters.
 /acrylic-t 3 mm def        % Material thickness.
 /pcb-w-mm 100 def          % Size of PCB
 /pcb-h-mm 160 def
 
+% The scan angle we are covering. One one hand, we want to have this
+% pretty small to minimize the focus lenght difference. But we also don't
+% want to have it too small, as this means we have lower on-time hence longer
+% exposure time. Maximum: 120. Typical near 40 degree.
 /scan-angle 40 def         % Something < 120, better less than 60
+/scan-redirect-mirror-distance 60 mm def  % Mirror distance
+/scan-redirect-mirror-width 30 mm def     % Width of the mirror foot.
+
+% temporary while hacking on prototype to see influence of different angles.
+/do-angle-test false def
 
 % reliefs on inner edges for finger/slots.
 /do-reliefs true def
-/relief-r 0.15 mm def
+/relief-r 0.18 mm def
 
 /slot-thick acrylic-t def  % slot thickness for snug fit.
 
@@ -139,9 +149,9 @@
 /hsync-w 2 mm def
 
 % The UV laser case
-/laser-width 33 mm def
-/laser-length 55 mm def
-/laser-edge-mount-distance 18 mm def
+/laser-width 33 mm def                % Typical width.
+/laser-length 55 mm def               % Typical length of the laser box
+/laser-edge-mount-distance 18 mm def  % distance center of laser from edge.
 
 /polygon-mirror-high laser-width 2 div def  % center of the laser
 /polygon-mirror-w 44 mm def
@@ -159,18 +169,6 @@
 % horizontal direction, i.e. radius == pcb-w. We want to use a little less of
 % the range to have space for synchronization.
 /arc-radius pcb-w 20 mm add def
-
-% Origin of the scan point, essentially the point light hits the polygon
-% mirror in the center axis.
-/scan-origin-to-board pcb-w 2 div scan-angle 2 div tan div def
-/scan-origin-to-slot
-    scan-origin-to-board       % total
-    polygon-mirror-high sub    % down from laser height on surface
-    acrylic-t sub              % through top part 'ceiling'
-    bed-slide-high-top sub     % Down to top of sled
-    def
-/scan-redirect-mirror-distance 60 mm def
-/scan-redirect-mirror-width 30 mm def
 
 % We want to be at least half pcb sled longer so that we are supported
 % at center of gravity. However, the mechanics might require to be longer.
@@ -807,15 +805,21 @@
     41.6 mm 2 div neg -18.5 mm screw
     stroke
 
-    print-measures { measure-col 0 0 polygon-mirror-r circle stroke } if % demo
+    % Some hinting lines.
+    print-measures {
+	measure-col
+	-25 mm -25 mm moveto 50 mm 72 mm box
+	0 0 polygon-mirror-r circle stroke
+    } if
 
     outer-cut
     48 mm 2 div neg -24 mm translate
 
     % should we print the outline ?
-    { 0 0 moveto 48 mm 68 mm box } if % cuts the outer of the mirror
-
-    48 mm 15 mm sub 2 div 0 moveto 15 mm 5 mm box  %  sensor protrusion cutout
+    {
+      0 0 moveto 48 mm 68 mm box % cuts the outer of the mirror
+      48 mm 15 mm sub 2 div 0 moveto 15 mm 5 mm box  %  sensor protrusion cutout
+    } if
     stroke
 
     grestore
@@ -869,39 +873,68 @@
 %---- end help procedures, start parts.
 
 /polygon-mirror-assembly {
-    5 dict begin
+    6 dict begin
 
-    /mirror-hit-point laser-slot-distance scan-origin-to-slot sub def
-    mirror-hit-point bed-w 2 div measure-A pop pop
+    % Origin of the scan point, essentially the point light hits the polygon
+    % mirror in the center axis.
+    /scan-origin-to-board pcb-w 2 div scan-angle 2 div tan div def
+    /scan-origin-to-slot
+       scan-origin-to-board       % total
+       polygon-mirror-high sub    % down from laser height on surface
+       acrylic-t sub              % through top part 'ceiling'
+       bed-slide-high-top sub     % Down to top of sled
+       def
+
+    % X/Y coordinate where the laser should hit the polygon mirror.
+    /poly-mirror-y bed-w 2 div def
+    /poly-mirror-x laser-slot-distance scan-origin-to-slot sub def
+
+    poly-mirror-x poly-mirror-y measure-A pop pop
     laser-slot-distance bed-w 2 div [0 (scan-origin-to-slot)] measure-B pop pop
 
-    mirror-hit-point bed-w 2 div measure-A pop pop
-    mirror-hit-point scan-redirect-mirror-distance add
+    poly-mirror-x poly-mirror-y measure-A pop pop
+    poly-mirror-x scan-redirect-mirror-distance add
     laser-edge-mount-distance [0 (<-redirected)] measure-B pop pop
 
     /redirect-angle
-        bed-w 2 div laser-edge-mount-distance sub
+        poly-mirror-y laser-edge-mount-distance sub
 	scan-redirect-mirror-distance
 	atan
         def
 
+    % Redirect mirror placement.
     gsave
 	/finger-len 3 mm def
 	/mirror-thickness 1 mm def  % TODO: measure and use angle
-	mirror-hit-point scan-redirect-mirror-distance add
+	poly-mirror-x scan-redirect-mirror-distance add
 	laser-edge-mount-distance translate
-	90 redirect-angle sub rotate
+	90 redirect-angle 2 div sub rotate
 	scan-redirect-mirror-width 2 div mirror-thickness neg moveto
 	scan-redirect-mirror-width 2 div neg mirror-thickness neg slot-lineto stroke
+	print-measures {
+  	  % illustrate normal on that mirror
+	  measure-col [3] 0 setdash 0 0 moveto 0 20 mm lineto stroke
+	} if
     grestore
 
-    /hit-mirror-offset scan-origin-to-slot scan-angle 2 div tan mul def
-    %/hit-mirror-offset scan-origin-to-board scan-angle 2 div tan mul def
+    % FYI help-lines showing the polygon mirror when it projects to center.
+    print-measures {
+       gsave
+ 	poly-mirror-x poly-mirror-y translate
+	90 redirect-angle 2 div sub rotate
+	measure-col
+	-10 mm 0 moveto 10 mm 0 lineto stroke
+	% Illustrate mirror normal.
+	[3] 0 setdash 0 -20 mm moveto 0 polygon-mirror-r lineto stroke
+        grestore
+    } if
 
-    mirror-hit-point bed-w 2 div measure-A pop pop
+    /hit-mirror-offset scan-origin-to-slot scan-angle 2 div tan mul def
+
+    poly-mirror-x poly-mirror-y measure-A pop pop
     laser-slot-distance bed-w 2 div hit-mirror-offset add [0 (v)] measure-B pop pop
 
-    mirror-hit-point bed-w 2 div measure-A pop pop
+    poly-mirror-x poly-mirror-y measure-A pop pop
     laser-slot-distance bed-w 2 div hit-mirror-offset sub [0 (^)] measure-B pop pop
 
     /dx redirect-angle 2 div cos polygon-mirror-r mul def
@@ -909,10 +942,16 @@
 
     % mounting holes for rotating mirror
     false  % do not cut outline
-    mirror-hit-point dx sub
-    bed-w 2 div dy add
+    poly-mirror-x dx sub
+    poly-mirror-y dy add
         polygon-mirror-footprint stroke
 
+    % Wire hole for polygon mirror
+    do-angle-test not {
+      laser-slot-distance scan-origin-to-slot sub 25 mm sub
+      bed-w 12 mm sub moveto
+      12 mm 5 mm 2 mm rounded-corner-box stroke
+    } if
     end
 } def
 
@@ -982,11 +1021,6 @@
     0 0 finger-lineto-noscrew
     stroke
 
-    % Wire hole for polygon mirror
-    laser-slot-distance scan-origin-to-slot sub 25 mm sub
-    bed-w 12 mm sub moveto
-    12 mm 5 mm 2 mm rounded-corner-box stroke
-
     70 mm laser-edge-mount-distance moveto laser-footprint  % Mounting the laser
     10 mm 36 mm 3 mm circle stroke      % laser wires
 
@@ -999,7 +1033,34 @@
     laser-slot-distance laser-slot-h 2 div sub bed-w laser-slot-w sub 2 div moveto
     laser-slot-h laser-slot-w measure-box 3 mm rounded-corner-box
 
-    polygon-mirror-assembly
+    do-angle-test {
+     /scan-angle 36.5 def         % Something < 120, better less than 60
+     /scan-redirect-mirror-distance 60 mm def  % Mirror distance
+     /scan-redirect-mirror-width 30 mm def     % Width of the mirror foot.
+     polygon-mirror-assembly
+
+     /scan-angle 45 def         % Something < 120, better less than 60
+     /scan-redirect-mirror-distance 40 mm def  % Mirror distance
+     /scan-redirect-mirror-width 30 mm def     % Width of the mirror foot.
+     polygon-mirror-assembly
+
+     /scan-angle 52 def         % Something < 120, better less than 60
+     /scan-redirect-mirror-distance 35 mm def  % Mirror distance
+     /scan-redirect-mirror-width 30 mm def     % Width of the mirror foot.
+     polygon-mirror-assembly
+
+     /scan-angle 60 def         % Something < 120, better less than 60
+     /scan-redirect-mirror-distance 30 mm def  % Mirror distance
+     /scan-redirect-mirror-width 30 mm def     % Width of the mirror foot.
+     polygon-mirror-assembly
+
+     /scan-angle 75 def         % Something < 120, better less than 60
+     /scan-redirect-mirror-distance 20 mm def  % Mirror distance
+     /scan-redirect-mirror-width 30 mm def     % Width of the mirror foot.
+     polygon-mirror-assembly
+    } {
+     polygon-mirror-assembly
+    } ifelse
 
     gsave
       % LDGraphy text. Right now in front of the slot, but should be placed
@@ -1517,19 +1578,20 @@ print-toppanel {
 
   %sled-range-visual
 
+  % redirect mirror (TODO: Should be separate sub-part).
   gsave
     1 dict begin
     /finger-len 3 mm def
-    inner-device-len 30 mm sub bed-w 2 div translate
+    inner-device-len 40 mm sub bed-w 2 div 10 mm add translate
     0 0 moveto
     scan-redirect-mirror-width 0 finger-rlineto-noscrew
-    0 30 mm rlineto
+    0 25 mm rlineto
     scan-redirect-mirror-width neg 0 rlineto
-    0 -30 mm rlineto
+    0 -25 mm rlineto
     stroke
     engraving-cut
     scan-redirect-mirror-width 2 div 0 moveto
-    0 30 mm rlineto
+    0 25 mm rlineto
     0 laser-width 2 div moveto
     scan-redirect-mirror-width 0 rlineto
     stroke
