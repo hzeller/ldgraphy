@@ -154,7 +154,7 @@
 /laser-length 55 mm def               % Typical length of the laser box
 /laser-edge-mount-distance 18 mm def  % distance center of laser from edge.
 
-/polygon-mirror-high laser-width 2 div def  % center of the laser
+/polygon-mirror-high laser-width 2 div def  % == center of the laser
 /polygon-mirror-w 44 mm def
 /polygon-mirror-h 60 mm def
 /polygon-mirror-r 35 mm 2 div def
@@ -170,10 +170,13 @@
 
 % The down mirror is elevated above the top plate, so we need the acrylic
 % thickness to be on the same level as the rot mirror that is mounted on
-% the top plate.
+% the top plate. TODO: adding acrylic-t here is confusing.
 /down-mirror-high polygon-mirror-high acrylic-t add def
 /down-mirror-w 10 mm def
-/down-mirror-t 4.5 mm def
+/down-mirror-t 4.3 mm def
+/down-mirror-slot false def           % if we want a slot for the mirror
+/down-mirror-backing-width 20 mm def  % might be calculated from curvature.
+/down-mirror-backing-glue-thick 0.7 mm def
 
 % Given that we cover 60 degrees, we cover 2 * sin(30) times radius in
 % horizontal direction, i.e. radius == pcb-w. We want to use a little less of
@@ -193,10 +196,20 @@
 /mirror-holder-r mirror-holder-width 2 div def
 /mirror-holder-high down-mirror-high mirror-holder-r add def
 
+% Apron above the toppanel. derived value
+/top-apron-high
+    mirror-holder-high
+    acrylic-t sub          % Want to embed down again around the top angle
+
+    laser-width            % Whatever is higher. Laser needs to fit as well.
+    max
+    def
+
 % -- variables to place properly between cuts
 % distance between different cuts
 /cut-dist print-measures { 6 mm } { 1 mm } ifelse def
-/side-cut-distance inner-device-high 2 mul mirror-holder-high add cut-dist add acrylic-t add 35 mm add def
+/side-cut-distance inner-device-high acrylic-t 2 mul add top-apron-high add
+     2 mul cut-dist add def
 
 % Linewidth doesn't do anything to the DXF output, it just makes it easier
 % to manually inspect in the PostScript viewer.
@@ -371,7 +384,8 @@
 
 /inner-cut { 1 0 0 setrgbcolor } def
 /outer-cut { 0 0 0 setrgbcolor } def
-/engraving-cut { 0 1 0 setrgbcolor } def
+/scan-engraving-cut { 0 1 0 setrgbcolor } def
+/vector-engraving-cut { 0 0 1 setrgbcolor } def
 
 % (description) x y
 /describe {
@@ -976,10 +990,11 @@
     current-measure-A
 
     % right to mirror slot
-    laser-slot-distance mirror-holder-r sub 0 finger-lineto-noscrew
+    laser-slot-distance 0 finger-lineto-noscrew
 
-    % mirror slot width
-    mirror-holder-width 0 rlineto
+    % skipping the curved area over the laser slot
+    laser-slot-distance top-apron-high 2 div add
+    0 lineto
 
     % to the end on the right.
     inner-device-len 0 finger-lineto-noscrew
@@ -993,7 +1008,7 @@
        /distance-from-end
            inner-device-len
 	   laser-slot-distance sub
-	   laser-slot-h 2 div sub
+	   top-apron-high 2 div sub
 	   ldgraphy-font-size sub % TODO: remove when text placed differently
 	   def
        /ease-in-fraction 0.2 def
@@ -1025,8 +1040,9 @@
        end
     } ifelse
 
-    laser-slot-distance mirror-holder-r add bed-w finger-lineto-noscrew
-    mirror-holder-width neg 0 rlineto
+    % front part back to end of rounding of apron
+    laser-slot-distance top-apron-high 2 div add bed-w finger-lineto-noscrew
+    laser-slot-distance bed-w lineto  % skip until mirror.
 
     0 bed-w finger-lineto-noscrew
     0 0 finger-lineto-noscrew
@@ -1035,6 +1051,14 @@
     laser-slot-distance bed-w [6 mm] measure-B pop pop
 
     stroke
+
+    % Mounting holes for rounded toppart
+    1 dict begin
+    /finger-len 15 mm def
+    laser-slot-distance top-apron-high 2 div add acrylic-t add 0 moveto
+    laser-slot-distance top-apron-high 2 div add acrylic-t add bed-w slot-lineto
+    stroke
+    end
 
     % Laser mount
     70 mm laser-edge-mount-distance moveto laser-footprint  % Mounting the laser
@@ -1076,8 +1100,8 @@
     gsave
       % LDGraphy text. Right now in front of the slot, but should be placed
       % on a panel covering the front part (not there yet)
-      engraving-cut
-      laser-slot-distance laser-slot-h 2 div add  % right of laser slot
+      scan-engraving-cut
+      laser-slot-distance top-apron-high 2 div add  % right of laser slot
       bed-w 2 div moveto
       90 rotate
       /Courier findfont ldgraphy-font-size scalefont setfont
@@ -1087,8 +1111,21 @@
    flush-measures
 } def
 
+/part-laser-height-gauge {
+   (Height gauge) -10 mm polygon-mirror-high 3 mm add describe
+   0 0 moveto
+   20 mm 0 lineto
+   0 polygon-mirror-high 1 mm add rlineto
+   -30 mm 0 rlineto
+   0 -2 mm rlineto
+   10 mm 0 rlineto
+   0 0 lineto
+   stroke
+} def
+
 % The little mirror redirecting
 /part-redirect-mirror {
+    (Red. Mirror) 0 -10 mm describe
     3 dict begin
     /finger-len 3 mm def
     0 0 moveto
@@ -1111,13 +1148,6 @@
     0 0 curveto
     stroke
 
-    engraving-cut
-    scan-redirect-mirror-base 2 div 0 moveto
-    0 25 mm rlineto
-    0 laser-width 2 div moveto
-    scan-redirect-mirror-base 0 rlineto
-    stroke
-    outer-cut
     end
 } def
 
@@ -1132,19 +1162,22 @@
    current-measure-A
    1 dict begin
       /finger-len 12 mm def
-     inner-device-len inner-device-high down-mirror-high add mirror-holder-r add acrylic-t sub groove-lineto
+     inner-device-len
+     inner-device-high acrylic-t add top-apron-high add groove-lineto
      [-8 mm] current-measure-B
    end
 
-    inner-device-len laser-slot-distance sub
-    inner-device-high down-mirror-high add mirror-holder-r add acrylic-t sub groove-lineto
+    inner-device-len laser-slot-distance sub top-apron-high 2 div add
+    inner-device-high acrylic-t add top-apron-high add groove-lineto
 
-    % Notch for mirror
-    inner-device-len laser-slot-distance sub
-    inner-device-high down-mirror-high add mirror-holder-r 90 180 arc
+    % turn around
+    inner-device-len laser-slot-distance sub top-apron-high 2 div add
+    inner-device-high acrylic-t add top-apron-high 90 180 arc
 
     % end of mirror holder, down to top panel again.
-    inner-device-len laser-slot-distance sub mirror-holder-r sub inner-device-high lineto
+
+    inner-device-len laser-slot-distance sub top-apron-high 2 div sub
+    inner-device-high lineto
 
     % towards the front
     0 inner-device-high groove-lineto-noscrew
@@ -1159,12 +1192,33 @@
     end
     stroke
 
+    % Mirror hole.
     gsave
-      inner-device-len laser-slot-distance sub  % we go from the back
-      inner-device-high down-mirror-high add translate
+      inner-device-len laser-slot-distance sub   % we go from the back
+      inner-device-high acrylic-t add measure-A  % measure point: top of plate
+      acrylic-t sub  % down-mirror-high already has acrylic-t included.
+      down-mirror-high add [-22 mm] measure-B
+      translate
       45 rotate
-      down-mirror-w 2 div neg down-mirror-t 2 div neg moveto down-mirror-w down-mirror-t box
+      down-mirror-slot {
+        inner-cut
+      } {
+        measure-col
+      } ifelse
+
+      down-mirror-w 2 div neg 0 moveto down-mirror-w down-mirror-t box
       stroke
+
+      1 dict begin
+      /finger-len 3 mm def
+      down-mirror-backing-width 2 div neg
+      down-mirror-t down-mirror-backing-glue-thick add moveto
+      down-mirror-backing-width 0 slot-rlineto
+      stroke
+      end
+
+      stroke
+
    grestore
 
    bed-slide-high-bottom screw-r slide-holes
@@ -1172,7 +1226,7 @@
    bed-slide-high-top screw-r slide-holes grestore
 
    % slots to hold top-panel
-   inner-device-len laser-slot-distance sub mirror-holder-r add
+   inner-device-len laser-slot-distance sub
    inner-device-high moveto
    inner-device-len inner-device-high slot-lineto
 
@@ -1225,10 +1279,11 @@
    1 dict begin
       /finger-len 12 mm def
       current-measure-A
-      bed-w inner-device-high down-mirror-high add mirror-holder-r add acrylic-t sub finger-lineto   % up
+      bed-w
+      inner-device-high acrylic-t add top-apron-high add finger-lineto % up
       [-6 mm] current-measure-B
       bed-w neg 0 rlineto  % flat back for now.
-      0 0 finger-lineto   % down
+      0 0 finger-lineto    % down
    end
    stroke
 
@@ -1261,6 +1316,27 @@
 
    stroke
    flush-measures
+} def
+
+/part-down-mirror-back {
+   (Down mirror backing) 5 mm 5 mm describe
+   1 dict begin
+   /finger-len 3 mm def   % same as used in part-sidepanel for this
+   0 0 moveto bed-w 0 lineto
+   bed-w down-mirror-backing-width finger-lineto-noscrew
+   0 down-mirror-backing-width lineto
+   0 0 finger-lineto-noscrew
+   stroke
+
+   % Show alignment lines to help centering mirror
+   vector-engraving-cut
+   3 mm down-mirror-backing-width 2 div down-mirror-w 2 div sub moveto
+   bed-w 6 mm sub 0 rlineto
+   3 mm down-mirror-backing-width 2 div down-mirror-w 2 div add moveto
+   bed-w 6 mm sub 0 rlineto
+   stroke
+   outer-cut
+   end
 } def
 
 /pcbframe-alignment-holes {
@@ -1304,7 +1380,7 @@
    pcb-h pcb-w 0.8 mm circle
    stroke
 
-   engraving-cut
+   vector-engraving-cut
    /Courier findfont 2.5 mm scalefont setfont
    pcb-h pcb-w translate 90 rotate
    0 1 pcb-w-mm {
@@ -1612,9 +1688,10 @@ print-sidepanels {
 
 print-front-back {
   0 0 moveto part-front stroke % front-piece
+  gsave 0 30 mm translate part-down-mirror-back grestore
   gsave bed-w acrylic-t 2 mul add cut-dist add 0 translate
         part-back stroke grestore % back piece
-  0 inner-device-high down-mirror-high add mirror-holder-r add cut-dist add translate
+  0 inner-device-high acrylic-t add top-apron-high add cut-dist add translate
 } if
 
 print-toppanel {
@@ -1624,9 +1701,15 @@ print-toppanel {
   %sled-range-visual
 
   gsave
-  inner-device-len 40 mm sub bed-w 2 div 30 mm sub translate
+  inner-device-len scan-redirect-mirror-base sub bed-w 2 div 30 mm sub translate
   part-redirect-mirror
   grestore
+
+  gsave
+  inner-device-len 25 mm sub bed-w 2 div 5 mm add translate
+  part-laser-height-gauge
+  grestore
+
 
   false {
      % extra raiser board for the mirror
@@ -1660,7 +1743,7 @@ print-TEST-finger-slot {
     1 dict begin
 
     /Helvetica-Bold findfont 3 mm scalefont setfont
-    engraving-cut
+    vector-engraving-cut
     5 mm 16 mm moveto (Slot Sample) show
     12 mm 32 mm moveto (10 mm) show
     8 mm 1 mm moveto (5 mm) show
@@ -1692,7 +1775,7 @@ print-TEST-finger-slot {
 
     % Finger sample
     /Helvetica-Bold findfont 3 mm scalefont setfont
-    engraving-cut 65 mm 12 mm moveto (Finger Sample) show outer-cut
+    vector-engraving-cut 65 mm 12 mm moveto (Finger Sample) show outer-cut
 
     60 mm 0 moveto
     /finger-len 10 mm def
