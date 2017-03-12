@@ -3,11 +3,15 @@ Casing
 
 The [laser-cut-case.ps](./laser-cut-case.ps) PostScript file is a somewhat
 parametrized source for making an acrylic case for LDGraphy.
-Use black or dark-red acrylic to prevent the 405nm laser to escape in
-eye-damaging levels.
-You might see some pictures here that are transparent or open case for
+
+Use black or dark-red acrylic for all parts except the sled to prevent the
+405nm laser to escape in eye-damaging levels. The sled should be cut from
+fluorescing material.
+
+(You might see some pictures here that are transparent or open case for
 illustrative purposes, and which are good engineering samples while developing (
-and **require to wear Laser safety goggles**).
+and **require to wear Laser safety goggles**)).
+
 **Do not** use glass-clear transparent acrylic for the real machine, a 500mW
 laser can blind you!
 
@@ -24,6 +28,7 @@ There are several colored output layers that have different meaning for your
 set-up in the laser cutter:
   * the 'black layer'. Cut with outward kerf correction (laser cuts outside).
   * the 'red layer'. Cut with inside kerf correction (laser cuts inside).
+  * the 'yellow layer': Set to straight cut, no kerf correction.
   * the 'green layer'. Set to scan engraving.
   * the 'blue layer'. Set to vector engraving.
   * the 'gray layer' (if `/print-measures` true). Don't cut. Just FYI with measurements and help-lines.

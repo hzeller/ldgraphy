@@ -1,5 +1,5 @@
 %!PS-Adobe-3.0
-%%BoundingBox: 0 0 800 2600
+%%BoundingBox: 0 0 800 2800
 
 % Bounding box widths for comparison with real-world acrylic
 % 850 for 30 cm wide material
@@ -33,6 +33,7 @@
 /print-sidepanels true def         % Side panels framing of the outer case.
 /print-front-back true def         % Front and back parts of the case.
 /print-toppanel true def           % The laser and rotating mirror mounted here.
+/print-lid true def                % Lid covering everything.
 /print-pcbframe true def           % frame around sled.
 
 % Show measurement lines and descriptions. Switch these off before generating
@@ -174,8 +175,8 @@
 /down-mirror-high polygon-mirror-high acrylic-t add def
 /down-mirror-w 10 mm def
 /down-mirror-t 4.3 mm def
-/down-mirror-slot false def           % if we want a slot for the mirror
-/down-mirror-backing-width 20 mm def  % might be calculated from curvature.
+/down-mirror-slot true def            % if we want a slot for an overlong mirror
+/down-mirror-backing-width 15 mm def  % might be calculated from curvature.
 /down-mirror-backing-glue-thick 0.7 mm def
 
 % Given that we cover 60 degrees, we cover 2 * sin(30) times radius in
@@ -382,8 +383,73 @@
 
 %%-- measureline.ps
 
+% width x y
+/wave-bend {
+    gsave
+    translate
+    0 0 moveto
+    3 dict begin
+    /total-len exch def
+    0 1 40 {
+	40 div /fraction exch def
+	/angle fraction total-len mul len-x div 360 mul 2 mul def
+	total-len fraction mul
+	angle sin 0.5 mm mul lineto
+    } for
+    end
+    stroke
+    grestore
+} def
+
+/living-hinge-steps 3 def
+/lh-spacing-x 1 mm def
+/lh-spacing-y 1.5 mm def
+
+% width height fun
+/living-hinge {
+  gsave
+  currentpoint translate
+  1 dict begin
+  /line-fun exch def
+  /lh-h exch def
+  /lh-w exch def
+  /len-x lh-w lh-spacing-x sub living-hinge-steps div def
+
+  0 0 moveto
+  lh-w 0 rlineto
+  0 lh-h rlineto
+  lh-w neg 0 rlineto
+  0 lh-h neg rlineto
+  closepath
+  clip
+
+  newpath
+  lh-spacing-y 2 mul lh-spacing-y 2 mul lh-h {
+     /y exch def
+     0 1 living-hinge-steps 1 sub {
+	/i exch def
+	/x i len-x mul lh-spacing-x add def
+	len-x lh-spacing-x sub x y line-fun
+     } for
+  } for
+  stroke
+
+  lh-spacing-y lh-spacing-y 2 mul lh-h lh-spacing-y sub {
+     /y exch def
+     0 1 living-hinge-steps {
+	/i exch def
+	/x i len-x mul len-x 2 div sub lh-spacing-x add def
+	len-x lh-spacing-x sub x y line-fun
+     } for
+  } for
+  stroke
+  end
+  grestore
+} def
+
 /inner-cut { 1 0 0 setrgbcolor } def
 /outer-cut { 0 0 0 setrgbcolor } def
+/simple-cut { 1 1 0 setrgbcolor } def
 /scan-engraving-cut { 0 1 0 setrgbcolor } def
 /vector-engraving-cut { 0 0 1 setrgbcolor } def
 
@@ -654,7 +720,12 @@
 	moveto sdx 0 rmoveto
     } for
     stroke
-    print-measures { measure-col 0 0 moveto len 0 lineto stroke } if
+    print-measures {
+	measure-col
+	0 0 moveto len 0 lineto stroke
+	[3] 0 setdash
+	0 0 moveto 0 acrylic-t lineto len acrylic-t lineto len 0 lineto stroke
+    } if
     end
     grestore
 } def
@@ -1009,7 +1080,9 @@
            inner-device-len
 	   laser-slot-distance sub
 	   top-apron-high 2 div sub
-	   ldgraphy-font-size sub % TODO: remove when text placed differently
+	   acrylic-t sub  % plug in the rounded top part
+	   4 mm sub       % some sanity spacing
+	   %ldgraphy-font-size sub % TODO: remove when text placed differently
 	   def
        /ease-in-fraction 0.2 def
        /center-pull 1.1 def
@@ -1052,7 +1125,7 @@
 
     stroke
 
-    % Mounting holes for rounded toppart
+    % Mounting holes for rounded lid
     1 dict begin
     /finger-len 15 mm def
     laser-slot-distance top-apron-high 2 div add acrylic-t add 0 moveto
@@ -1097,6 +1170,7 @@
      polygon-mirror-assembly
     } ifelse
 
+    false {  % might need to go as we have LDGraphy now on the roleau
     gsave
       % LDGraphy text. Right now in front of the slot, but should be placed
       % on a panel covering the front part (not there yet)
@@ -1108,6 +1182,8 @@
       0 ldgraphy-font-size 0.8 mul neg rmoveto
       gsave (LDGraphy) center-show grestore
    grestore
+    } if
+
    flush-measures
 } def
 
@@ -1167,12 +1243,13 @@
      [-8 mm] current-measure-B
    end
 
-    inner-device-len laser-slot-distance sub top-apron-high 2 div add
-    inner-device-high acrylic-t add top-apron-high add groove-lineto
+   % top part holding the lid
+   inner-device-len laser-slot-distance sub top-apron-high 2 div add
+   inner-device-high acrylic-t add top-apron-high add groove-lineto-noscrew
 
-    % turn around
-    inner-device-len laser-slot-distance sub top-apron-high 2 div add
-    inner-device-high acrylic-t add top-apron-high 90 180 arc
+   % arc around towards baseline.
+   inner-device-len laser-slot-distance sub top-apron-high 2 div add
+   inner-device-high acrylic-t add top-apron-high 90 180 arc
 
     % end of mirror holder, down to top panel again.
 
@@ -1197,7 +1274,7 @@
       inner-device-len laser-slot-distance sub   % we go from the back
       inner-device-high acrylic-t add measure-A  % measure point: top of plate
       acrylic-t sub  % down-mirror-high already has acrylic-t included.
-      down-mirror-high add [-22 mm] measure-B
+      down-mirror-high add [-10 mm] measure-B
       translate
       45 rotate
       down-mirror-slot {
@@ -1282,7 +1359,11 @@
       bed-w
       inner-device-high acrylic-t add top-apron-high add finger-lineto % up
       [-6 mm] current-measure-B
-      bed-w neg 0 rlineto  % flat back for now.
+
+      /finger-len 25 mm def
+      bed-w neg 0 groove-rlineto  % flat back for now.
+
+      /finger-len 12 mm def
       0 0 finger-lineto    % down
    end
    stroke
@@ -1641,7 +1722,56 @@
   flush-measures
 } def
 
-%% Assembly
+/part-lid {
+    (Lid) 5 mm 5 mm describe
+    3 dict begin
+    /ldgraphy-font-size 22 mm laser-slot-w mul 104 mm div def
+    /finger-len 20 mm def
+    /long-part laser-slot-distance top-apron-high 2 div sub def
+    /hinge-len 2 3.1415926 mul top-apron-high mul 4 div def
+
+    0 0 moveto
+    long-part 0 finger-lineto-noscrew
+    0 acrylic-t neg rlineto
+    hinge-len 0 rlineto
+
+    /finger-len 15 mm def
+    0 bed-w acrylic-t 2 mul add finger-rlineto-noscrew
+
+    hinge-len neg 0 rlineto  % rouleau
+    0 acrylic-t neg rlineto
+
+    /finger-len 20 mm def
+    0 bed-w finger-lineto-noscrew
+
+    /finger-len 25 mm def
+    0 0 finger-lineto
+    stroke
+
+    % living hinge in front part
+    gsave
+    long-part hinge-len add acrylic-t neg translate
+    90 rotate
+
+    % First the text, as PostScript does not allow composition.
+    scan-engraving-cut
+    /Courier findfont ldgraphy-font-size scalefont setfont
+    bed-w acrylic-t 2 mul add 2 div ldgraphy-font-size 2 div moveto
+    (LDGraphy) center-show
+
+    simple-cut  % no kerf correction.
+    0 0 moveto bed-w acrylic-t 2 mul add hinge-len { wave-bend } living-hinge
+    stroke
+
+    outer-cut
+    grestore
+
+    end
+} def
+
+% ---------------------------------------------------------------------
+% ------------------- Assembly ----------------------------------------
+% ---------------------------------------------------------------------
 
 acrylic-t cut-dist add cut-dist translate
 
@@ -1691,7 +1821,7 @@ print-front-back {
   gsave 0 30 mm translate part-down-mirror-back grestore
   gsave bed-w acrylic-t 2 mul add cut-dist add 0 translate
         part-back stroke grestore % back piece
-  0 inner-device-high acrylic-t add top-apron-high add cut-dist add translate
+  0 inner-device-high acrylic-t 2 mul add top-apron-high add cut-dist add translate
 } if
 
 print-toppanel {
@@ -1735,7 +1865,13 @@ print-pcbframe {
   true  % cut outline
   0 0 polygon-mirror-footprint stroke
   grestore
-  0 bed-w acrylic-t 2 mul sub cut-dist add translate
+
+  0 bed-w cut-dist add translate
+} if
+
+print-lid {
+   0 acrylic-t translate
+   part-lid
 } if
 
 print-TEST-finger-slot {
