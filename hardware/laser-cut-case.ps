@@ -1,5 +1,5 @@
 %!PS-Adobe-3.0
-%%BoundingBox: 0 0 800 2800
+%%BoundingBox: 0 0 800 3100
 
 % Bounding box widths for comparison with real-world acrylic
 % 850 for 30 cm wide material
@@ -383,63 +383,74 @@
 
 %%-- measureline.ps
 
-% width x y
+% width clip-min-x clip-max-x x y
 /wave-bend {
     gsave
-    translate
-    0 0 moveto
-    3 dict begin
+    6 dict begin
+    /y exch def
+    /x exch def
+    x sub /clip-max-x exch def  % substracting x as we are going to translate
+    x sub /clip-min-x exch def
     /total-len exch def
+    x y translate
+    0 0 moveto
     0 1 40 {
 	40 div /fraction exch def
 	/angle fraction total-len mul len-x div 360 mul 2 mul def
-	total-len fraction mul
-	angle sin 0.5 mm mul lineto
+	/xpos total-len fraction mul def
+
+	xpos angle sin 0.5 mm mul
+	xpos clip-min-x lt xpos clip-max-x gt or { moveto } { lineto } ifelse
     } for
     end
     stroke
     grestore
 } def
 
-/living-hinge-steps 3 def
-/lh-spacing-x 1 mm def
-/lh-spacing-y 1.5 mm def
+/kerf-bend-steps 2 def
+/lh-spacing-x 2 mm def
+/lh-spacing-y 1.4 mm def
 
 % width height fun
-/living-hinge {
+/kerf-bend {
   gsave
   currentpoint translate
   1 dict begin
   /line-fun exch def
   /lh-h exch def
   /lh-w exch def
-  /len-x lh-w lh-spacing-x sub living-hinge-steps div def
+  /len-x lh-w lh-spacing-x sub kerf-bend-steps div def
 
-  0 0 moveto
-  lh-w 0 rlineto
-  0 lh-h rlineto
-  lh-w neg 0 rlineto
-  0 lh-h neg rlineto
-  closepath
-  clip
+  % this clipping doesn't really seem to work with pstoedit.
+  %0 0 moveto
+  %lh-w 0 rlineto
+  %0 lh-h rlineto
+  %lh-w neg 0 rlineto
+  %0 lh-h neg rlineto
+  %closepath
+  %clip
 
   newpath
   lh-spacing-y 2 mul lh-spacing-y 2 mul lh-h {
      /y exch def
-     0 1 living-hinge-steps 1 sub {
+     0 1 kerf-bend-steps 1 sub {
 	/i exch def
 	/x i len-x mul lh-spacing-x add def
-	len-x lh-spacing-x sub x y line-fun
+	len-x lh-spacing-x sub  % width
+	-1 mm lh-w 2 mm add                 % x-min/ x-max
+	x y line-fun
      } for
   } for
   stroke
 
   lh-spacing-y lh-spacing-y 2 mul lh-h lh-spacing-y sub {
      /y exch def
-     0 1 living-hinge-steps {
+     0 1 kerf-bend-steps {
 	/i exch def
 	/x i len-x mul len-x 2 div sub lh-spacing-x add def
-	len-x lh-spacing-x sub x y line-fun
+	len-x lh-spacing-x sub  % width
+	-1 mm lh-w 2 mm add                 % x-min/ x-max
+	x y line-fun
      } for
   } for
   stroke
@@ -1760,7 +1771,9 @@
     (LDGraphy) center-show
 
     simple-cut  % no kerf correction.
-    0 0 moveto bed-w acrylic-t 2 mul add hinge-len { wave-bend } living-hinge
+    0.5 mm 0.5 mm moveto
+    bed-w acrylic-t 2 mul add 1 mm sub
+    hinge-len 1 mm sub { wave-bend } kerf-bend
     stroke
 
     outer-cut
