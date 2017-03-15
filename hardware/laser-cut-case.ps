@@ -177,7 +177,7 @@
 /down-mirror-t 4.3 mm def
 /down-mirror-slot true def            % if we want a slot for an overlong mirror
 /down-mirror-backing-width 15 mm def  % might be calculated from curvature.
-/down-mirror-backing-glue-thick 0.7 mm def
+/down-mirror-backing-glue-thick 0 mm def
 
 % Given that we cover 60 degrees, we cover 2 * sin(30) times radius in
 % horizontal direction, i.e. radius == pcb-w. We want to use a little less of
@@ -409,7 +409,7 @@
 
 /kerf-bend-steps 2 def
 /lh-spacing-x 2 mm def
-/lh-spacing-y 1.4 mm def
+/lh-spacing-y 1.7 mm def
 
 % width height fun
 /kerf-bend {
@@ -865,6 +865,7 @@
   w neg 0 rlineto  relief-here
   0 h neg rlineto  relief-here
   closepath stroke
+
   end
 } def
 
@@ -1199,7 +1200,7 @@
 } def
 
 /part-laser-height-gauge {
-   (Height gauge) -10 mm polygon-mirror-high 3 mm add describe
+   (Height gauge) -25 mm polygon-mirror-high 4 mm add describe
    0 0 moveto
    20 mm 0 lineto
    0 polygon-mirror-high 1 mm add rlineto
@@ -1212,7 +1213,7 @@
 
 % The little mirror redirecting
 /part-redirect-mirror {
-    (Red. Mirror) 0 -10 mm describe
+    (Red. Mirror) -10 mm -10 mm describe
     3 dict begin
     /finger-len 3 mm def
     0 0 moveto
@@ -1260,7 +1261,8 @@
 
    % arc around towards baseline.
    inner-device-len laser-slot-distance sub top-apron-high 2 div add
-   inner-device-high acrylic-t add top-apron-high 90 180 arc
+   % Only doing 170 instead of 180 to avoid laser software choke.
+   inner-device-high acrylic-t add top-apron-high 90 170 arc
 
     % end of mirror holder, down to top panel again.
 

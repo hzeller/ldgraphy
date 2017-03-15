@@ -26,11 +26,15 @@ call `make`.
 
 There are several colored output layers that have different meaning for your
 set-up in the laser cutter:
+  * the 'green layer'. Set to scan engraving.
+  * the 'blue layer'. Set to vector engraving.
+
+Do the engravings first. Then:
   * the 'black layer'. Cut with outward kerf correction (laser cuts outside).
   * the 'red layer'. Cut with inside kerf correction (laser cuts inside).
   * the 'yellow layer': Set to straight cut, no kerf correction.
-  * the 'green layer'. Set to scan engraving.
-  * the 'blue layer'. Set to vector engraving.
+
+Don't cut
   * the 'gray layer' (if `/print-measures` true). Don't cut. Just FYI with measurements and help-lines.
 
 ### Customization
