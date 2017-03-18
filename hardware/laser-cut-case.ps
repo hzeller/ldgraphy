@@ -957,6 +957,19 @@
     outer-cut
 } def
 
+% A nema 11 footprint.
+/motor-footprint {
+    currentpoint
+    gsave
+    translate
+    measure-col
+    0 -11 mm moveto 3 mm 22 mm box      % shim
+    3 mm -2.5 mm moveto 18 mm 5 mm box  % shaft
+    -32 mm -14 mm moveto 32 mm 28 mm box % body
+    stroke
+    grestore
+} def
+
 % (text)
 /center-show {
     dup stringwidth pop 2 div neg 0 rmoveto
@@ -1709,6 +1722,8 @@
   % mounting for motor
   drive-mount-pos bed-w moveto
   0 bed-w neg slot-rlineto stroke
+
+  drive-mount-pos bed-w 2 div moveto motor-footprint
 
   0 bed-w 2 div measure-A pop pop
   drive-mount-pos bed-w 2 div [20 mm (drive-mount-pos)] measure-B pop pop
