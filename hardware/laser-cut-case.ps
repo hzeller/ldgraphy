@@ -37,7 +37,7 @@
 /print-pcbframe true def           % frame around sled.
 
 % Show measurement lines and descriptions. Switch these off before generating
-% the DXF to save space (there are more gaps for the measurements)
+% the DXF to save acrylic material (there are more gaps for the measurements)
 /print-measures false def
 
 % For testing while tweaking finger/slot output on your laser cutter.
@@ -816,6 +816,20 @@
     screw-r circle
 } def
 
+% To leave a little more space. Only in X direction currently.
+/oval-screw {
+    3 dict begin
+    2 div /half-extend exch def
+    /y exch def
+    /x exch def
+    x half-extend add y screw-r add moveto
+    x half-extend sub y screw-r add lineto
+    x half-extend sub y screw-r 90 270 arc
+    x half-extend add y screw-r sub lineto
+    x half-extend add y screw-r -90 90 arc
+    end
+} def
+
 % Initially, we had rods through the hole width, now just simple
 % screws.
 /rod {
@@ -949,10 +963,10 @@
     } if
 
     inner-cut
-    -7.85 mm 0 screw
-    laser-length neg 7.85 mm add 0 screw
-    -16 mm 0 screw
-    -36 mm 0 screw stroke
+    -7.85 mm 0 2 mm oval-screw
+    laser-length neg 7.85 mm add 0 2 mm oval-screw
+    -16 mm 0 2 mm oval-screw
+    -36 mm 0 2 mm oval-screw stroke
     grestore
     outer-cut
 } def
