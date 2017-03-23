@@ -43,7 +43,7 @@ popt.SetSubtractMaskFromSilk(False)
 #   gerbv *
 # just makes sense
 plot_plan = [
-    ( Edge_Cuts, "1-EdgeCuts",    "Edges" ),
+    ( Edge_Cuts, "1-Edge_Cuts",   "Edges" ),
 
     ( F_SilkS,   "2-SilkTop",     "Silk top" ),
     ( F_Paste,   "3-PasteTop",    "Paste top" ),
