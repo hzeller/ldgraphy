@@ -39,9 +39,10 @@
 		       (Output of our OpAmp is slow, only 10V/us */
 		    0x070 0x77 /* GPIO_0[30]; P9.11 Hsync input. Pullup. Slow Slew */
 
-		    /* Stepmotor data. Not yet used. */
+		    0x044 0x07 /* GPIO_1[17]; P9.23 Mirror + Stepper Enable */
+
+		    /* Sled stepper */
 		    0x040 0x07 /* GPIO_1[16]; P9.15 Dir */
-		    0x044 0x07 /* GPIO_1[17]; P9.23 Enable */
 		    0x048 0x07 /* GPIO_1[18]; P9.14 Step */
                 >;
             };
