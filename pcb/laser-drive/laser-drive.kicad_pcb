@@ -37,7 +37,7 @@
   )
 
   (setup
-    (last_trace_width 0.5)
+    (last_trace_width 0.25)
     (user_trace_width 0.25)
     (user_trace_width 0.3)
     (user_trace_width 0.35)
@@ -835,10 +835,10 @@
       (net 11 /ControlOut))
     (pad 5 smd rect (at 0.95 -0.65) (size 0.65 0.4) (layers F.Cu F.Paste F.Mask)
       (net 2 +12V))
-    (model ${KISYS3DMOD}/TO_SOT_Packages_SMD.3dshapes/SOT-353_SC-70-5.wrl
+    (model ${KISYS3DMOD}/TO_SOT_Packages_SMD.3dshapes/SC-70-5.wrl
       (at (xyz 0 0 0))
       (scale (xyz 1 1 1))
-      (rotate (xyz 0 0 0))
+      (rotate (xyz 0 0 90))
     )
   )
 
@@ -1124,7 +1124,7 @@
   (gr_line (start 111.76 45.085) (end 111.76 77.47) (layer Edge.Cuts) (width 0.15))
   (gr_line (start 83.185 45.085) (end 111.76 45.085) (layer Edge.Cuts) (width 0.15))
   (dimension 32.385 (width 0.3) (layer F.SilkS)
-    (gr_text "32.385 mm" (at 115.142 61.2775 270) (layer F.SilkS) (tstamp 58D9D4C1)
+    (gr_text "32.385 mm" (at 115.142 61.2775 270) (layer F.SilkS) (tstamp 58DA7D36)
       (effects (font (size 1.5 1.5) (thickness 0.3)))
     )
     (feature1 (pts (xy 111.76 77.47) (xy 116.492 77.47)))
@@ -1136,7 +1136,7 @@
     (arrow2b (pts (xy 113.792 45.085) (xy 114.378421 46.211504)))
   )
   (dimension 28.575 (width 0.3) (layer F.SilkS)
-    (gr_text "28.575 mm" (at 97.4725 41.957) (layer F.SilkS) (tstamp 58D9D4C2)
+    (gr_text "28.575 mm" (at 97.4725 41.957) (layer F.SilkS) (tstamp 58DA7D37)
       (effects (font (size 1.5 1.5) (thickness 0.3)))
     )
     (feature1 (pts (xy 111.76 45.085) (xy 111.76 40.607)))
