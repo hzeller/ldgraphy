@@ -1,4 +1,5 @@
 EESchema Schematic File Version 2
+LIBS:laser-drive-rescue
 LIBS:power
 LIBS:device
 LIBS:transistors
@@ -140,15 +141,15 @@ F 3 "" H 6800 4100 50  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L POT RV1
+L POT-RESCUE-laser-drive RV1
 U 1 1 58D4177B
 P 4450 1900
-F 0 "RV1" V 4350 2000 50  0000 R CNN
-F 1 "10k" V 4500 2150 50  0000 R CNN
+F 0 "RV1" V 4400 1800 50  0000 R CNN
+F 1 "10k" H 4500 1900 50  0000 R CNN
 F 2 "Potentiometers:Potentiometer_WirePads" H 4450 1900 50  0001 C CNN
 F 3 "" H 4450 1900 50  0000 C CNN
 	1    4450 1900
-	1    0    0    1   
+	0    1    -1   0   
 $EndComp
 $Comp
 L C C1
