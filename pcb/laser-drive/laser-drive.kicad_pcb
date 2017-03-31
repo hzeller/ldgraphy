@@ -1,4 +1,4 @@
-(kicad_pcb (version 20170123) (host pcbnew "(2017-03-30 revision 3234087dc)-master")
+(kicad_pcb (version 20170123) (host pcbnew "(2017-03-23 revision f2763e90e)-master")
 
   (general
     (links 48)
@@ -6,7 +6,7 @@
     (area 79.339857 40.607 121.792001 79.4145)
     (thickness 1.6)
     (drawings 14)
-    (tracks 160)
+    (tracks 165)
     (zones 0)
     (modules 28)
     (nets 13)
@@ -37,7 +37,7 @@
   )
 
   (setup
-    (last_trace_width 0.25)
+    (last_trace_width 0.3)
     (user_trace_width 0.25)
     (user_trace_width 0.3)
     (user_trace_width 0.35)
@@ -1124,7 +1124,7 @@
   (gr_line (start 111.76 45.085) (end 111.76 77.47) (layer Edge.Cuts) (width 0.15))
   (gr_line (start 83.185 45.085) (end 111.76 45.085) (layer Edge.Cuts) (width 0.15))
   (dimension 32.385 (width 0.3) (layer F.SilkS)
-    (gr_text "32.385 mm" (at 115.142 61.2775 270) (layer F.SilkS) (tstamp 58DDEAA5)
+    (gr_text "32.385 mm" (at 115.142 61.2775 270) (layer F.SilkS) (tstamp 58DE787C)
       (effects (font (size 1.5 1.5) (thickness 0.3)))
     )
     (feature1 (pts (xy 111.76 77.47) (xy 116.492 77.47)))
@@ -1136,7 +1136,7 @@
     (arrow2b (pts (xy 113.792 45.085) (xy 114.378421 46.211504)))
   )
   (dimension 28.575 (width 0.3) (layer F.SilkS)
-    (gr_text "28.575 mm" (at 97.4725 41.957) (layer F.SilkS) (tstamp 58DDEAA6)
+    (gr_text "28.575 mm" (at 97.4725 41.957) (layer F.SilkS) (tstamp 58DE787D)
       (effects (font (size 1.5 1.5) (thickness 0.3)))
     )
     (feature1 (pts (xy 111.76 45.085) (xy 111.76 40.607)))
@@ -1148,6 +1148,12 @@
     (arrow2b (pts (xy 83.185 43.307) (xy 84.311504 42.720579)))
   )
 
+  (segment (start 91.144049 70.782951) (end 89.916 72.011) (width 1) (layer F.Cu) (net 1))
+  (segment (start 89.916 72.011) (end 89.662 72.265) (width 1) (layer F.Cu) (net 1))
+  (segment (start 87.764 71.374) (end 89.279 71.374) (width 0.3) (layer F.Cu) (net 1))
+  (segment (start 89.279 71.374) (end 89.916 72.011) (width 0.3) (layer F.Cu) (net 1))
+  (segment (start 85.852 70.612) (end 87.002 70.612) (width 0.3) (layer F.Cu) (net 1))
+  (segment (start 87.002 70.612) (end 87.764 71.374) (width 0.3) (layer F.Cu) (net 1))
   (segment (start 97.869087 46.33795) (end 105.894952 46.33795) (width 0.5) (layer F.Cu) (net 1))
   (segment (start 105.894952 46.33795) (end 105.912002 46.355) (width 0.5) (layer F.Cu) (net 1))
   (segment (start 105.912002 46.355) (end 107.95 46.355) (width 0.5) (layer F.Cu) (net 1))
@@ -1172,7 +1178,6 @@
   (segment (start 89.662 72.39) (end 89.662 74.18) (width 0.5) (layer F.Cu) (net 1) (status 30))
   (segment (start 89.662 74.18) (end 89.904 74.422) (width 0.5) (layer F.Cu) (net 1) (status 30))
   (segment (start 91.144049 70.145951) (end 91.144049 70.782951) (width 1) (layer F.Cu) (net 1))
-  (segment (start 91.144049 70.782951) (end 89.662 72.265) (width 1) (layer F.Cu) (net 1) (status 20))
   (segment (start 89.662 72.265) (end 89.662 72.39) (width 1) (layer F.Cu) (net 1) (status 30))
   (segment (start 91.428087 70.145951) (end 91.144049 70.145951) (width 1) (layer F.Cu) (net 1))
   (segment (start 91.428087 70.145951) (end 91.428087 68.427951) (width 1) (layer F.Cu) (net 1))
