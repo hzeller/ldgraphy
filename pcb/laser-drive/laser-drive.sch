@@ -1,35 +1,5 @@
 EESchema Schematic File Version 2
-LIBS:laser-drive-rescue
 LIBS:power
-LIBS:device
-LIBS:transistors
-LIBS:conn
-LIBS:linear
-LIBS:regul
-LIBS:74xx
-LIBS:cmos4000
-LIBS:adc-dac
-LIBS:memory
-LIBS:xilinx
-LIBS:microcontrollers
-LIBS:dsp
-LIBS:microchip
-LIBS:analog_switches
-LIBS:motorola
-LIBS:texas
-LIBS:intel
-LIBS:audio
-LIBS:interface
-LIBS:digital-audio
-LIBS:philips
-LIBS:display
-LIBS:cypress
-LIBS:siliconi
-LIBS:opto
-LIBS:atmel
-LIBS:contrib
-LIBS:valves
-LIBS:ldgraphy
 LIBS:laser-drive-cache
 EELAYER 26 0
 EELAYER END
@@ -146,7 +116,7 @@ U 1 1 58D4177B
 P 4450 1900
 F 0 "RV1" V 4400 1800 50  0000 R CNN
 F 1 "10k" H 4500 1900 50  0000 R CNN
-F 2 "Potentiometers:Potentiometer_WirePads" H 4450 1900 50  0001 C CNN
+F 2 "Potentiometers:Potentiometer_WirePads_Small" H 4450 1900 50  0001 C CNN
 F 3 "" H 4450 1900 50  0000 C CNN
 	1    4450 1900
 	0    1    -1   0   
