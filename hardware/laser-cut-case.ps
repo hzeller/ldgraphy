@@ -43,6 +43,7 @@
 % For testing while tweaking finger/slot output on your laser cutter.
 % Typical tweak parameters are /acrylic-t, /do-reliefs, /relief-r, /slot-thick
 /print-TEST-finger-slot false def
+/print-TEST-x-spring false def
 
 /mm { 72 25.4 div mul } bind def
 
@@ -747,6 +748,51 @@
     3 1 roll sub  % dy dx
     exch
     slot-rlineto
+} def
+
+% Spring edge of a part. Really only works in x-direction right now
+% x y len
+/x-spring {
+  7 dict begin
+ /line-len exch def     % total length of line
+
+ % Some hardcodes, probably would be good as
+ /arc-x 5 mm def        % curve up and down part
+ /arc-y 0.7 mm def      % thickness of the 'hump'
+ /spring-thick 1 mm def % thickness of the bendable part
+ /spring-short 2 mm def % how much shorter the bendable part should be to length
+ /bend-radius 1.2 mm def
+
+  gsave
+  simple-cut
+  translate 0 0 moveto
+  line-len arc-x 2 mul sub 0 mm lineto    % start of hump
+  arc-x 2 div   0                         % hump up
+  arc-x 2 div   arc-y
+  arc-x arc-y rcurveto
+
+  arc-x 2 div 0                           % hump down
+  arc-x 2 div arc-y neg
+  arc-x arc-y neg rcurveto
+
+  0 spring-thick neg rlineto              % down; should be arc
+
+  % line backwards to form spring span; might be better with bezier ?
+  line-len spring-short sub bend-radius sub neg 0 rlineto
+  currentpoint bend-radius sub bend-radius 90 270	 arc
+
+  % at the end of the travel, we bend down by this amount. Since the 'hump' of
+  % height arc-y is a little bit inwards of the lever, the travel at the end is
+  % more than arc-y
+  /down-bend line-len line-len arc-x sub div arc-y mul 0.2 mm add def
+
+  line-len 0.5 mm add
+  spring-thick neg down-bend sub lineto
+
+  0 spring-thick down-bend add rlineto
+  stroke
+  grestore
+  end
 } def
 
 % r is the outer radius.
@@ -1560,7 +1606,34 @@
 /part-sled {
   (Sled) 90 mm 60 mm describe
   3 dict begin
-  0 0 moveto bed-h bed-w 3 mm rounded-corner-box  % the sled
+  % Both springs should be the same length (for same string force).
+  % The front-one needs its 'hump' to be in the middle, as this is the
+  % center of gravity that is just supported when the sled is fully
+  % extended.
+  /spring-len bed-h 2 div 10 mm sub def
+  /rounded 3 mm def
+
+  %0 0 moveto bed-h bed-w 3 mm rounded-corner-box  % the sled
+  gsave
+  simple-cut  % ideally, we need an outer kerf-cut, but polygon is not closed
+
+  % Starting at top left. Move to the beginning of spring, then arc left around
+  10 mm 5 mm add bed-w moveto
+  rounded bed-w rounded sub rounded 90 180 arc  % top right arc
+
+  0 rounded lineto
+  rounded rounded rounded 180 270 arc    % bottom left arc
+
+  bed-h rounded sub 0 lineto  % bottom left-right
+  currentpoint rounded add rounded -90 0 arc   % rounded up
+  bed-h bed-w lineto                           % up
+
+  % Little connector piece between springs.
+  10 mm 5 mm add spring-len add bed-w moveto 10 mm 0 rlineto
+  stroke
+  grestore
+  10 mm 5 mm add bed-w spring-len x-spring
+  bed-h spring-len sub bed-w spring-len x-spring
   stroke
 
   pcbframe-alignment-holes
@@ -1966,6 +2039,18 @@ print-TEST-finger-slot {
     0 -20 mm rlineto
     stroke
     end
+    0 50 mm translate
+} if
+
+print-TEST-x-spring {
+    gsave
+    simple-cut
+    0 10 mm 80 mm x-spring
+    0 10 mm moveto 0 0 lineto
+    80 mm 0 lineto
+    80 mm 10 mm lineto
+    stroke
+    grestore
 } if
 
 stroke
