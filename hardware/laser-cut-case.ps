@@ -1615,6 +1615,9 @@
 
   %0 0 moveto bed-h bed-w 3 mm rounded-corner-box  % the sled
   gsave
+  % Messed up, the below needs to be rotated. Quick hack around:
+  bed-h bed-w translate 180 rotate
+
   simple-cut  % ideally, we need an outer kerf-cut, but polygon is not closed
 
   % Starting at top left. Move to the beginning of spring, then arc left around
@@ -1631,10 +1634,10 @@
   % Little connector piece between springs.
   10 mm 5 mm add spring-len add bed-w moveto 10 mm 0 rlineto
   stroke
-  grestore
   10 mm 5 mm add bed-w spring-len x-spring
   bed-h spring-len sub bed-w spring-len x-spring
   stroke
+  grestore
 
   pcbframe-alignment-holes
 
@@ -1913,6 +1916,7 @@ print-slide-rail-bottom {
 } if
 
 print-sled {
+  0 1 mm translate   % for the spring 'bump'
   part-sled flush-measures
   gsave bed-h cut-dist add 0 translate part-sled-misc grestore
   0 bed-w cut-dist 2 mul add translate
