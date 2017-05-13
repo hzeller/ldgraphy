@@ -393,7 +393,9 @@
     x sub /clip-max-x exch def  % substracting x as we are going to translate
     x sub /clip-min-x exch def
     /total-len exch def
+    /relief-radius 0.2 mm def
     x y translate
+    0 clip-min-x gt { 0 0 relief-radius 0 360 arc } if
     0 0 moveto
     0 1 40 {
 	40 div /fraction exch def
@@ -403,6 +405,7 @@
 	xpos angle sin 0.5 mm mul
 	xpos clip-min-x lt xpos clip-max-x gt or { moveto } { lineto } ifelse
     } for
+    currentpoint pop clip-max-x lt { currentpoint relief-radius 0 360 arc } if
     end
     stroke
     grestore
@@ -410,7 +413,7 @@
 
 /kerf-bend-steps 2 def
 /lh-spacing-x 2 mm def
-/lh-spacing-y 2.4 mm def
+/lh-spacing-y 1.9 mm def
 
 % width height fun
 /kerf-bend {
@@ -759,7 +762,7 @@
  % Some hardcodes, probably would be good as
  /arc-x 5 mm def        % curve up and down part
  /arc-y 0.7 mm def      % thickness of the 'hump'
- /spring-thick 1 mm def % thickness of the bendable part
+ /spring-thick 2 mm def % thickness of the bendable part
  /spring-short 2 mm def % how much shorter the bendable part should be to length
  /bend-radius 1.2 mm def
 
@@ -1610,7 +1613,8 @@
   % The front-one needs its 'hump' to be in the middle, as this is the
   % center of gravity that is just supported when the sled is fully
   % extended.
-  /spring-len bed-h 2 div 10 mm sub def
+  /spring-len bed-h 4 div 10 mm sub def
+  /center-spring-pos bed-h 2 div spring-len sub 5 mm add def
   /rounded 3 mm def
 
   %0 0 moveto bed-h bed-w 3 mm rounded-corner-box  % the sled
@@ -1621,7 +1625,7 @@
   simple-cut  % ideally, we need an outer kerf-cut, but polygon is not closed
 
   % Starting at top left. Move to the beginning of spring, then arc left around
-  10 mm 5 mm add bed-w moveto
+  center-spring-pos bed-w moveto
   rounded bed-w rounded sub rounded 90 180 arc  % top right arc
 
   0 rounded lineto
@@ -1632,10 +1636,11 @@
   bed-h bed-w lineto                           % up
 
   % Little connector piece between springs.
-  10 mm 5 mm add spring-len add bed-w moveto 10 mm 0 rlineto
-  stroke
-  10 mm 5 mm add bed-w spring-len x-spring
-  bed-h spring-len sub bed-w spring-len x-spring
+  center-spring-pos spring-len add bed-w moveto
+  bed-h 2 div spring-len sub 0 rlineto stroke
+
+  center-spring-pos  bed-w spring-len x-spring    % center spring.
+  bed-h spring-len sub bed-w spring-len x-spring  % spring at end of part
   stroke
   grestore
 
@@ -1846,7 +1851,7 @@
     /ldgraphy-font-size 22 mm laser-slot-w mul 104 mm div def
     /finger-len 20 mm def
     /long-part laser-slot-distance top-apron-high 2 div sub def
-    /hinge-len 2 3.1415926 mul top-apron-high mul 4 div def
+    /hinge-len 2 3.1415926 mul top-apron-high mul 4 div def % quarter turn
 
     0 0 moveto
     long-part 0 finger-lineto-noscrew
@@ -2048,11 +2053,12 @@ print-TEST-finger-slot {
 
 print-TEST-x-spring {
     gsave
+    /spring-len bed-h 4 div 10 mm sub def
     simple-cut
-    0 10 mm 80 mm x-spring
+    0 10 mm spring-len x-spring
     0 10 mm moveto 0 0 lineto
-    80 mm 0 lineto
-    80 mm 10 mm lineto
+    spring-len 0 lineto
+    spring-len 10 mm lineto
     stroke
     grestore
 } if
