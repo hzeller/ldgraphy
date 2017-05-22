@@ -995,6 +995,22 @@
     grestore
 } def
 
+/beaglebone-black-footprint {
+    currentpoint
+    gsave
+    translate
+    measure-col
+    86.36 mm 54.61 mm 12.7 mm rounded-corner-box
+    -3 mm 21.325 mm moveto 20 mm 17 mm box   % Ethernet jack
+    inner-cut
+    14.61 mm                       3.18 mm     1.8 mm circle
+    14.61 mm              54.61 mm 3.18 mm sub 1.8 mm circle
+    86.36 mm 5.59 mm sub           6.35 mm     1.8 mm circle
+    86.36 mm 5.59 mm sub  54.61 mm 6.35 mm sub 1.8 mm circle
+    stroke
+    grestore
+} def
+
 % Laser footprint at current position. Origin is the laser exit
 /laser-footprint {
     currentpoint
@@ -1442,11 +1458,11 @@
    0 0 moveto
    bed-w 0 lineto
 
-   1 dict begin
+   2 dict begin
+      /back-height inner-device-high acrylic-t add top-apron-high add def
       /finger-len 12 mm def
       current-measure-A
-      bed-w
-      inner-device-high acrylic-t add top-apron-high add finger-lineto % up
+      bed-w back-height finger-lineto % up
       [-6 mm] current-measure-B
 
       /finger-len 25 mm def
@@ -1454,6 +1470,11 @@
 
       /finger-len 12 mm def
       0 0 finger-lineto    % down
+
+      % Place for the ethernet plug. Position copied from beaglebone footprint
+      % A little larger for now to do some fitting.
+      20.325 mm 1 mm add back-height 20 mm sub moveto
+      19 mm 18 mm box
    end
    stroke
 
@@ -1462,6 +1483,8 @@
    bed-w 0 slot-rlineto stroke
    0 0 [20 mm (inner-device-high)] measure-B pop pop
    flush-measures
+
+
 } def
 
 /part-front {
@@ -1892,6 +1915,12 @@
     grestore
 
     end
+
+    gsave
+    1 mm bed-w 1 mm sub moveto
+    1 -1 scale    % flip over, as we mount it on the underside.
+    beaglebone-black-footprint
+    grestore
 } def
 
 % ---------------------------------------------------------------------
