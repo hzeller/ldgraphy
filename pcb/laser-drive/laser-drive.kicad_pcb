@@ -1,4 +1,4 @@
-(kicad_pcb (version 20170123) (host pcbnew "(2017-04-01 revision 6eb2000b6)-master")
+(kicad_pcb (version 20170123) (host pcbnew "(2017-03-23 revision f2763e90e)-master")
 
   (general
     (links 48)
@@ -1123,8 +1123,8 @@
   (gr_line (start 111.76 77.47) (end 83.185 77.47) (layer Edge.Cuts) (width 0.15))
   (gr_line (start 111.76 45.085) (end 111.76 77.47) (layer Edge.Cuts) (width 0.15))
   (gr_line (start 83.185 45.085) (end 111.76 45.085) (layer Edge.Cuts) (width 0.15))
-  (dimension 32.385 (width 0.3) (layer F.SilkS)
-    (gr_text "32.385 mm" (at 115.142 61.2775 270) (layer F.SilkS) (tstamp 58E170C0)
+  (dimension 32.385 (width 0.3) (layer Cmts.User)
+    (gr_text "32.385 mm" (at 115.142 61.2775 270) (layer Cmts.User) (tstamp 58F1B38A)
       (effects (font (size 1.5 1.5) (thickness 0.3)))
     )
     (feature1 (pts (xy 111.76 77.47) (xy 116.492 77.47)))
@@ -1135,8 +1135,8 @@
     (arrow2a (pts (xy 113.792 45.085) (xy 113.205579 46.211504)))
     (arrow2b (pts (xy 113.792 45.085) (xy 114.378421 46.211504)))
   )
-  (dimension 28.575 (width 0.3) (layer F.SilkS)
-    (gr_text "28.575 mm" (at 97.4725 41.957) (layer F.SilkS) (tstamp 58E170C1)
+  (dimension 28.575 (width 0.3) (layer Cmts.User)
+    (gr_text "28.575 mm" (at 97.4725 41.957) (layer Cmts.User) (tstamp 58F1B38B)
       (effects (font (size 1.5 1.5) (thickness 0.3)))
     )
     (feature1 (pts (xy 111.76 45.085) (xy 111.76 40.607)))
