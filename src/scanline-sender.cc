@@ -79,8 +79,9 @@ bool PRUScanLineSender::Init() {
     return running_;
 }
 
-void PRUScanLineSender::EnqueueNextData(const uint8_t *data, size_t size,
+bool PRUScanLineSender::EnqueueNextData(const uint8_t *data, size_t size,
                                         bool sled_on) {
+    if (!running_) return false;
     assert(size == SCANLINE_DATA_SIZE);  // We only accept full lines :)
     WaitUntil(queue_pos_, CMD_EMPTY);
     unaligned_memcpy(ring_buffer_[queue_pos_].data, data, size);
@@ -91,9 +92,11 @@ void PRUScanLineSender::EnqueueNextData(const uint8_t *data, size_t size,
 
     queue_pos_++;
     queue_pos_ %= QUEUE_LEN;
+    return true;
 }
 
 bool PRUScanLineSender::Shutdown() {
+    if (!running_) return false;
     WaitUntil(queue_pos_, CMD_EMPTY);
     ring_buffer_[queue_pos_].state = CMD_EXIT;
     // PRU will set it to empty again when actually halted.
@@ -105,7 +108,15 @@ bool PRUScanLineSender::Shutdown() {
 }
 
 void PRUScanLineSender::WaitUntil(int pos, int state) {
-    while (ring_buffer_[pos].state != state) {
+    for (;;) {
+        const int buffer_state = ring_buffer_[pos].state;
+        if (buffer_state == state)
+            return;
+
+        if (buffer_state == CMD_DONE) {  // Error cond. Should be separate state
+            running_ = false;
+            return;
+        }
         pru_.WaitEvent();
     }
 }
@@ -114,9 +125,10 @@ DummyScanLineSender::DummyScanLineSender() : lines_enqueued_(0) {
     fprintf(stderr, "Dry-run, including rough timing simulation.\n");
 }
 
-void DummyScanLineSender::EnqueueNextData(const uint8_t *, size_t, bool) {
+bool DummyScanLineSender::EnqueueNextData(const uint8_t *, size_t, bool) {
     lines_enqueued_++;
     usleep(1000000 / 257);  // rough simulation of scan; see line_frequency
+    return true;
 }
 bool DummyScanLineSender::Shutdown() {
     fprintf(stderr, "Dry-run: total %d lines sent\n", lines_enqueued_);

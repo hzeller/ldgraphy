@@ -130,13 +130,13 @@ void LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
     delete img;
 
     // Correct for physical laser dot thickness - taking off pixels off edges.
-    if (output_debug_images) exposure_image->ToPGM(fopen("/tmp/foo.pgm", "w"));
+    if (output_debug_images) exposure_image->ToPGM(fopen("/tmp/ld_1.pgm", "w"));
     const float laser_resolution_in_mm_per_pixel = bed_width / y_lookup.size();
     if (output_debug_images) fprintf(stderr, " Thinning structures...\n");
     ThinImageStructures(exposure_image,
                         kFocus_X_Dia / laser_resolution_in_mm_per_pixel / 2,
                         kFocus_Y_Dia / image_resolution_mm_per_pixel / 2);
-    if (output_debug_images) exposure_image->ToPGM(fopen("/tmp/bar.pgm", "w"));
+    if (output_debug_images) exposure_image->ToPGM(fopen("/tmp/ld_2.pgm", "w"));
 
     // Now, convert it to the final bitmap to be sent to the output, padded
     // to the full data width.
@@ -149,7 +149,7 @@ void LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
         }
     }
     if (output_debug_images) fprintf(stderr, "[image preparation done].\n");
-    if (output_debug_images) scan_image_->ToPBM(fopen("/tmp/baz.pbm", "w"));
+    if (output_debug_images) scan_image_->ToPBM(fopen("/tmp/ld_3.pbm", "w"));
     delete exposure_image;
 }
 
@@ -166,6 +166,11 @@ void LDGraphyScanner::ScanExpose(bool do_move,
         const int scan_pixel = roundf(scan / sled_step_per_image_pixel_);
         if (scan_pixel >= max) break;   // could be due to rounding.
         const uint8_t *row_data = scan_image_->GetRow(scan_pixel);
-        backend_->EnqueueNextData(row_data, SCANLINE_DATA_SIZE, do_move);
+        if (!backend_->EnqueueNextData(row_data, SCANLINE_DATA_SIZE, do_move)) {
+            // For now, the only error condition is getting a sync. Later we
+            // might need to make this message more diverse.
+            fprintf(stderr, "\nIssue synchronizing. Shutting down.\n");
+            break;
+        }
     }
 }

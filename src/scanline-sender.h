@@ -33,7 +33,8 @@ public:
 
     // Enqueue next scanline. Blocks until there is space in the ring buffer.
     // If "sled_on" == true, then advances the sled after this line.
-    virtual void EnqueueNextData(const uint8_t *data, size_t size,
+    // Returns 'true' on success.
+    virtual bool EnqueueNextData(const uint8_t *data, size_t size,
                                  bool sled_on) = 0;
 
     // Shutdown the system.
@@ -51,7 +52,7 @@ public:
     static ScanLineSender *Create();
 
     // -- ScanLineSender interface
-    void EnqueueNextData(const uint8_t *data, size_t size, bool sled_on) override;
+    bool EnqueueNextData(const uint8_t *data, size_t size, bool sled_on) override;
     bool Shutdown() override;
 
 private:
@@ -72,7 +73,7 @@ class DummyScanLineSender : public ScanLineSender {
 public:
     DummyScanLineSender();
 
-    void EnqueueNextData(const uint8_t *data, size_t size, bool sled_on) override;
+    bool EnqueueNextData(const uint8_t *data, size_t size, bool sled_on) override;
     bool Shutdown() override;
 
 private:

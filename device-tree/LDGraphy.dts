@@ -2,13 +2,13 @@
  * Based on github.com/jadonk/validation-scripts/tree/master/test-capemgr
  * Copyright (C) 2012 Texas Instruments Incorporated - http://www.ti.com/
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Purpose License Version 2 as
- * published by the Free Software Foundation
+ * This is part of LDGraphy which is free software; you can redistribute it
+ * and/or modify it under the terms of the GNU General Purpose License Version 2
+ * as published by the Free Software Foundation
  *
  * To create the binary representation that the device manager can handle, run
  *   make LDGraphy-00A0.dtbo
- * (The binary fill is checked into github, so this is only needed if you are
+ * (The binary is checked into github, so this is only needed if you are
  *  modifying this file)
  */
 
@@ -21,7 +21,8 @@
     version = "00A0";
 
     exclusive-use = "pruss",  // Programmable realtime unit
-    		  "P9.18", "P9.17";
+                    "P9.11", "P9.12", "P9.13", "P9.14", "P9.15", "P9.16",
+                    "P9.17", "P9.18", "P9.23";
 
     fragment@0 {
         target = <&am33xx_pinmux>;
@@ -31,19 +32,17 @@
 		    /* Pixel data */
 		    0x158 0x07 /* GPIO_0[4] ; P9.18 Polygon Mirror Clock */
 		    0x15c 0x07 /* GPIO_0[5] ; P9.17 Laser Data */
-		    0x074 0x17 /* GPIO_0[31]; P9.13 Motor Enable; pullup */
-
-		    /* Input */
-		    /* Not sure if slow slew means what I think it means: assuming that
-		       it enables a SchmittTrigger at the GPIO input.
-		       (Output of our OpAmp is slow, only 10V/us */
-		    0x070 0x77 /* GPIO_0[30]; P9.11 Hsync input. Pullup. Slow Slew */
-
-		    0x044 0x07 /* GPIO_1[17]; P9.23 Mirror + Stepper Enable */
+		    0x04c 0x07 /* GPIO_1[19]; P9.16 Mirror + Stepper Enable */
 
 		    /* Sled stepper */
-		    0x040 0x07 /* GPIO_1[16]; P9.15 Dir */
-		    0x048 0x07 /* GPIO_1[18]; P9.14 Step */
+		    0x048 0x07 /* GPIO_1[18]; P9.14 Dir */
+		    0x040 0x07 /* GPIO_1[16]; P9.15 Step */
+
+		    /* Input */
+		    0x044 0x17 /* GPIO_1[17]; P9.23 Hsync input. Pullup. */
+		    0x078 0x17 /* GPIO_1[28]; P9.12 Stop-switch back; pullup */
+		    0x074 0x17 /* GPIO_0[31]; P9.13 Stop-switch front; pullup */
+		    0x070 0x17 /* GPIO_0[30]; P9.11 UI-button; pullup */
                 >;
             };
         };
