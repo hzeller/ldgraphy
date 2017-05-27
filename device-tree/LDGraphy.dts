@@ -31,18 +31,18 @@
                 pinctrl-single,pins = <
 		    /* Pixel data */
 		    0x158 0x07 /* GPIO_0[4] ; P9.18 Polygon Mirror Clock */
-		    0x15c 0x07 /* GPIO_0[5] ; P9.17 Laser Data */
-		    0x04c 0x07 /* GPIO_1[19]; P9.16 Mirror + Stepper Enable */
+		    0x15c 0x07 /* GPIO_0[5] ; P9.17 Laser Data; pulldown */
+		    0x04c 0x17 /* GPIO_1[19]; P9.16 Mirror/Stepper ~EN; pullup */
 
 		    /* Sled stepper */
 		    0x048 0x07 /* GPIO_1[18]; P9.14 Dir */
 		    0x040 0x07 /* GPIO_1[16]; P9.15 Step */
 
 		    /* Input */
-		    0x044 0x17 /* GPIO_1[17]; P9.23 Hsync input. Pullup. */
-		    0x078 0x17 /* GPIO_1[28]; P9.12 Stop-switch back; pullup */
-		    0x074 0x17 /* GPIO_0[31]; P9.13 Stop-switch front; pullup */
-		    0x070 0x17 /* GPIO_0[30]; P9.11 UI-button; pullup */
+		    0x044 0x37 /* GPIO_1[17]; P9.23 Hsync input. Pullup. */
+		    0x078 0x37 /* GPIO_1[28]; P9.12 Stop-switch back; pullup */
+		    0x074 0x37 /* GPIO_0[31]; P9.13 Stop-switch front; pullup */
+		    0x070 0x37 /* GPIO_0[30]; P9.11 UI-button; pullup */
                 >;
             };
         };
