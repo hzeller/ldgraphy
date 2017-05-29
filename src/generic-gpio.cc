@@ -99,6 +99,43 @@ static void set_gpio_mask(uint32_t *mask, uint32_t gpio_def) {
   }
 }
 
+// TODO: have at central place, right now it is tow places
+#define SLED_MOTOR_STEP (GPIO_1_BASE | 16)
+#define SLED_MOTOR_DIR (GPIO_1_BASE | 18)
+#define SLED_MOTOR_ENABLE (GPIO_1_BASE | 19)
+
+#define SLED_ENDSWITCH_FRONT (GPIO_0_BASE | 31)
+#define SLED_ENDSWITCH_BACK (GPIO_1_BASE | 28)
+
+static void cfg_gpio_io() {
+  uint32_t output_mask[4] = { 0, 0, 0, 0 };
+
+  // All the gpio's we need from userspace (PRU will do its own)
+  set_gpio_mask(output_mask, SLED_MOTOR_ENABLE);
+  set_gpio_mask(output_mask, SLED_MOTOR_DIR);
+  set_gpio_mask(output_mask, SLED_MOTOR_STEP);
+
+  uint32_t input_mask[4] = { 0, 0, 0, 0 };
+  set_gpio_mask(input_mask, SLED_ENDSWITCH_FRONT);
+  set_gpio_mask(input_mask, SLED_ENDSWITCH_BACK);
+
+  // Preserve GPIO output settings that might already be set by other tasks,
+  // so we only selectively set the bits we are interested in.
+
+  // Set the output enable register for each GPIO bank.
+  // Output direction is signified with a zero.
+  gpio_0[GPIO_OE/4] &= ~output_mask[0];
+  gpio_1[GPIO_OE/4] &= ~output_mask[1];
+  gpio_2[GPIO_OE/4] &= ~output_mask[2];
+  gpio_3[GPIO_OE/4] &= ~output_mask[3];
+
+  // All the inputs we need. Inputs are signified with a one.
+  gpio_0[GPIO_OE/4] |= input_mask[0];
+  gpio_1[GPIO_OE/4] |= input_mask[1];
+  gpio_2[GPIO_OE/4] |= input_mask[2];
+  gpio_3[GPIO_OE/4] |= input_mask[3];
+}
+
 static volatile uint32_t *map_port(int fd, size_t length, off_t offset) {
   return (volatile uint32_t*) mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, offset);
 }
@@ -148,6 +185,8 @@ bool map_gpio() {
   if (gpio_2 == MAP_FAILED) { perror("mmap() GPIO-2"); goto exit; }
   gpio_3 = map_port(fd, GPIO_MMAP_SIZE, GPIO_3_BASE);
   if (gpio_3 == MAP_FAILED) { perror("mmap() GPIO-3"); goto exit; }
+
+  cfg_gpio_io();  // All the pins we use.
 
   ret = true;
 
