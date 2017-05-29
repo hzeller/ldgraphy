@@ -24,6 +24,7 @@
 #include "scanline-sender.h"
 #include "image-processing.h"
 #include "laser-scribe-constants.h"
+#include "sled-control.h"
 
 constexpr int SCAN_PIXELS = SCANLINE_DATA_SIZE * 8;
 constexpr float deg2rad = 2*M_PI/360;
@@ -32,9 +33,6 @@ constexpr float deg2rad = 2*M_PI/360;
  * These are constants that depend on the set-up of the LDGraphy hardware.
  */
 constexpr int kHSyncShoulder = 100;   // Distance between sensor and start
-
-// Stepper motor + lead settings. Here: 1/4 stepping and 24 threads/inch
-constexpr float kSledMMperStep = (25.4 / 24) / 200 / 4;
 
 constexpr int kMirrorFaces = 6;
 // Reflection would cover 2*angle, but we only send data for the first
@@ -89,7 +87,8 @@ static std::vector<int> PrepareTangensLookup(float radius_pixels,
 
 void LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
     const float image_resolution_mm_per_pixel = 25.4f / dpi;
-    sled_step_per_image_pixel_ = image_resolution_mm_per_pixel / kSledMMperStep;
+    sled_step_per_image_pixel_ = (image_resolution_mm_per_pixel
+                                  / SledControl::kSledMMperStep);
     scanlines_ = img->width() * sled_step_per_image_pixel_;
 
     // Create lookup-table: data pixel position to actual position in image.

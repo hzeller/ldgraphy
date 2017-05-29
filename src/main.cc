@@ -36,6 +36,7 @@
 #include "laser-scribe-constants.h"
 #include "ldgraphy-scanner.h"
 #include "scanline-sender.h"
+#include "sled-control.h"
 
 // Interrupt handling. Provide a is_interrupted() function that reports
 // if Ctrl-C has been pressed. Requires ArmInterruptHandler() called before use.
@@ -114,6 +115,10 @@ void RunFocusLine(LDGraphyScanner *scanner) {
     fprintf(stderr, "Focus run done.\n");
 }
 
+void UIMessage(const char *msg) {
+    fprintf(stdout, "********** %s\n", msg);
+}
+
 int main(int argc, char *argv[]) {
     double commandline_dpi = -1;
     bool dryrun = false;
@@ -154,6 +159,17 @@ int main(int argc, char *argv[]) {
     if (!filename && !do_focus)
         return usage(argv[0]);   // Nothing to do.
 
+    SledControl sled(4000);
+
+    // Super-crude UI
+    UIMessage("Hold on .. sled to take your board is on the way...");
+    sled.Move(180);  // Move all the way out for person to place device.
+    UIMessage("Here we are. Please place board in (0,0) corner. Press <RETURN>.");
+    while (fgetc(stdin) != '\n')
+        ;
+    UIMessage("Thanks. Getting ready to scan.");
+    sled.Move(-180);
+
     ScanLineSender *line_sender = dryrun
         ? new DummyScanLineSender()
         : PRUScanLineSender::Create();
@@ -162,20 +178,20 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    LDGraphyScanner ldgraphy(line_sender);
+    LDGraphyScanner *ldgraphy = new LDGraphyScanner(line_sender);
 
     if (do_focus) {
         fprintf(stderr, "== FOCUS run. Exit with Ctrl-C. ==\n");
-        RunFocusLine(&ldgraphy);
+        RunFocusLine(ldgraphy);
     }
 
-    if (LoadImage(&ldgraphy, filename, commandline_dpi, invert)) {
+    if (LoadImage(ldgraphy, filename, commandline_dpi, invert)) {
         ArmInterruptHandler();
         fprintf(stderr, "== Exposure. Emergency stop with Ctrl-C. ==\n");
         fprintf(stderr, "Estimated time: %.0f seconds\n",
-                ldgraphy.estimated_time_seconds());
+                ldgraphy->estimated_time_seconds());
         float prev_percent = -1;
-        ldgraphy.ScanExpose(
+        ldgraphy->ScanExpose(
             do_move, [&prev_percent](int done, int total) {
                 // Simple commandline progress indicator.
                 const int percent = roundf(100.0 * done / total);
@@ -190,6 +206,17 @@ int main(int argc, char *argv[]) {
         if (is_interrupted())
             fprintf(stderr, "Interrupted. Exposure might be incomplete.\n");
     }
+
+    delete ldgraphy;  // First make PRU stop using our pins.
+
+    UIMessage("Done Scanning - sending the sled with the board towards you.");
+    sled.Move(180);  // Move out for user to grab.
+
+    UIMessage("Here we are. Please take the board and press <RETURN>");
+    while (fgetc(stdin) != '\n')
+        ;
+    UIMessage("Thanks. Going back.");
+    sled.Move(-85);
 
     return 0;
 }
