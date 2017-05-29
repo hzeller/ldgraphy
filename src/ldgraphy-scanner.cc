@@ -21,6 +21,7 @@
 
 #include <math.h>
 #include <assert.h>
+#include <string.h>
 
 #include "scanline-sender.h"
 #include "image-processing.h"
@@ -181,5 +182,24 @@ void LDGraphyScanner::ScanExpose(bool do_move,
 	for (int i = 1; i < exposure_factor_; ++i) {
             backend_->EnqueueNextData(row_data, SCANLINE_DATA_SIZE, false);
 	}
+    }
+}
+
+void LDGraphyScanner::ExposeJitterTest(int mirrors, int repeats) {
+    uint8_t *buffer = new uint8_t[mirrors * SCANLINE_DATA_SIZE]();
+    // Only use part of our scanline for the test.
+    const int mirror_line_len = (0.5 * SCANLINE_DATA_SIZE) / mirrors;
+    uint8_t *write_pos = buffer;
+    for (int m = 0; m < mirrors; ++m) {
+        memset(write_pos, 0xff, mirror_line_len);
+        write_pos += mirror_line_len + SCANLINE_DATA_SIZE;
+    }
+    for (int i = 0; i < repeats; ++i) {
+        // We send six lines, one for each mirror. We don't know which mirror
+        // is first currently, so it starts with whatever mirror was first.
+        for (int m = 0; m < mirrors; ++m) {
+            backend_->EnqueueNextData(buffer + m*SCANLINE_DATA_SIZE,
+                                      SCANLINE_DATA_SIZE, false);
+        }
     }
 }

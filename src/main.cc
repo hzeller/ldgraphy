@@ -64,9 +64,11 @@ static int usage(const char *progname, const char *errmsg = NULL) {
             "\t-d <val>   : Override DPI of input image. Default -1\n"
             "\t-i         : Inverse image: black becomes laser on\n"
             "\t-x<val>    : Exposure factor. Default 1.\n"
+            "\t-o<val>    : Offset in sled direction in mm\n"
             "\t-F         : Run a focus round until Ctrl-C\n"
             "\t-M         : Testing: Inhibit sled move.\n"
             "\t-n         : Dryrun. Do not do any scanning; laser off.\n"
+            "\t-j<exp>    : Mirror jitter test with given exposure repeat\n"
             "\t-h         : This help\n");
     return errmsg ? 1 : 0;
 }
@@ -126,10 +128,12 @@ int main(int argc, char *argv[]) {
     bool invert = false;
     bool do_focus = false;
     bool do_move = true;
+    int mirror_adjust_exposure = 0;
+    float offset_x = 0;
     float exposure_factor = 1.0f;
 
     int opt;
-    while ((opt = getopt(argc, argv, "MFhnid:x:")) != -1) {
+    while ((opt = getopt(argc, argv, "MFhnid:x:j:o:")) != -1) {
         switch (opt) {
         case 'h': return usage(argv[0]);
         case 'd':
@@ -150,6 +154,12 @@ int main(int argc, char *argv[]) {
         case 'x':
             exposure_factor = atof(optarg);
             break;
+        case 'j':
+            mirror_adjust_exposure = atoi(optarg);
+            break;
+        case 'o':
+            offset_x = atof(optarg);   // TODO: also y. as x,y coordinate.
+            break;
         }
     }
 
@@ -161,7 +171,7 @@ int main(int argc, char *argv[]) {
         filename = argv[optind];
     }
 
-    if (!filename && !do_focus)
+    if (!filename && !do_focus && !mirror_adjust_exposure)
         return usage(argv[0]);   // Nothing to do.
 
     if (exposure_factor < 1.0f) {
@@ -179,6 +189,8 @@ int main(int argc, char *argv[]) {
     UIMessage("Thanks. Getting ready to scan.");
     sled.Move(-180);
     sled.Move(3);    // Forward until we reach begin. TODO put in scanner.
+    if (mirror_adjust_exposure) sled.Move(5);
+    sled.Move(offset_x);
 
     ScanLineSender *line_sender = dryrun
         ? new DummyScanLineSender()
@@ -190,6 +202,10 @@ int main(int argc, char *argv[]) {
 
     LDGraphyScanner *ldgraphy = new LDGraphyScanner(line_sender,
                                                     exposure_factor);
+
+    if (mirror_adjust_exposure) {
+        ldgraphy->ExposeJitterTest(6, mirror_adjust_exposure);
+    }
 
     if (do_focus) {
         fprintf(stderr, "== FOCUS run. Exit with Ctrl-C. ==\n");

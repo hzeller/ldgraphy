@@ -54,6 +54,14 @@ public:
     void ScanExpose(bool do_move,
                     std::function<bool(int done, int total)> progress_out);
 
+    // Create an exposure of the jitter that compares the projection of
+    // each mirror face. Unfortunately, some mirrors do have some up/down
+    // jitter in this regard - this creates an exposure to later correct for
+    // that.
+    // "mirrors" is number of mirror faces the polygon mirror has, "repeats" is
+    // number of exposure lines over the same place.
+    void ExposeJitterTest(int mirrors, int repeats);
+
 private:
     std::unique_ptr<ScanLineSender> const backend_;
     const int exposure_factor_;
