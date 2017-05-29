@@ -209,7 +209,10 @@ INIT:
 
 	MOV v.gpio_out0, 0
 	MOV v.gpio_out1, 0
+
 	SET v.gpio_out1, GPIO_MOTORS_ENABLE ; negative logic, so motors off.
+	CLR v.gpio_out1, GPIO_SLED_DIR ; direction needs changing later.
+	CLR v.gpio_out1, GPIO_SLED_STEP
 
 	MOV v.item_start, 0		    ; Byte position in DRAM
 	MOV v.state, STATE_IDLE
@@ -303,8 +306,7 @@ wait_for_sync_hsync_seen:
 	ADD v.sync_laser_on_time, v.hsync_time, v.start_sync_after
 
 	;; we step at the end of a data line, so here we should reset.
-	MOV r1, 0		; clear motor step
-	SBBO r1, v.gpio_1_write, 0, 4 ; TODOproperlysetbits
+	CLR v.gpio_out1, GPIO_SLED_STEP
 
 	MOV v.state, STATE_DATA_RUN
 	JMP MAIN_LOOP_NEXT
@@ -341,9 +343,7 @@ STATE_ADVANCE_RINGBUFFER:
 	;; check if we need to advance stepper
 	LBCO r1.b0, CONST_PRUDRAM, v.item_start, 1
 	QBEQ advance_sled_done, r1.b0, CMD_SCAN_DATA_NO_SLED
-	MOV r1, 0		; clear motor step
-	SET r1, GPIO_SLED_STEP
-	SBBO r1, v.gpio_1_write, 0, 4; TODOproperlysetbits
+	SET v.gpio_out1, GPIO_SLED_STEP
 advance_sled_done:
 	;; signal host that we're done with this item.
 	MOV r1.b0, CMD_EMPTY

@@ -33,8 +33,8 @@ constexpr float deg2rad = 2*M_PI/360;
  */
 constexpr int kHSyncShoulder = 100;   // Distance between sensor and start
 
-// Stepper motor + lead settings. Here: 1/8 stepping and 24 threads/inch
-constexpr float kSledMMperStep = (25.4 / 24) / 200 / 8;
+// Stepper motor + lead settings. Here: 1/4 stepping and 24 threads/inch
+constexpr float kSledMMperStep = (25.4 / 24) / 200 / 4;
 
 constexpr int kMirrorFaces = 6;
 // Reflection would cover 2*angle, but we only send data for the first
