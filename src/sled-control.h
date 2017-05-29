@@ -28,7 +28,11 @@ public:
     // Stepper motor + lead settings. Here: 1/4 stepping and 24 threads/inch
     static constexpr float kSledMMperStep = (25.4 / 24) / 200 / 4;
 
-    SledControl(int step_frequency);
+    // Control sled with given stepper frequency (which is very approximate
+    // right now).
+    // If do_move is false, no hardware is controlled and Move() returns
+    // immediately (can be used for dryrun).
+    SledControl(int step_frequency, bool do_move = true);
     ~SledControl();
 
     // Move the number of millimeter or until end-stop was hit.
@@ -37,6 +41,7 @@ public:
     float Move(float millimeter);
 
 private:
+    const bool do_move_;
     int64_t sleep_nanos_;
 };
 

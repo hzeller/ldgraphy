@@ -63,9 +63,10 @@ static int usage(const char *progname, const char *errmsg = NULL) {
     fprintf(stderr, "Options:\n"
             "\t-d <val>   : Override DPI of input image. Default -1\n"
             "\t-i         : Inverse image: black becomes laser on\n"
-            "\t-M         : Inhibit move in x direction\n"
+            "\t-x<val>    : Exposure factor. Default 1.\n"
             "\t-F         : Run a focus round until Ctrl-C\n"
-            "\t-n         : Dryrun. Do not do any scanning.\n"
+            "\t-M         : Testing: Inhibit sled move.\n"
+            "\t-n         : Dryrun. Do not do any scanning; laser off.\n"
             "\t-h         : This help\n");
     return errmsg ? 1 : 0;
 }
@@ -116,7 +117,7 @@ void RunFocusLine(LDGraphyScanner *scanner) {
 }
 
 void UIMessage(const char *msg) {
-    fprintf(stdout, "********** %s\n", msg);
+    fprintf(stdout, "**********> %s\n", msg);
 }
 
 int main(int argc, char *argv[]) {
@@ -125,9 +126,10 @@ int main(int argc, char *argv[]) {
     bool invert = false;
     bool do_focus = false;
     bool do_move = true;
+    float exposure_factor = 1.0f;
 
     int opt;
-    while ((opt = getopt(argc, argv, "MFhnid:")) != -1) {
+    while ((opt = getopt(argc, argv, "MFhnid:x:")) != -1) {
         switch (opt) {
         case 'h': return usage(argv[0]);
         case 'd':
@@ -145,6 +147,9 @@ int main(int argc, char *argv[]) {
         case 'M':
             do_move = false;
             break;
+        case 'x':
+            exposure_factor = atof(optarg);
+            break;
         }
     }
 
@@ -159,7 +164,11 @@ int main(int argc, char *argv[]) {
     if (!filename && !do_focus)
         return usage(argv[0]);   // Nothing to do.
 
-    SledControl sled(4000);
+    if (exposure_factor < 1.0f) {
+        return usage(argv[0], "Exposure factor needs to be at least 1.");
+    }
+
+    SledControl sled(4000, do_move && !dryrun);
 
     // Super-crude UI
     UIMessage("Hold on .. sled to take your board is on the way...");
@@ -169,6 +178,7 @@ int main(int argc, char *argv[]) {
         ;
     UIMessage("Thanks. Getting ready to scan.");
     sled.Move(-180);
+    sled.Move(3);    // Forward until we reach begin. TODO put in scanner.
 
     ScanLineSender *line_sender = dryrun
         ? new DummyScanLineSender()
@@ -178,7 +188,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    LDGraphyScanner *ldgraphy = new LDGraphyScanner(line_sender);
+    LDGraphyScanner *ldgraphy = new LDGraphyScanner(line_sender,
+                                                    exposure_factor);
 
     if (do_focus) {
         fprintf(stderr, "== FOCUS run. Exit with Ctrl-C. ==\n");
@@ -213,6 +224,8 @@ int main(int argc, char *argv[]) {
     sled.Move(180);  // Move out for user to grab.
 
     UIMessage("Here we are. Please take the board and press <RETURN>");
+    // TODO: here, when the user takes too long, just pull in board again
+    // to have it more protected against light.
     while (fgetc(stdin) != '\n')
         ;
     UIMessage("Thanks. Going back.");

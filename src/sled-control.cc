@@ -31,18 +31,20 @@
 #define SLED_ENDSWITCH_FRONT (GPIO_0_BASE | 31)
 #define SLED_ENDSWITCH_BACK (GPIO_1_BASE | 28)
 
-SledControl::SledControl(int step_frequency)
-    : sleep_nanos_(1e9 / step_frequency) {
+SledControl::SledControl(int step_frequency, bool do_move)
+    : do_move_(do_move), sleep_nanos_(1e9 / step_frequency) {
     sleep_nanos_ -= 50000;  // some fudging.
     if (sleep_nanos_ < 0) sleep_nanos_ = 0;
-    map_gpio();  // We the only non-PRU code that needs access to gpio.
+    if (do_move_) map_gpio();
 }
 
 SledControl::~SledControl() {
-    unmap_gpio();
+    if (do_move_) unmap_gpio();
 }
 
 float SledControl::Move(float millimeter) {
+    if (!do_move_) return millimeter;
+
     uint32_t switch_to_watch;
     if (millimeter < 0) {
         switch_to_watch = SLED_ENDSWITCH_BACK;

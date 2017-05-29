@@ -20,6 +20,7 @@
 #include "ldgraphy-scanner.h"
 
 #include <math.h>
+#include <assert.h>
 
 #include "scanline-sender.h"
 #include "image-processing.h"
@@ -32,7 +33,7 @@ constexpr float deg2rad = 2*M_PI/360;
 /*
  * These are constants that depend on the set-up of the LDGraphy hardware.
  */
-constexpr int kHSyncShoulder = 100;   // Distance between sensor and start
+constexpr int kHSyncShoulder = 200;   // Distance between sensor and start
 
 constexpr int kMirrorFaces = 6;
 // Reflection would cover 2*angle, but we only send data for the first
@@ -51,7 +52,13 @@ constexpr float line_frequency = 257.0;  // Hz. Measured with scope.
 
 constexpr bool output_debug_images = false;
 
-LDGraphyScanner::LDGraphyScanner(ScanLineSender *sink) : backend_(sink) {}
+LDGraphyScanner::LDGraphyScanner(ScanLineSender *sink, float exposure_factor)
+    : backend_(sink),
+      exposure_factor_(roundf(exposure_factor))  // We only do integer for now.
+{
+    assert(exposure_factor >= 1);
+}
+
 LDGraphyScanner::~LDGraphyScanner() {
     backend_->Shutdown();
 }
@@ -153,7 +160,7 @@ void LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
 }
 
 float LDGraphyScanner::estimated_time_seconds() const {
-    return scanlines_ / line_frequency;
+    return exposure_factor_ * (scanlines_ / line_frequency);
 }
 
 void LDGraphyScanner::ScanExpose(bool do_move,
@@ -166,10 +173,13 @@ void LDGraphyScanner::ScanExpose(bool do_move,
         if (scan_pixel >= max) break;   // could be due to rounding.
         const uint8_t *row_data = scan_image_->GetRow(scan_pixel);
         if (!backend_->EnqueueNextData(row_data, SCANLINE_DATA_SIZE, do_move)) {
-            // For now, the only error condition is getting a sync. Later we
-            // might need to make this message more diverse.
+            // TODO: For now, the only error condition is getting a sync. Later
+            // we might need to make this message more diverse.
             fprintf(stderr, "\nIssue synchronizing. Shutting down.\n");
             break;
         }
+	for (int i = 1; i < exposure_factor_; ++i) {
+            backend_->EnqueueNextData(row_data, SCANLINE_DATA_SIZE, false);
+	}
     }
 }

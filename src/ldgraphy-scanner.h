@@ -33,7 +33,9 @@ public:
     ~LDGraphyScanner();
 
     // Create an image scanner. Takes ownership of the ScanLineSender
-    LDGraphyScanner(ScanLineSender *sink);
+    // Exposure factor above 1 indicates multiples of exposure time to
+    // baseline (NB: right now, this only rounds to full integers).
+    LDGraphyScanner(ScanLineSender *sink, float exposure_factor);
 
     // Set new image. Image is a grayscale image that needs to already
     // be quantized to black/white.
@@ -54,6 +56,7 @@ public:
 
 private:
     std::unique_ptr<ScanLineSender> const backend_;
+    const int exposure_factor_;
     std::unique_ptr<BitmapImage> scan_image_;  // preprocessed.
     int scanlines_;
     float sled_step_per_image_pixel_;
