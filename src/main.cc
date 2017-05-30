@@ -65,6 +65,7 @@ static int usage(const char *progname, const char *errmsg = NULL) {
             "\t-i         : Inverse image: black becomes laser on\n"
             "\t-x<val>    : Exposure factor. Default 1.\n"
             "\t-o<val>    : Offset in sled direction in mm\n"
+            "\t-S         : Skip sled loading; assume board already loaded\n"
             "\t-F         : Run a focus round until Ctrl-C\n"
             "\t-M         : Testing: Inhibit sled move.\n"
             "\t-n         : Dryrun. Do not do any scanning; laser off.\n"
@@ -128,12 +129,13 @@ int main(int argc, char *argv[]) {
     bool invert = false;
     bool do_focus = false;
     bool do_move = true;
+    bool do_sled_loading_ui = true;
     int mirror_adjust_exposure = 0;
     float offset_x = 0;
     float exposure_factor = 1.0f;
 
     int opt;
-    while ((opt = getopt(argc, argv, "MFhnid:x:j:o:")) != -1) {
+    while ((opt = getopt(argc, argv, "MFhnid:x:j:o:S")) != -1) {
         switch (opt) {
         case 'h': return usage(argv[0]);
         case 'd':
@@ -160,6 +162,9 @@ int main(int argc, char *argv[]) {
         case 'o':
             offset_x = atof(optarg);   // TODO: also y. as x,y coordinate.
             break;
+        case 'S':
+            do_sled_loading_ui = false;
+            break;
         }
     }
 
@@ -181,16 +186,19 @@ int main(int argc, char *argv[]) {
     SledControl sled(4000, do_move && !dryrun);
 
     // Super-crude UI
-    UIMessage("Hold on .. sled to take your board is on the way...");
-    sled.Move(180);  // Move all the way out for person to place device.
-    UIMessage("Here we are. Please place board in (0,0) corner. Press <RETURN>.");
-    while (fgetc(stdin) != '\n')
-        ;
-    UIMessage("Thanks. Getting ready to scan.");
+    if (do_sled_loading_ui) {
+        UIMessage("Hold on .. sled to take your board is on the way...");
+        sled.Move(180);  // Move all the way out for person to place device.
+        UIMessage("Here we are. Please place board in (0,0) corner. Press <RETURN>.");
+        while (fgetc(stdin) != '\n')
+            ;
+        UIMessage("Thanks. Getting ready to scan.");
+    }
     sled.Move(-180);
-    sled.Move(3);    // Forward until we reach begin. TODO put in scanner.
-    if (mirror_adjust_exposure) sled.Move(5);
-    sled.Move(offset_x);
+    float forward_move = 3;  // Forward until we reach begin.
+    if (mirror_adjust_exposure) forward_move += 5;
+    forward_move += offset_x;
+    sled.Move(forward_move);
 
     ScanLineSender *line_sender = dryrun
         ? new DummyScanLineSender()
