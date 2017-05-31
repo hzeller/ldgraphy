@@ -6,37 +6,62 @@ set -e
 # When hand-drilling, we want the holes small.
 SMALL_HOLES=1  # todo: make this a command line option
 
-if [ $# -lt 2 -o $# -gt 3 ] ; then
-   echo "usage: $0 <options> <rsolution-dpi> <gerber-filename> [<drillfile>]" > /dev/stderr
+if [ $# -lt 2 ] ; then
+   echo "usage: $0 [-d <outdir>] <resolution-dpi> <gerber-file> [<gerber-file>...]" > /dev/stderr
    echo "Output on stdout." > /dev/stderr
    exit 1
 fi
 
+OUTDIR=""
+
+case $1 in
+    -d) OUTDIR=$2; mkdir -p $OUTDIR ; shift; shift ;;
+esac
+
 DPI=$1
-IN_GERBER=$2
-DRILL_FILE=$3
+shift
 
-COPPER_LAYER="-f#000000ff $IN_GERBER"
+SHOWN_COLOR="-f#000000ff"   # Black.
+HIDDEN_COLOR="-f#fefefe00"  # almost white, force layer to be in BoundingBox
+DRILL_COLOR="-f#ffffffff"   # white holes
 
-if [ ! -z "$DRILL_FILE" ] ; then
-   if [ $SMALL_HOLES -eq 0 ] ; then
-       DRILL_LAYER="-f#ffffffff $DRILL_FILE"
-   else
-       sed 's/^T[0-9]*C.*/;\0/' < $DRILL_FILE > /tmp/orig.$$.drl
-       ( for i in `seq 1 9` ; do echo "T0$i 0.01" ; done ) > /tmp/fake.$$.drl
-       DRILL_LAYER="-f#ffffffff /tmp/orig.$$.drl -t/tmp/fake.$$.drl"
-   fi
-fi
+for f in "$@" ; do
+    if [[ "$f" == *.png ]] ; then
+	continue
+    fi
+    if [[ "$f" == *.drl ]] ; then
+	if [ $SMALL_HOLES -eq 0 ] ; then
+	    DRILL_LAYER="$DRILL_COLOR $f"
+	else
+	    sed 's/^T[0-9]*C.*/;\0/' < "$f" > /tmp/orig.$$.drl
+	    ( for i in `seq 1 9` ; do echo "T0$i 0.01" ; done ) > /tmp/fake.$$.drl
+	    DRILL_LAYER="$DRILL_COLOR /tmp/orig.$$.drl -t/tmp/fake.$$.drl"
+	fi
+    else
+	BACKGROUND_LAYERS="$BACKGROUND_LAYERS $HIDDEN_COLOR $f"
+	ALL_THE_FILES="$ALL_THE_FILES $f"
+    fi
+done
 
+for f in $ALL_THE_FILES ; do
+    if [[ "$f" == *.g?l ]] ; then  # gtl or gbl
+	#echo "$f - in copper"
+	# Copper layers should have the drill layer ... if available
+	gerbv -xps -o/tmp/gerbvtmp.$$.ps $DRILL_LAYER $SHOWN_COLOR "$f" $BACKGROUND_LAYERS 2>/dev/null
+    else
+	gerbv -xps -o/tmp/gerbvtmp.$$.ps $SHOWN_COLOR "$f" $BACKGROUND_LAYERS 2>/dev/null
+    fi
 
-# gerbv can't export the DPI in the png output file (working on it, requires
-# patches to Cairo and gerbv). Till then, export first as PostScript, then
-# generate PNG from it with proper DPI settings.
+    # Depending if we have an out-dir, we write it there or
+    if [ -z "$OUTDIR" ] ; then
+	OUTFILE="$f.png"
+    else
+	OUTFILE="$OUTDIR/`basename $f`.png"
+    fi
 
-# .. generate PostScript
-gerbv -xps -o/tmp/gerbvtmp.$$.ps -b"#ffffff" $DRILL_LAYER $COPPER_LAYER
-
-# .. convert to PNG, set DPI.
-`dirname $0`/ps2bwpng $DPI /tmp/gerbvtmp.$$.ps
+    # .. convert to PNG, set DPI.
+    `dirname $0`/ps2bwpng $DPI /tmp/gerbvtmp.$$.ps > "$OUTFILE"
+    rm -f /tmp/gerbvtmp.$$.ps
+done
 
 rm -f /tmp/*.$$.drl /tmp/gerbvtmp.$$.ps
