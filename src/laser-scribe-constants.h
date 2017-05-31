@@ -25,8 +25,11 @@
 #define CMD_EXIT    3
 #define CMD_DONE    4
 
+// The data per segment is sent in a bit-array. The laser covers about half
+// the range of the 120 degrees it can do, wo we only send bits for the
+// first half of global time ticks.
 #define SCANLINE_HEADER_SIZE 1   // A single byte containing the command.
-#define SCANLINE_DATA_SIZE 512   // Bytes that follow. We have 8x the pixels.
+#define SCANLINE_DATA_SIZE 512   // Bytes that follow, containing the bit-set.
 
 #define SCANLINE_ITEM_SIZE (SCANLINE_HEADER_SIZE + SCANLINE_DATA_SIZE)
 

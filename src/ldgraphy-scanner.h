@@ -51,7 +51,8 @@ public:
     // The "progress_out" callback is called with the current state of how
     // much is done from all. This progress_out() callback should return a
     // boolean indicating if we should continue.
-    void ScanExpose(bool do_move,
+    // Returns "true" on success.
+    bool ScanExpose(bool do_move,
                     std::function<bool(int done, int total)> progress_out);
 
     // Create an exposure of the jitter that compares the projection of

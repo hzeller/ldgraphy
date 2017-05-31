@@ -49,22 +49,23 @@
 
 // Each mirror segment, we divide int number of ticks.
 #define TICK_PER_SEGMENT (2*8*SCANLINE_DATA_SIZE)
-#define JITTER_ALLOW (TICK_PER_SEGMENT/100)
+#define JITTER_ALLOW (TICK_PER_SEGMENT/150)
 
 // Each line, hence mirror segment, is divided in 8192 cycles.
 // This is the rough number of CPU cycles between each of the steps.
-#define TICK_DELAY 70
+#define TICK_DELAY 60
 
 // Significant bit in the global time that toggles the mirror. A full mirror
-// clock loop is 8192 cycles (one exposure line), so in the order of 250ish Hz.
-// So, why 12 bit instead of 13 ? Because we toggle the bit every 4096 to get
-// a square wave with a 8192 cycle.
-#define MIRROR_COUNT_BIT 12
+// clock loop is 2 * 2^(9 + 3) bits long (2^9 = 512; 2^3= 8 bits/byte, two
+// times, as we only get data for the first half). We want to toggle every
+// half cycle so if we are looking at that bit, which is the clock bit for
+// the mirror.
+#define MIRROR_COUNT_BIT (9 + 3)
 
 // Cycles to spin up mirror. roughly 1 second per 1 million.
-#define SPINUP_TICKS 2000000
-#define MAX_WAIT_STABLE_TIME 3000000
-#define END_OF_DATA_WAIT 2000000
+#define SPINUP_TICKS 2500000	     ; Spinup, laser off
+#define MAX_WAIT_STABLE_TIME 3000000 ; laser on, while waiting for sync.
+#define END_OF_DATA_WAIT 2000000     ; No data for this time - finish.
 
 // Mapping some fixed registers to named variables.
 // We have enough registers to keep things readable.
@@ -103,20 +104,6 @@
 ;; r1 ... r9 : common use
 ;; r10 ... named variables
 
-;; Someting to keep our timing true.
-.macro NOP
-	MOV r1, r1
-.endm
-
-;; uses r5
-.macro WaitLoop
-.mparam loop_count
-	MOV r5, loop_count
-SLEEP_LOOP:
-	SUB r5, r5, 1                   ; two cycles per loop.
-	QBNE SLEEP_LOOP, r5, 0
-.endm
-
 // 5 CPU cycles
 .macro set_laser_mirror_bit
 .mparam which_bit, to_value
@@ -135,12 +122,14 @@ SLEEP_LOOP:
 	QBGT to_label, r6, value
 .endm
 
-// Sets hsync_time and jumps to label if hsync seen.
+// Sets hsync_time and jumps to label if hsync seen. HSync is defined as
+// the laser just finishing the fluorescencing hsync block. Electrically
+// the rising edge after we have been low for a bit (while laser is over block).
 .macro branch_if_hsync
 .mparam to_label
 	LBBO r5, v.gpio_1_read, 0, 4
 	QBBC bit_is_clear, r5, GPIO_HSYNC_IN
-	QBEQ no_hsync, v.last_hsync_bit, 1
+	QBEQ no_hsync, v.last_hsync_bit, 1 ; we are only interested in 0->1 edge
 	MOV v.last_hsync_bit, 1
 	MOV v.hsync_time, v.global_time
 	JMP to_label
@@ -297,7 +286,8 @@ confirm_stable_hsync_seen:
 	;; Sync step between data lines.
 STATE_DATA_WAIT_FOR_SYNC:
 	QBLT MAIN_LOOP_NEXT, v.sync_laser_on_time, v.global_time ; not yet
-	SET v.gpio_out0, GPIO_LASER_DATA		; expect hsync soon
+	;; Now we are close enough to the hsync-block, switch on the laser.
+	SET v.gpio_out0, GPIO_LASER_DATA
 wait_for_sync:
 	branch_if_hsync wait_for_sync_hsync_seen
 	JMP MAIN_LOOP_NEXT
@@ -379,6 +369,8 @@ active_data_wait:
 	JMP MAIN_LOOP_NEXT
 
 MAIN_LOOP_NEXT:
+	;; The current state set whatever state it needed, now wait for the
+	;; end of our period to execute the actions: set GPIO bits.
 	wait_until_cpu_cycle_counter_reaches TICK_DELAY
 
 	;; Global time update. The global time wraps around after 1h or so

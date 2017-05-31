@@ -114,7 +114,10 @@ void RunFocusLine(LDGraphyScanner *scanner) {
     scanner->SetImage(img, dpi);
     ArmInterruptHandler();
     while (!is_interrupted()) {
-        scanner->ScanExpose(false, [](int, int) { return !is_interrupted(); });
+        if (!scanner->ScanExpose(false,
+                                 [](int, int) { return !is_interrupted(); })) {
+            break;
+        }
     }
     fprintf(stderr, "Focus run done.\n");
 }
@@ -194,7 +197,9 @@ int main(int argc, char *argv[]) {
             ;
         UIMessage("Thanks. Getting ready to scan.");
     }
-    sled.Move(-180);
+
+    sled.Move(-180);   // Back to base.
+
     float forward_move = 3;  // Forward until we reach begin.
     if (mirror_adjust_exposure) forward_move += 5;
     forward_move += offset_x;
@@ -203,6 +208,7 @@ int main(int argc, char *argv[]) {
     ScanLineSender *line_sender = dryrun
         ? new DummyScanLineSender()
         : PRUScanLineSender::Create();
+
     if (!line_sender) {
         fprintf(stderr, "Cannot initialize hardware.\n");
         return 1;
@@ -244,16 +250,18 @@ int main(int argc, char *argv[]) {
 
     delete ldgraphy;  // First make PRU stop using our pins.
 
-    UIMessage("Done Scanning - sending the sled with the board towards you.");
-    sled.Move(180);  // Move out for user to grab.
+    if (do_sled_loading_ui) {
+        UIMessage("Done Scanning - sending the sled with the board towards you.");
+        sled.Move(180);  // Move out for user to grab.
 
-    UIMessage("Here we are. Please take the board and press <RETURN>");
-    // TODO: here, when the user takes too long, just pull in board again
-    // to have it more protected against light.
-    while (fgetc(stdin) != '\n')
-        ;
-    UIMessage("Thanks. Going back.");
-    sled.Move(-85);
+        UIMessage("Here we are. Please take the board and press <RETURN>");
+        // TODO: here, when the user takes too long, just pull in board again
+        // to have it more protected against light.
+        while (fgetc(stdin) != '\n')
+            ;
+        UIMessage("Thanks. Going back.");
+        sled.Move(-85);
+    }
 
     return 0;
 }

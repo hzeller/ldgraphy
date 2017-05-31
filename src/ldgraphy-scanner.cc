@@ -49,7 +49,7 @@ constexpr float bed_width = 100.0;   // Width of the laser to throw.
 constexpr float kFocus_X_Dia = 0.04;  // mm
 constexpr float kFocus_Y_Dia = 0.04;  // mm
 
-constexpr float line_frequency = 257.0;  // Hz. Measured with scope.
+constexpr float line_frequency = 239.0;  // Hz. Measured with scope.
 
 constexpr bool output_debug_images = false;
 
@@ -164,10 +164,10 @@ float LDGraphyScanner::estimated_time_seconds() const {
     return exposure_factor_ * (scanlines_ / line_frequency);
 }
 
-void LDGraphyScanner::ScanExpose(bool do_move,
+bool LDGraphyScanner::ScanExpose(bool do_move,
                                  std::function<bool(int d, int t)> progress_cont)
 {
-    if (!scan_image_) return;
+    if (!scan_image_) return true;
     const int max = scan_image_->height();
     for (int scan = 0; scan < scanlines_ && progress_cont(scan, scanlines_); ++scan) {
         const int scan_pixel = roundf(scan / sled_step_per_image_pixel_);
@@ -177,12 +177,13 @@ void LDGraphyScanner::ScanExpose(bool do_move,
             // TODO: For now, the only error condition is getting a sync. Later
             // we might need to make this message more diverse.
             fprintf(stderr, "\nIssue synchronizing. Shutting down.\n");
-            break;
+            return false;
         }
 	for (int i = 1; i < exposure_factor_; ++i) {
             backend_->EnqueueNextData(row_data, SCANLINE_DATA_SIZE, false);
 	}
     }
+    return true;
 }
 
 void LDGraphyScanner::ExposeJitterTest(int mirrors, int repeats) {
