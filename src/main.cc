@@ -65,7 +65,9 @@ static int usage(const char *progname, const char *errmsg = NULL) {
             "\t-i         : Inverse image: black becomes laser on\n"
             "\t-x<val>    : Exposure factor. Default 1.\n"
             "\t-o<val>    : Offset in sled direction in mm\n"
-            "\t-S         : Skip sled loading; assume board already loaded\n"
+            "Mostly for testing:\n"
+            "\t-S         : Skip sled loading; assume board already loaded.\n"
+            "\t-E         : Skip eject at end.\n"
             "\t-F         : Run a focus round until Ctrl-C\n"
             "\t-M         : Testing: Inhibit sled move.\n"
             "\t-n         : Dryrun. Do not do any scanning; laser off.\n"
@@ -133,12 +135,13 @@ int main(int argc, char *argv[]) {
     bool do_focus = false;
     bool do_move = true;
     bool do_sled_loading_ui = true;
+    bool do_sled_eject = true;
     int mirror_adjust_exposure = 0;
     float offset_x = 0;
     float exposure_factor = 1.0f;
 
     int opt;
-    while ((opt = getopt(argc, argv, "MFhnid:x:j:o:S")) != -1) {
+    while ((opt = getopt(argc, argv, "MFhnid:x:j:o:SE")) != -1) {
         switch (opt) {
         case 'h': return usage(argv[0]);
         case 'd':
@@ -167,6 +170,9 @@ int main(int argc, char *argv[]) {
             break;
         case 'S':
             do_sled_loading_ui = false;
+            break;
+        case 'E':
+            do_sled_eject = false;
             break;
         }
     }
@@ -250,7 +256,7 @@ int main(int argc, char *argv[]) {
 
     delete ldgraphy;  // First make PRU stop using our pins.
 
-    if (do_sled_loading_ui) {
+    if (do_sled_eject) {
         UIMessage("Done Scanning - sending the sled with the board towards you.");
         sled.Move(180);  // Move out for user to grab.
 

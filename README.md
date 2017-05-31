@@ -11,9 +11,20 @@ Uses
   * 500mW 405nm laser
   * Commonly available polygon mirror scanner (from laser printers)
   * stepper motor for linear axis.
-  * Beaglebone Black to control it all (using the PRU to generate precise
+  * Beaglebone Black/Green to control it all (using the PRU to generate precise
     timings for mirror and laser).
   * Possibly later some simpler set-up with Cortex M4 or so.
+
+Work in Progress
+----------------
+Currently, the design is refined while testing various different
+types of commonly available Polygon Mirrors and Lasers. Also the
+PCBs for the Cape and the Laser current driver are in their first iteration with
+focus on easy measurements and removable parts (e.g. stepper driver and DC/DC
+converter are external modules) than compact design. And of course, the
+software would need a little more bells and whistles.
+
+Having said that, the device is fully functional.
 
 Build
 -----
@@ -34,16 +45,25 @@ cd ldgraphy/src
 make
 ```
 
+At this point, the input is very simply a PNG image (as that has
+embedded DPI information). For converting Gerber files to PNG, see the
+`gerber2png` tool in the [scripts/](./scripts) directory.
+
 Usage:
 ```
-Usage:
-./ldgraphy [options] <image-file>
+./ldgraphy [options] <png-image-file>
 Options:
-        -d <val>   : DPI of input image. Default 600
+        -d <val>   : Override DPI of input image. Default -1
         -i         : Inverse image: black becomes laser on
-        -M         : Inhibit move in x direction
-        -F         : Run a focus round until the first Ctrl-C
-        -n         : Dryrun. Do not do any scanning.
+        -x<val>    : Exposure factor. Default 1.
+        -o<val>    : Offset in sled direction in mm
+Mostly for testing:
+        -S         : Skip sled loading; assume board already loaded.
+        -E         : Skip eject at end.
+        -F         : Run a focus round until Ctrl-C
+        -M         : Testing: Inhibit sled move.
+        -n         : Dryrun. Do not do any scanning; laser off.
+        -j<exp>    : Mirror jitter test with given exposure repeat
         -h         : This help
 ```
 
