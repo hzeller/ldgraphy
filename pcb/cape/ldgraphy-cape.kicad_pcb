@@ -2,10 +2,10 @@
 
   (general
     (links 74)
-    (no_connects 2)
-    (area 69.774999 41.3705 114.004286 102.945001)
+    (no_connects 0)
+    (area 71.552999 41.3705 114.004286 92.785001)
     (thickness 1.6)
-    (drawings 17)
+    (drawings 16)
     (tracks 281)
     (zones 0)
     (modules 27)
@@ -37,7 +37,7 @@
   )
 
   (setup
-    (last_trace_width 1)
+    (last_trace_width 0.3)
     (user_trace_width 0.25)
     (user_trace_width 0.3)
     (user_trace_width 0.35)
@@ -1583,7 +1583,6 @@
     (effects (font (size 1.2 1.2) (thickness 0.2)) (justify right))
   )
   (gr_line (start 71.628 92.71) (end 71.628 43.18) (layer Edge.Cuts) (width 0.15))
-  (gr_line (start 69.85 102.87) (end 69.85 102.87) (layer Edge.Cuts) (width 0.15) (tstamp 58E6731F))
   (gr_line (start 106.68 92.71) (end 71.628 92.71) (layer Edge.Cuts) (width 0.15))
   (gr_line (start 106.68 43.18) (end 106.68 92.71) (layer Edge.Cuts) (width 0.15))
   (gr_line (start 71.628 43.18) (end 106.68 43.18) (layer Edge.Cuts) (width 0.15))
