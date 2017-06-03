@@ -39,10 +39,17 @@
 		    0x040 0x07 /* GPIO_1[16]; P9.15 Step */
 
 		    /* Input */
-		    0x044 0x37 /* GPIO_1[17]; P9.23 Hsync input. Pullup. */
+		    //0x044 0x37 /* GPIO_1[17]; P9.23 Hsync input. Pullup. */
+		    0x044 0x3F /* GPIO_1[17]; P9.23 Hsync input. Pullup disable */
+
 		    0x078 0x37 /* GPIO_1[28]; P9.12 Stop-switch back; pullup */
 		    0x074 0x37 /* GPIO_0[31]; P9.13 Stop-switch front; pullup */
 		    0x070 0x37 /* GPIO_0[30]; P9.11 UI-button; pullup */
+
+		    /* Experimental direct io */
+		    //0x184 0x36 /* R31[16]; P9.24 input; pullup */
+		    0x184 0x3E /* R31[16]; P9.24 input; pullup disabled. */
+		    0x1a4 0x0D /* R30[5];  P9.27 output */
                 >;
             };
         };

@@ -49,11 +49,11 @@
 
 // Each mirror segment, we divide int number of ticks.
 #define TICK_PER_SEGMENT (2*8*SCANLINE_DATA_SIZE)
-#define JITTER_ALLOW (TICK_PER_SEGMENT/150)
+#define JITTER_ALLOW (TICK_PER_SEGMENT/100)
 
 // Each line, hence mirror segment, is divided in 8192 cycles.
 // This is the rough number of CPU cycles between each of the steps.
-#define TICK_DELAY 60
+#define TICK_DELAY 100
 
 // Significant bit in the global time that toggles the mirror. A full mirror
 // clock loop is 2 * 2^(9 + 3) bits long (2^9 = 512; 2^3= 8 bits/byte, two
@@ -63,9 +63,9 @@
 #define MIRROR_COUNT_BIT (9 + 3)
 
 // Cycles to spin up mirror. roughly 1 second per 1 million.
-#define SPINUP_TICKS 2500000	     ; Spinup, laser off
+#define SPINUP_TICKS         4000000 ; Spinup, laser off
 #define MAX_WAIT_STABLE_TIME 3000000 ; laser on, while waiting for sync.
-#define END_OF_DATA_WAIT 2000000     ; No data for this time - finish.
+#define END_OF_DATA_WAIT     2000000 ; No data for this time - finish.
 
 // Mapping some fixed registers to named variables.
 // We have enough registers to keep things readable.
@@ -98,7 +98,7 @@
 	.u8  bit_loop		; bit loop
 	.u8  last_hsync_bit	; so that we can trigger on an edge
 .ends
-.assign Variables, r10, r26, v
+.assign Variables, r12, r28, v
 
 ;; Registers
 ;; r1 ... r9 : common use
@@ -138,12 +138,26 @@ bit_is_clear:
 no_hsync:
 .endm
 
+// Experimental alternative: reading from r31. But that only makes sense once
+// we have an accurate time source.
+.macro branch_if_hsync_r31
+.mparam to_label
+	QBBC bit_is_clear, r31, 16	   ; direct PRU input
+	QBEQ no_hsync, v.last_hsync_bit, 1 ; we are only interested in 0->1 edge
+	MOV v.last_hsync_bit, 1
+	MOV v.hsync_time, v.global_time
+	JMP to_label
+bit_is_clear:
+	MOV v.last_hsync_bit, 0
+no_hsync:
+.endm
+
 // Using cpu cycle counter instead of IEP, so that we have
 // an easier time to transfer that to a simpler processor later.
 .macro start_cpu_cycle_counter
 	MOV r5, PRUSS_PRU_CTL
-	LBBO r6, r5, 0, 4
 
+	LBBO r6, r5, 0, 4
 	CLR r6, 3		; bit 3: disable
 	SBBO r6, r5, 0, 4
 
@@ -154,17 +168,24 @@ no_hsync:
 	SBBO r6, r5, 0, 4
 .endm
 
-.macro wait_until_cpu_cycle_counter_reaches
+.macro wait_to_next_tick_and_reset
 .mparam value
-	MOV r5, PRUSS_PRU_CTL
-	MOV r6, value
+	MOV r7, PRUSS_PRU_CTL
+	// Reading this register takes 4 cpu cycles. So we read it and
+	// then do the remaining time with a busy loop.
+	LBBO r9, r7, CYCLE_COUNTER_OFFSET, 4 ; get current counter
+	MOV r8, (value - 10)		     ; account for some overhead
+	QBGT reset_cycle, r8, r9             ; already past time
+	SUB r9, r8, r9			     ; remaining CPU cycles
+	LSR r9, r9, 1			     ; each busy loop is 2 cycles
+	QBGE reset_cycle, r9, 1
 wait_loop:
-	LBBO r7, r5, CYCLE_COUNTER_OFFSET, 4
-	QBLT wait_loop, r6, r7
+	SUB r9, r9, 1
+	QBLT wait_loop, r9, 0
 
-	LBBO r6, r5, 0, 4
-	CLR r6, 3		; bit 3: disable
-	SBBO r6, r5, 0, 4
+reset_cycle:
+	// r9 is already set to remaining time.
+	SBBO r9, r7, CYCLE_COUNTER_OFFSET, 4 ; reset
 .endm
 
 INIT:
@@ -206,9 +227,9 @@ INIT:
 	MOV v.item_start, 0		    ; Byte position in DRAM
 	MOV v.state, STATE_IDLE
 
-MAIN_LOOP:
 	start_cpu_cycle_counter
 
+MAIN_LOOP:
 	/* for now, as we don't send data */
 	LBCO r1.b0, CONST_PRUDRAM, v.item_start, 1 ; read header
 	QBEQ FINISH, r1.b0, CMD_EXIT
@@ -371,7 +392,8 @@ active_data_wait:
 MAIN_LOOP_NEXT:
 	;; The current state set whatever state it needed, now wait for the
 	;; end of our period to execute the actions: set GPIO bits.
-	wait_until_cpu_cycle_counter_reaches TICK_DELAY
+	wait_to_next_tick_and_reset TICK_DELAY
+	XOR r30, r30, (1<<5)
 
 	;; Global time update. The global time wraps around after 1h or so
 	;; but it is sufficient for the typical exposure times of a few minutes.

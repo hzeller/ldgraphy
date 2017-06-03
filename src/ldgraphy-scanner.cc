@@ -49,7 +49,7 @@ constexpr float bed_width = 100.0;   // Width of the laser to throw.
 constexpr float kFocus_X_Dia = 0.04;  // mm
 constexpr float kFocus_Y_Dia = 0.04;  // mm
 
-constexpr float line_frequency = 239.0;  // Hz. Measured with scope.
+constexpr float line_frequency = 244.1;  // Hz. Measured with scope.
 
 constexpr bool output_debug_images = false;
 

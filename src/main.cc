@@ -54,6 +54,10 @@ static void ArmInterruptHandler() {
     s_interrupt_received = false;
 }
 static bool is_interrupted() { return s_interrupt_received; }
+static void DisarmInterruptHandler() {
+    signal(SIGTERM, SIG_DFL);
+    signal(SIGINT, SIG_DFL);
+}
 
 static int usage(const char *progname, const char *errmsg = NULL) {
     if (errmsg) {
@@ -220,6 +224,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    ArmInterruptHandler();  // While PRU running, we want controlled exit.
     LDGraphyScanner *ldgraphy = new LDGraphyScanner(line_sender,
                                                     exposure_factor);
 
@@ -233,7 +238,6 @@ int main(int argc, char *argv[]) {
     }
 
     if (LoadImage(ldgraphy, filename, commandline_dpi, invert)) {
-        ArmInterruptHandler();
         fprintf(stderr, "== Exposure. Emergency stop with Ctrl-C. ==\n");
         fprintf(stderr, "Estimated time: %.0f seconds\n",
                 ldgraphy->estimated_time_seconds());
@@ -255,6 +259,8 @@ int main(int argc, char *argv[]) {
     }
 
     delete ldgraphy;  // First make PRU stop using our pins.
+
+    DisarmInterruptHandler();   // Everything that comes now: fine to interrupt
 
     if (do_sled_eject) {
         UIMessage("Done Scanning - sending the sled with the board towards you.");
