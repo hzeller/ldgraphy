@@ -32,10 +32,10 @@ class LDGraphyScanner {
 public:
     ~LDGraphyScanner();
 
-    // Create an image scanner. Takes ownership of the ScanLineSender
+    // Create an image scanner.
     // Exposure factor above 1 indicates multiples of exposure time to
     // baseline (NB: right now, this only rounds to full integers).
-    LDGraphyScanner(ScanLineSender *sink, float exposure_factor);
+    LDGraphyScanner(float exposure_factor);
 
     // Set new image. Image is a grayscale image that needs to already
     // be quantized to black/white.
@@ -45,8 +45,13 @@ public:
     // Give an estimation how long a ScanExpose() would take with current image.
     float estimated_time_seconds() const;
 
+    // Set the ScanLineSender Backend to be used. Required before calling any
+    // of the Expose() methods.
+    void SetScanLineSender(ScanLineSender *sink) { backend_.reset(sink); }
+
     // Scan expose the image until done or progress_out() returns false.
-    // If do_move is false, then do not move sled.
+    // If do_move is false, then do not move sled. Requires that
+    // SetScanLineSender() has been called with a valid backend before.
     //
     // The "progress_out" callback is called with the current state of how
     // much is done from all. This progress_out() callback should return a
@@ -64,7 +69,7 @@ public:
     void ExposeJitterTest(int mirrors, int repeats);
 
 private:
-    std::unique_ptr<ScanLineSender> const backend_;
+    std::unique_ptr<ScanLineSender> backend_;
     const int exposure_factor_;
     std::unique_ptr<BitmapImage> scan_image_;  // preprocessed.
     int scanlines_;

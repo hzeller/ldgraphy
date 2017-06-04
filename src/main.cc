@@ -196,6 +196,13 @@ int main(int argc, char *argv[]) {
         return usage(argv[0], "Exposure factor needs to be at least 1.");
     }
 
+    LDGraphyScanner *ldgraphy = new LDGraphyScanner(exposure_factor);
+    const bool do_image = LoadImage(ldgraphy, filename, commandline_dpi, invert);
+    if (do_image) {
+        fprintf(stderr, "Estimated time: %.0f seconds\n",
+                ldgraphy->estimated_time_seconds());
+    }
+
     SledControl sled(4000, do_move && !dryrun);
 
     // Super-crude UI
@@ -215,18 +222,16 @@ int main(int argc, char *argv[]) {
     forward_move += offset_x;
     sled.Move(forward_move);
 
+    ArmInterruptHandler();  // While PRU running, we want controlled exit.
     ScanLineSender *line_sender = dryrun
         ? new DummyScanLineSender()
         : PRUScanLineSender::Create();
-
     if (!line_sender) {
         fprintf(stderr, "Cannot initialize hardware.\n");
         return 1;
     }
 
-    ArmInterruptHandler();  // While PRU running, we want controlled exit.
-    LDGraphyScanner *ldgraphy = new LDGraphyScanner(line_sender,
-                                                    exposure_factor);
+    ldgraphy->SetScanLineSender(line_sender);
 
     if (mirror_adjust_exposure) {
         ldgraphy->ExposeJitterTest(6, mirror_adjust_exposure);
@@ -237,20 +242,25 @@ int main(int argc, char *argv[]) {
         RunFocusLine(ldgraphy);
     }
 
-    if (LoadImage(ldgraphy, filename, commandline_dpi, invert)) {
+    if (do_image) {
         fprintf(stderr, "== Exposure. Emergency stop with Ctrl-C. ==\n");
-        fprintf(stderr, "Estimated time: %.0f seconds\n",
-                ldgraphy->estimated_time_seconds());
-        float prev_percent = -1;
+        int prev_percent = -1, prev_remain_time = -1;
+        const float total_sec = ldgraphy->estimated_time_seconds();
         ldgraphy->ScanExpose(
-            do_move, [&prev_percent](int done, int total) {
+            do_move,
+            [&prev_percent, &prev_remain_time, total_sec](int done, int total) {
                 // Simple commandline progress indicator.
                 const int percent = roundf(100.0 * done / total);
-                if (percent != prev_percent) {
-                    fprintf(stderr, "\b\b\b\b\b\b\b\b\b\b\b\b%d%% (%d)",
-                            percent, done);
+                const int remain_time = roundf(total_sec -
+                                               (total_sec * done / total));
+                // Only update if any number would change.
+                if (percent != prev_percent || remain_time != prev_remain_time) {
+                    fprintf(stderr, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b"
+                            "%3d%%; %d sec left",
+                            percent, remain_time);
                     fflush(stderr);
                     prev_percent = percent;
+                    prev_remain_time = remain_time;
                 }
                 return !is_interrupted();
             });

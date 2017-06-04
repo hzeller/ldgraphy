@@ -53,15 +53,14 @@ constexpr float line_frequency = 244.1;  // Hz. Measured with scope.
 
 constexpr bool output_debug_images = false;
 
-LDGraphyScanner::LDGraphyScanner(ScanLineSender *sink, float exposure_factor)
-    : backend_(sink),
-      exposure_factor_(roundf(exposure_factor))  // We only do integer for now.
+LDGraphyScanner::LDGraphyScanner(float exposure_factor)
+    : exposure_factor_(roundf(exposure_factor))  // We only do integer for now.
 {
     assert(exposure_factor >= 1);
 }
 
 LDGraphyScanner::~LDGraphyScanner() {
-    backend_->Shutdown();
+    if (backend_) backend_->Shutdown();
 }
 
 // Create lookup-table for a particular image resolution: what pixel to extract
@@ -113,13 +112,14 @@ void LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
     const float laser_dots_per_mm = (laser_dots_per_image_pixel
                                      / image_resolution_mm_per_pixel);
     // Let's see what the range is we need to scan.
-    fprintf(stderr, "Exposure size: (%.1fmm along sled; %.1fmm wide).\n"
-            "Resolution %.0fdpi: "
-            "%.1f sled steps per width-pixel; %.2f laser dots per height pixel. "
+    fprintf(stderr, "Exposure size: (X=%.1fmm along sled; Y=%.1fmm laser scan).\n"
+            "Resolution %.0fdpi (%.3fmm/pixel): "
+            "%.1f sled steps per X-pixel; %.2f laser dots per Y pixel. "
             "(%.3fmm dots @ %.0fkHz laser modulation.)\n",
             img->width() * image_resolution_mm_per_pixel,
             img->height() * image_resolution_mm_per_pixel,
-            dpi, sled_step_per_image_pixel_, laser_dots_per_image_pixel,
+            dpi, image_resolution_mm_per_pixel,
+            sled_step_per_image_pixel_, laser_dots_per_image_pixel,
             1 / laser_dots_per_mm, line_frequency * SCAN_PIXELS / 1000.0);
 #endif
     // Convert this into the image, tangens-corrected and rotated by
@@ -168,6 +168,10 @@ bool LDGraphyScanner::ScanExpose(bool do_move,
                                  std::function<bool(int d, int t)> progress_cont)
 {
     if (!scan_image_) return true;
+    if (!backend_) {
+        fprintf(stderr, "No ScanLine backend provided\n");
+        return false;
+    }
     const int max = scan_image_->height();
     for (int scan = 0; scan < scanlines_ && progress_cont(scan, scanlines_); ++scan) {
         const int scan_pixel = roundf(scan / sled_step_per_image_pixel_);
@@ -187,6 +191,7 @@ bool LDGraphyScanner::ScanExpose(bool do_move,
 }
 
 void LDGraphyScanner::ExposeJitterTest(int mirrors, int repeats) {
+    assert(backend_);
     uint8_t *buffer = new uint8_t[mirrors * SCANLINE_DATA_SIZE]();
     // Only use part of our scanline for the test.
     const int mirror_line_len = (0.5 * SCANLINE_DATA_SIZE) / mirrors;

@@ -127,7 +127,7 @@ DummyScanLineSender::DummyScanLineSender() : lines_enqueued_(0) {
 
 bool DummyScanLineSender::EnqueueNextData(const uint8_t *, size_t, bool) {
     lines_enqueued_++;
-    usleep(1000000 / 257);  // rough simulation of scan; see line_frequency
+    usleep(1000000 / 244);  // rough simulation of scan; see line_frequency
     return true;
 }
 bool DummyScanLineSender::Shutdown() {
