@@ -1,31 +1,58 @@
 #!/bin/bash
 ##
 
+GERBV=$(which gerbv)
+
 set -e
 
 # When hand-drilling, we want the holes small.
-SMALL_HOLES=1  # todo: make this a command line option
+SMALL_HOLES=1
+RESOLUTION_DPI=1500
+OUTDIR=""
 
-if [ $# -lt 2 ] ; then
-   echo "usage: $0 [-d <outdir>] <resolution-dpi> <gerber-file> [<gerber-file>...]" > /dev/stderr
-   echo "Output on stdout." > /dev/stderr
+if [ $# -lt 1 ] ; then
+    echo "usage: $0 [options] <gerber-file> [<gerber-file>...]"
+    echo -e "\t-d <outdir>  : Directory to write PNG files to. Default: wherever the gerber files are."
+    echo -e "\t-r <dpi>     : Resolution in DPI. Default 1500dpi"
+    echo -e "\t-l           : Large holes: do not narrow drill holes"
+
+    echo "Output to PNG filenames based on the gerber filenames + '.png'"
+    echo
+    echo "If you also give the drill file, 'holes' are generated in the copper layers."
+    echo
+    echo "To have all corresponding PNG images aligned with each other"
+    echo "(think of exposure copper and solder mask in two rounds),"
+    echo "always pass in all needed gerber files."
    exit 1
 fi
 
-OUTDIR=""
+while : ; do
+    case $1 in
+	-d) OUTDIR=$2; mkdir -p $OUTDIR ; shift; shift
+	    ;;
+	-l) SMALL_HOLES=0; shift
+	    ;;
+	-r) RESOLUTION_DPI=$2 ; shift ; shift
+	    ;;
+	*) break
+	   ;;
+    esac
+done
 
-case $1 in
-    -d) OUTDIR=$2; mkdir -p $OUTDIR ; shift; shift ;;
-esac
-
-DPI=$1
-shift
+if [ -z "$GERBV" ] ; then
+    echo "This requires the 'gerbv' binary to be installed."
+    exit 1
+fi
 
 SHOWN_COLOR="-f#000000ff"   # Black.
 HIDDEN_COLOR="-f#fefefe00"  # almost white, force layer to be in BoundingBox
 DRILL_COLOR="-f#ffffffff"   # white holes
 
 for f in "$@" ; do
+    if [ ! -f "$f" ] ; then
+	echo "Not a file $f"
+	exit 1
+    fi
     if [[ "$f" == *.png ]] ; then
 	continue
     fi
@@ -47,9 +74,9 @@ for f in $ALL_THE_FILES ; do
     if [[ "$f" == *.g?l ]] ; then  # gtl or gbl
 	#echo "$f - in copper"
 	# Copper layers should have the drill layer ... if available
-	gerbv -xps -o/tmp/gerbvtmp.$$.ps $DRILL_LAYER $SHOWN_COLOR "$f" $BACKGROUND_LAYERS 2>/dev/null
+	$GERBV -xps -o/tmp/gerbvtmp.$$.ps $DRILL_LAYER $SHOWN_COLOR "$f" $BACKGROUND_LAYERS 2>/dev/null
     else
-	gerbv -xps -o/tmp/gerbvtmp.$$.ps $SHOWN_COLOR "$f" $BACKGROUND_LAYERS 2>/dev/null
+	$GERBV -xps -o/tmp/gerbvtmp.$$.ps $SHOWN_COLOR "$f" $BACKGROUND_LAYERS 2>/dev/null
     fi
 
     # Depending if we have an out-dir, we write it there or
@@ -60,7 +87,7 @@ for f in $ALL_THE_FILES ; do
     fi
 
     # .. convert to PNG, set DPI.
-    `dirname $0`/ps2bwpng $DPI /tmp/gerbvtmp.$$.ps > "$OUTFILE"
+    `dirname $0`/ps2bwpng $RESOLUTION_DPI /tmp/gerbvtmp.$$.ps > "$OUTFILE"
     rm -f /tmp/gerbvtmp.$$.ps
 done
 

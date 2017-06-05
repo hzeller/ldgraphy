@@ -32,7 +32,7 @@ EXTRACT=$($GS -sDEVICE=bbox -sOutputFile=- $IN_PS 2>&1 | \
 
 RES=$(echo "$EXTRACT" | awk -F: '{print $1}')
 TRANSLATE=$(echo "$EXTRACT" | awk -F: '{print $2}')
-echo "Resolution $RES ; $TRANSLATE" > /dev/stderr
+#echo "Resolution $RES ; $TRANSLATE" > /dev/stderr
 
 # Now the actual output.
 (echo "$TRANSLATE" ; cat "$IN_PS" ) | $GS -sDEVICE=pngmono -sOutputFile=- -r${DPI}x${DPI} -g$RES -
