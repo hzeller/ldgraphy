@@ -45,7 +45,12 @@ public:
         return buffer_[width_ * y + x];
     }
 
-    void ToPGM(FILE *file);
+    const uint8_t &at(int x, int y) const {
+        assert(x >= 0 && x < width_ && y >= 0 && y < height_);
+        return buffer_[width_ * y + x];
+    }
+
+    void ToPGM(FILE *file) const;
 
 private:
     const int width_, height_;
@@ -72,7 +77,7 @@ public:
         return bits_->buffer() + r * width_ / 8;
     }
 
-    void ToPBM(FILE *file);
+    void ToPBM(FILE *file) const;
 
 private:
     const int width_, height_;
@@ -91,5 +96,8 @@ void ConvertBlackWhite(SimpleImage *img, uint8_t threshold, bool invert);
 // Thin out contiguous regions in x and y direction by x_radius, y_radius,
 // but never in a way that pixels are eliminated entirely.
 void ThinImageStructures(SimpleImage *img, int x_radius, int y_radius);
+
+// Create a new image, that is rotated by 90 degrees.
+SimpleImage *CreateRotatedImage(const SimpleImage &img);
 
 #endif  // LDGRAPHY_IMAGE_PROCESSING_H

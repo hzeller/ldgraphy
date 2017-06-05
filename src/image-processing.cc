@@ -22,13 +22,13 @@
 
 #include <functional>
 
-void SimpleImage::ToPGM(FILE *file) {
+void SimpleImage::ToPGM(FILE *file) const {
     fprintf(file, "P5\n%d %d\n255\n", width_, height_);
     fwrite(buffer_, 1, width_ * height_, file);
     fclose(file);
 }
 
-void BitmapImage::ToPBM(FILE *file) {
+void BitmapImage::ToPBM(FILE *file) const {
     fprintf(file, "P4\n%d %d\n", width_, height_);
     fwrite(bits_->buffer(), 1, width_ * height_ / 8, file);
     fclose(file);
@@ -165,4 +165,14 @@ void ThinImageStructures(SimpleImage *img, int x_radius, int y_radius) {
         ThinOneDimension(y_radius, 0, img->height(),
                          [x, img](int p) -> uint8_t& { return img->at(x, p); });
     }
+}
+
+SimpleImage *CreateRotatedImage(const SimpleImage &img) {
+    SimpleImage *const result = new SimpleImage(img.height(), img.width());
+    for (int x = 0; x < img.width(); ++x) {
+        for (int y = 0; y < img.height(); ++y) {
+            result->at(y, result->height() - x - 1) = img.at(x, y);
+        }
+    }
+    return result;
 }
