@@ -69,6 +69,7 @@ static int usage(const char *progname, const char *errmsg = NULL) {
             "\t-i         : Inverse image: black becomes laser on\n"
             "\t-x<val>    : Exposure factor. Default 1.\n"
             "\t-o<val>    : Offset in sled direction in mm\n"
+            "\t-R         : Rotate exposure 90 degrees ↺\n"
             "Mostly for testing:\n"
             "\t-S         : Skip sled loading; assume board already loaded.\n"
             "\t-E         : Skip eject at end.\n"

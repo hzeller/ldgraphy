@@ -57,6 +57,7 @@ Options:
         -i         : Inverse image: black becomes laser on
         -x<val>    : Exposure factor. Default 1.
         -o<val>    : Offset in sled direction in mm
+        -R         : Rotate exposure 90 degrees ↺
 Mostly for testing:
         -S         : Skip sled loading; assume board already loaded.
         -E         : Skip eject at end.
