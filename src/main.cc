@@ -83,12 +83,12 @@ static int usage(const char *progname, const char *errmsg = NULL) {
 // Given an image filename, create a LDGraphyScanner that can be used to expose
 // that image.
 bool LoadImage(LDGraphyScanner *scanner,
-               const char *filename, float override_dpi, bool invert) {
+               const char *filename, float override_dpi,
+               bool invert, bool rotate) {
     if (!filename) return false;
     double input_dpi = -1;
-    SimpleImage *img = LoadPNGImage(filename, &input_dpi);
-    if (img == nullptr)
-        return false;
+    std::unique_ptr<SimpleImage> img(LoadPNGImage(filename, &input_dpi));
+    if (img == nullptr) return false;
 
     if (override_dpi > 0 || input_dpi < 100 || input_dpi > 20000)
         input_dpi = override_dpi;
@@ -99,9 +99,11 @@ bool LoadImage(LDGraphyScanner *scanner,
         return false;
     }
 
-    ConvertBlackWhite(img, 128, invert);
+    if (rotate) img.reset(CreateRotatedImage(*img));
 
-    scanner->SetImage(img, input_dpi);
+    ConvertBlackWhite(img.get(), 128, invert);
+
+    scanner->SetImage(img.release(), input_dpi);
     return true;
 }
 
@@ -140,12 +142,13 @@ int main(int argc, char *argv[]) {
     bool do_move = true;
     bool do_sled_loading_ui = true;
     bool do_sled_eject = true;
+    bool do_rotate = false;
     int mirror_adjust_exposure = 0;
     float offset_x = 0;
     float exposure_factor = 1.0f;
 
     int opt;
-    while ((opt = getopt(argc, argv, "MFhnid:x:j:o:SE")) != -1) {
+    while ((opt = getopt(argc, argv, "MFhnid:x:j:o:SER")) != -1) {
         switch (opt) {
         case 'h': return usage(argv[0]);
         case 'd':
@@ -178,6 +181,9 @@ int main(int argc, char *argv[]) {
         case 'E':
             do_sled_eject = false;
             break;
+        case 'R':
+            do_rotate = true;
+            break;
         }
     }
 
@@ -197,7 +203,8 @@ int main(int argc, char *argv[]) {
     }
 
     LDGraphyScanner *ldgraphy = new LDGraphyScanner(exposure_factor);
-    const bool do_image = LoadImage(ldgraphy, filename, commandline_dpi, invert);
+    const bool do_image = LoadImage(ldgraphy, filename,
+                                    commandline_dpi, invert, do_rotate);
     if (do_image) {
         fprintf(stderr, "Estimated time: %.0f seconds\n",
                 ldgraphy->estimated_time_seconds());
