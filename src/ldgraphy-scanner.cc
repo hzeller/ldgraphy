@@ -112,10 +112,11 @@ void LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
     const float laser_dots_per_mm = (laser_dots_per_image_pixel
                                      / image_resolution_mm_per_pixel);
     // Let's see what the range is we need to scan.
-    fprintf(stderr, "Exposure size: (X=%.1fmm along sled; Y=%.1fmm laser scan).\n"
-            "Resolution %.0fdpi (%.3fmm/pixel): "
-            "%.1f sled steps per X-pixel; %.2f laser dots per Y pixel. "
-            "(%.3fmm dots @ %.0fkHz laser modulation.)\n",
+    fprintf(stderr, "Exposure size: "
+            "(X=%.1fmm along sled; Y=%.1fmm wide laser scan).\n"
+            "Resolution %.0fdpi (%.3fmm/pixel)\n"
+            "  %5.2f Sled steps per X-pixel.\n  %5.2f Laser dots per Y-pixel "
+            "(%.3fmm dots @ %.0fkHz laser modulation).\n",
             img->width() * image_resolution_mm_per_pixel,
             img->height() * image_resolution_mm_per_pixel,
             dpi, image_resolution_mm_per_pixel,
