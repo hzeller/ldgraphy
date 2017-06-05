@@ -28,6 +28,9 @@
 #include "laser-scribe-constants.h"
 #include "sled-control.h"
 
+// Output images to TMP to observe the image processing progress.
+constexpr bool debug_images = false;
+
 constexpr int SCAN_PIXELS = SCANLINE_DATA_SIZE * 8;
 constexpr float deg2rad = 2*M_PI/360;
 
@@ -50,8 +53,6 @@ constexpr float kFocus_X_Dia = 0.04;  // mm
 constexpr float kFocus_Y_Dia = 0.04;  // mm
 
 constexpr float line_frequency = 244.1;  // Hz. Measured with scope.
-
-constexpr bool output_debug_images = false;
 
 LDGraphyScanner::LDGraphyScanner(float exposure_factor)
     : exposure_factor_(roundf(exposure_factor))  // We only do integer for now.
@@ -125,7 +126,7 @@ void LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
 #endif
     // Convert this into the image, tangens-corrected and rotated by
     // 90 degrees, so that we can send it line-by-line.
-    if (output_debug_images) fprintf(stderr, " Tangens correct...\n");
+    if (debug_images) fprintf(stderr, " Tangens correct...\n");
     SimpleImage *exposure_image = new SimpleImage(y_lookup.size(), img->width());
     for (int x_pixel = 0; x_pixel < img->width(); ++x_pixel) {
         for (size_t i = 0; i < y_lookup.size(); ++i) {
@@ -138,17 +139,17 @@ void LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
     delete img;
 
     // Correct for physical laser dot thickness - taking off pixels off edges.
-    if (output_debug_images) exposure_image->ToPGM(fopen("/tmp/ld_1.pgm", "w"));
+    if (debug_images) exposure_image->ToPGM(fopen("/tmp/ld_1_tangens.pgm", "w"));
     const float laser_resolution_in_mm_per_pixel = bed_width / y_lookup.size();
-    if (output_debug_images) fprintf(stderr, " Thinning structures...\n");
+    if (debug_images) fprintf(stderr, " Thinning structures...\n");
     ThinImageStructures(exposure_image,
                         kFocus_X_Dia / laser_resolution_in_mm_per_pixel / 2,
                         kFocus_Y_Dia / image_resolution_mm_per_pixel / 2);
-    if (output_debug_images) exposure_image->ToPGM(fopen("/tmp/ld_2.pgm", "w"));
+    if (debug_images) exposure_image->ToPGM(fopen("/tmp/ld_2_thinned.pgm", "w"));
 
     // Now, convert it to the final bitmap to be sent to the output, padded
     // to the full data width.
-    if (output_debug_images) fprintf(stderr, " Convert to Bitmap...\n");
+    if (debug_images) fprintf(stderr, " Convert to Bitmap...\n");
     scan_image_.reset(new BitmapImage(SCAN_PIXELS, exposure_image->height()));
     for (int y = 0; y < exposure_image->height(); ++y) {
         for (int x = 0; x < exposure_image->width(); ++x) {
@@ -156,8 +157,8 @@ void LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
                              exposure_image->at(x, y) > 127);
         }
     }
-    if (output_debug_images) fprintf(stderr, "[image preparation done].\n");
-    if (output_debug_images) scan_image_->ToPBM(fopen("/tmp/ld_3.pbm", "w"));
+    if (debug_images) fprintf(stderr, "[image preparation done].\n");
+    if (debug_images) scan_image_->ToPBM(fopen("/tmp/ld_3_bitmap.pbm", "w"));
     delete exposure_image;
 }
 
