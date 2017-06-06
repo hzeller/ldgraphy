@@ -46,7 +46,7 @@ constexpr float segment_data_angle = (360 / kMirrorFaces) * deg2rad;
 
 constexpr float kRadiusMM = 133.0;   // distance between rot-mirror -> PCB
 //constexpr float bed_len = 160.0;
-constexpr float bed_width = 100.0;   // Width of the laser to throw.
+constexpr float bed_width = 100.5;   // Width of the laser to throw.
 
 // How fine can we get the focus ? Needs to be tuned per machine.
 constexpr float kFocus_X_Dia = 0.04;  // mm
@@ -123,7 +123,13 @@ void LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
             dpi, image_resolution_mm_per_pixel,
             sled_step_per_image_pixel_, laser_dots_per_image_pixel,
             1 / laser_dots_per_mm, line_frequency * SCAN_PIXELS / 1000.0);
+    if (img->width() > img->height()
+        && img->width() * image_resolution_mm_per_pixel <= bed_width) {
+        fprintf(stderr, "FYI: Currently the long side is along the sled. It "
+                "would be faster in portrait orientation; give -R option\n");
+    }
 #endif
+
     // Convert this into the image, tangens-corrected and rotated by
     // 90 degrees, so that we can send it line-by-line.
     if (debug_images) fprintf(stderr, " Tangens correct...\n");

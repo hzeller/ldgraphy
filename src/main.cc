@@ -69,7 +69,8 @@ static int usage(const char *progname, const char *errmsg = NULL) {
             "\t-i         : Inverse image: black becomes laser on\n"
             "\t-x<val>    : Exposure factor. Default 1.\n"
             "\t-o<val>    : Offset in sled direction in mm\n"
-            "\t-R         : Rotate exposure 90 degrees ↺\n"
+            "\t-R         : Quarter image turn left; "
+            "can be given multiple times.\n"
             "Mostly for testing:\n"
             "\t-S         : Skip sled loading; assume board already loaded.\n"
             "\t-E         : Skip eject at end.\n"
@@ -85,7 +86,7 @@ static int usage(const char *progname, const char *errmsg = NULL) {
 // that image.
 bool LoadImage(LDGraphyScanner *scanner,
                const char *filename, float override_dpi,
-               bool invert, bool rotate) {
+               bool invert, int quarter_turns) {
     if (!filename) return false;
     double input_dpi = -1;
     std::unique_ptr<SimpleImage> img(LoadPNGImage(filename, &input_dpi));
@@ -100,7 +101,8 @@ bool LoadImage(LDGraphyScanner *scanner,
         return false;
     }
 
-    if (rotate) img.reset(CreateRotatedImage(*img));
+    while (quarter_turns--)
+        img.reset(CreateRotatedImage(*img));
 
     ConvertBlackWhite(img.get(), 128, invert);
 
@@ -143,7 +145,7 @@ int main(int argc, char *argv[]) {
     bool do_move = true;
     bool do_sled_loading_ui = true;
     bool do_sled_eject = true;
-    bool do_rotate = false;
+    int quarter_turns = 0;
     int mirror_adjust_exposure = 0;
     float offset_x = 0;
     float exposure_factor = 1.0f;
@@ -183,7 +185,7 @@ int main(int argc, char *argv[]) {
             do_sled_eject = false;
             break;
         case 'R':
-            do_rotate = true;
+            quarter_turns++;
             break;
         }
     }
@@ -205,7 +207,7 @@ int main(int argc, char *argv[]) {
 
     LDGraphyScanner *ldgraphy = new LDGraphyScanner(exposure_factor);
     const bool do_image = LoadImage(ldgraphy, filename,
-                                    commandline_dpi, invert, do_rotate);
+                                    commandline_dpi, invert, quarter_turns);
     if (do_image) {
         fprintf(stderr, "Estimated time: %.0f seconds\n",
                 ldgraphy->estimated_time_seconds());
