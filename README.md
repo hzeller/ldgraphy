@@ -3,28 +3,32 @@ LDgraphy - Laser Direct Lithography
 
 Or Laser Direct Imaging, whatever you prefer.
 
-_(work in progress, nothing to see here yet)_
+_([work in progress][LDGraphy-posts], don't expect a polished result yet)_
 
 Simple implementation of photo resist exposure directly using a 405nm laser.
+
+![Case](./img/sample-case.jpg)
 
 Uses
   * 500mW 405nm laser
   * Commonly available polygon mirror scanner (from laser printers)
-  * stepper motor for linear axis.
+  * Stepper motor for linear axis (plus end-stop switches)
+  * Photo diode to determine start-of-line (as the polygon mirrors have
+    slightly different long faces and also phase-drift over time).
   * Beaglebone Black/Green to control it all (using the PRU to generate precise
-    timings for mirror and laser).
-  * Possibly later some simpler set-up with Cortex M4 or so.
+    timings for motors and laser).
 
 Work in Progress
 ----------------
-Currently, the design is refined while testing various different
+Currently, the design is work-in-progress while testing various different
 types of commonly available Polygon Mirrors and Lasers. Also the
-PCBs for the Cape and the Laser current driver are in their first iteration with
-focus on easy measurements and removable parts (e.g. stepper driver and DC/DC
-converter are external modules) than compact design. And of course, the
-software would need a little more bells and whistles.
+[PCBs](./pcb) for the [Cape] and the [Laser current driver] are in their
+first iteration with focus on easy measurements and removable parts
+(e.g. stepper driver and DC/DC converter are external modules) than compact
+design. And of course, the software would need a little more bells and whistles.
 
-Having said that, the device is fully functional.
+Having said that, the device is fully operational with a reliable
+resolution of 0.2mm (goal: reliable 0.1mm (4mil) traces with 0.1mm gaps).
 
 Build
 -----
@@ -57,7 +61,7 @@ Options:
         -i         : Inverse image: black becomes laser on
         -x<val>    : Exposure factor. Default 1.
         -o<val>    : Offset in sled direction in mm
-        -R         : Rotate exposure 90 degrees ↺
+        -R         : Quarter image turn left; can be given multiple times.
 Mostly for testing:
         -S         : Skip sled loading; assume board already loaded.
         -E         : Skip eject at end.
@@ -71,11 +75,13 @@ Mostly for testing:
 Case
 ----
 The first test-device was put together with extruded aluminum
-(see below). There is [work-in-progress](./hardware) to make a case out of
-laser-cut acrylic to have it cheap and simple to build for everyone who has
+(see below). The current version is made out of [laser-cut acrylic](./hardware)
+parts to have it simple and cheaply build for everyone who has
 access to a laser cutter (hint: your local Hackerspace might have one).
 
-![Case](./img/sample-case.jpg)
+Above is current status of the case, which went through some refinements (here
+a previous [intermediate case](./img/intermediate-case.jpg) which shows better
+the internal arrangement).
 
 This was the first experiment
 -------------------------------
@@ -96,3 +102,6 @@ time (hence the 'curve'). Overall the [progress] after that improved various
 issues seen up to the point where it starts to be usable for PCB work.
 
 [progress]: https://plus.google.com/u/0/+HennerZeller/posts/FeqdPoEZ3AT
+[Laser current driver]: ./pcb/laser-drive
+[Cape]: ./pcb/cape
+[LDGraphy-posts]: https://plus.google.com/u/0/s/%23ldgraphy/top

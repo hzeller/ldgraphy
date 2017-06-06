@@ -8,10 +8,6 @@ Use black or dark-red acrylic for all parts except the sled to prevent the
 405nm laser to escape in eye-damaging levels. The sled should be cut from
 fluorescing material.
 
-(You might see some pictures here that are transparent or open case for
-illustrative purposes, and which are good engineering samples while developing (
-and **require to wear Laser safety goggles**)).
-
 **Do not** use glass-clear transparent acrylic for the real machine, a 500mW
 laser can blind you!
 
@@ -51,9 +47,12 @@ You might also need to change `/scan-redirect-mirror-distance` to have the
 redirect mirror or its reflected beam not conflict with any object.
 
 ### Note
-This is pretty much work in progress, the drive and angle of laser mount etc.
-are still beeing tweaked, there is no cover yet, or a place to mount the
-BeagleBone.
+Nearing final state, ready to be used. This is fully parametrized, but
+PostScript is not the very best 2D CAD software and updating things is not
+so easy. I'd be happy if someone could translate that
+into e.g. [Solvespace] CAD. Pull requests welcome :)
 
-![](../img/sample-case.jpg)
 ![](../img/laser-cut-outline.png)
+![](../img/sample-case.jpg)
+
+[Solvespace]: http://solvespace.com/
