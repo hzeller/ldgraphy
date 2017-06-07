@@ -51,10 +51,6 @@
 #define TICK_PER_SEGMENT (2*8*SCANLINE_DATA_SIZE)
 #define JITTER_ALLOW (TICK_PER_SEGMENT/100)
 
-// Each line, hence mirror segment, is divided in 8192 cycles.
-// This is the rough number of CPU cycles between each of the steps.
-#define TICK_DELAY 100
-
 // Significant bit in the global time that toggles the mirror. A full mirror
 // clock loop is 2 * 2^(9 + 3) bits long (2^9 = 512; 2^3= 8 bits/byte, two
 // times, as we only get data for the first half). We want to toggle every

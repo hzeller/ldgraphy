@@ -35,4 +35,8 @@
 
 #define QUEUE_LEN 8
 
+// This is the CPU cycles (on the 200Mhz CPU) between each laser dot.
+// Other values are derived from this.
+#define TICK_DELAY 100
+
 #endif // LASER_SCRIBE_CONSTANTS_H

@@ -39,20 +39,34 @@ constexpr float deg2rad = 2*M_PI/360;
  */
 constexpr int kHSyncShoulder = 200;   // Distance between sensor and start
 
-constexpr int kMirrorFaces = 6;
-// Reflection would cover 2*angle, but we only send data for the first
-// half.
-constexpr float segment_data_angle = (360 / kMirrorFaces) * deg2rad;
+// Right now, the frequencies are just factor 8192 apart, but we might
+// choose in the future to create the mirror frequency with a different
+// fraction to utilize more of the data bits.
+constexpr float kLaserPixelFrequency = 200e6 / TICK_DELAY;
+constexpr float kMirrorLineFrequency = kLaserPixelFrequency / 8192;
 
-constexpr float kRadiusMM = 133.0;   // distance between rot-mirror -> PCB
-//constexpr float bed_len = 160.0;
-constexpr float bed_width = 100.5;   // Width of the laser to throw.
+// Mirror ticks as multiple of laser modulation time. This is a long way
+// to write 8192, which is currently baked in, see above.
+constexpr float kMirrorTicks = kLaserPixelFrequency / kMirrorLineFrequency;
+
+// The SCAN_PIXELS only cover part of the full segment, to better utilize
+// the bits in the usable area.
+constexpr float kDataFraction = SCAN_PIXELS / kMirrorTicks;
+
+constexpr int kMirrorFaces = 6;
+// Reflection is 2*angle.
+constexpr float kMirrorThrowAngle = 2 * (360 / kMirrorFaces) * deg2rad;
+constexpr float segment_data_angle = kMirrorThrowAngle * kDataFraction;
+
+// TODO(hzeller): read these numbers from the same source in the PostScript
+// file and here.
+constexpr float bed_width = 102.0;   // Width of the laser to throw.
+constexpr float kScanAngle = 40.0;   // Degrees
+constexpr float kRadiusMM = (bed_width/2) / tan(kScanAngle * deg2rad / 2);
 
 // How fine can we get the focus ? Needs to be tuned per machine.
 constexpr float kFocus_X_Dia = 0.04;  // mm
 constexpr float kFocus_Y_Dia = 0.04;  // mm
-
-constexpr float line_frequency = 244.1;  // Hz. Measured with scope.
 
 LDGraphyScanner::LDGraphyScanner(float exposure_factor)
     : exposure_factor_(roundf(exposure_factor))  // We only do integer for now.
@@ -87,8 +101,10 @@ static std::vector<int> PrepareTangensLookup(float radius_pixels,
     }
 #if 0
     fprintf(stderr, "Last Y coordinate full width = %d "
-            "(Nerd-info: mapped to %d. scan angle: %.2f)\n",
-            result.back(), (int)result.size(), scan_angle_range / deg2rad);
+            "(Nerd-info: mapped to %d + %d shoulder = %d; scan angle: %.3f)\n",
+            result.back(), (int)result.size(),
+            kHSyncShoulder, (int)result.size() + kHSyncShoulder,
+            scan_angle_range / deg2rad);
 #endif
     return result;
 }
@@ -105,7 +121,7 @@ void LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
                                bed_width / image_resolution_mm_per_pixel,
                                SCAN_PIXELS);
 #if 1
-    // Due to the tangens, we have worse resolution at the endges. So look at the
+    // Due to the tangens, we have worse resolution at the edges. So look at the
     // beginning to report a worst-case resolution.
     const int beginning_pixel = y_lookup.size() / 20;  // First 5%
     const float laser_dots_per_image_pixel
@@ -117,16 +133,18 @@ void LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
             "(X=%.1fmm along sled; Y=%.1fmm wide laser scan).\n"
             "Resolution %.0fdpi (%.3fmm/pixel)\n"
             "  %5.2f Sled steps per X-pixel.\n  %5.2f Laser dots per Y-pixel "
-            "(%.3fmm dots @ %.0fkHz laser modulation).\n",
+            "(%.3fmm dots @ %.0fkHz laser pixel frequency (=%.0fdpi)).\n",
             img->width() * image_resolution_mm_per_pixel,
             img->height() * image_resolution_mm_per_pixel,
             dpi, image_resolution_mm_per_pixel,
             sled_step_per_image_pixel_, laser_dots_per_image_pixel,
-            1 / laser_dots_per_mm, line_frequency * SCAN_PIXELS / 1000.0);
+            1 / laser_dots_per_mm,
+            kMirrorLineFrequency * kMirrorTicks / 1000.0,
+            laser_dots_per_mm * 25.4);
     if (img->width() > img->height()
         && img->width() * image_resolution_mm_per_pixel <= bed_width) {
-        fprintf(stderr, "FYI: Currently the long side is along the sled. It "
-                "would be faster in portrait orientation; give -R option\n");
+        fprintf(stderr, "\n[ TIP: Currently the long side is along the sled. It "
+                "would be faster in portrait orientation; give -R option ]\n\n");
     }
 #endif
 
@@ -169,7 +187,7 @@ void LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
 }
 
 float LDGraphyScanner::estimated_time_seconds() const {
-    return exposure_factor_ * (scanlines_ / line_frequency);
+    return exposure_factor_ * (scanlines_ / kMirrorLineFrequency);
 }
 
 bool LDGraphyScanner::ScanExpose(bool do_move,
