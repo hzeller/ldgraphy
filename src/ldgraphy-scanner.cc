@@ -60,7 +60,8 @@ constexpr float segment_data_angle = kMirrorThrowAngle * kDataFraction;
 
 // TODO(hzeller): read these numbers from the same source in the PostScript
 // file and here.
-constexpr float bed_width = 102.0;   // Width of the laser to throw.
+constexpr float bed_length = 162.0;  // Sled length.
+constexpr float bed_width  = 102.0;  // Width of the laser to throw.
 constexpr float kScanAngle = 40.0;   // Degrees
 constexpr float kRadiusMM = (bed_width/2) / tan(kScanAngle * deg2rad / 2);
 
@@ -109,8 +110,20 @@ static std::vector<int> PrepareTangensLookup(float radius_pixels,
     return result;
 }
 
-void LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
+bool LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
     const float image_resolution_mm_per_pixel = 25.4f / dpi;
+
+    if (image_resolution_mm_per_pixel * img->width() > bed_length) {
+        fprintf(stderr, "Board too long, does not fit in %.0fmm "
+                "bed along sled.\n", bed_length);
+        return false;
+    }
+    if (image_resolution_mm_per_pixel * img->height() > bed_width) {
+        fprintf(stderr, "Board too high, does not fit in %.0fmm bed "
+                "along laser scan.\n", bed_width);
+        return false;
+    }
+
     sled_step_per_image_pixel_ = (image_resolution_mm_per_pixel
                                   / SledControl::kSledMMperStep);
     scanlines_ = img->width() * sled_step_per_image_pixel_;
@@ -184,6 +197,8 @@ void LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
     if (debug_images) fprintf(stderr, "[image preparation done].\n");
     if (debug_images) scan_image_->ToPBM(fopen("/tmp/ld_3_bitmap.pbm", "w"));
     delete exposure_image;
+
+    return true;
 }
 
 float LDGraphyScanner::estimated_time_seconds() const {

@@ -106,8 +106,7 @@ bool LoadImage(LDGraphyScanner *scanner,
 
     ConvertBlackWhite(img.get(), 128, invert);
 
-    scanner->SetImage(img.release(), input_dpi);
-    return true;
+    return scanner->SetImage(img.release(), input_dpi);
 }
 
 // Output a line with dots in regular distance for testing the set-up.
@@ -211,6 +210,10 @@ int main(int argc, char *argv[]) {
     if (do_image) {
         fprintf(stderr, "Estimated time: %.0f seconds\n",
                 ldgraphy->estimated_time_seconds());
+    } else if (filename) {
+        // We got a file, so we were supposed to do something with it, alas
+        // that didn't work out.
+        return 1;
     }
 
     SledControl sled(4000, do_move && !dryrun);

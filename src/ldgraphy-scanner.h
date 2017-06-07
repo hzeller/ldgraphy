@@ -40,7 +40,9 @@ public:
     // Set new image. Image is a grayscale image that needs to already
     // be quantized to black/white.
     // Takes ownership of the image.
-    void SetImage(SimpleImage *img, float dpi);
+    // Returns boolean indicating if successful (e.g. it would not be successful
+    // if it doesn't fit on the bed).
+    bool SetImage(SimpleImage *img, float dpi);
 
     // Give an estimation how long a ScanExpose() would take with current image.
     float estimated_time_seconds() const;
