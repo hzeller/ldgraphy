@@ -1,4 +1,6 @@
-all : test-pattern-1500dpi.png resolution-snake-1500dpi.png
+# Make the resolution beyond 4x the device resolution to prevent aliasing
+# issues.
+all : test-pattern-3000dpi.png resolution-snake-3000dpi.png line-resolution-test-3000dpi.png
 
-%-1500dpi.png: %.ps
-	../scripts/ps2bwpng 1500 $< > $@
+%-3000dpi.png: %.ps
+	../scripts/ps2bwpng 3000 $< > $@
