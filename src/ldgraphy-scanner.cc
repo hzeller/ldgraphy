@@ -31,6 +31,11 @@
 // Output images to TMP to observe the image processing progress.
 constexpr bool debug_images = false;
 
+// How fine can we get the focus ? Needs to be tuned per machine. The
+// focus often is slightly oval.
+constexpr float kFocus_Sled_Dia = 0.06;  // mm
+constexpr float kFocus_Laser_Dia = 0.116;  // mm
+
 constexpr int SCAN_PIXELS = SCANLINE_DATA_SIZE * 8;
 constexpr float deg2rad = 2*M_PI/360;
 
@@ -64,10 +69,6 @@ constexpr float bed_length = 162.0;  // Sled length.
 constexpr float bed_width  = 102.0;  // Width of the laser to throw.
 constexpr float kScanAngle = 40.0;   // Degrees
 constexpr float kRadiusMM = (bed_width/2) / tan(kScanAngle * deg2rad / 2);
-
-// How fine can we get the focus ? Needs to be tuned per machine.
-constexpr float kFocus_X_Dia = 0.04;  // mm
-constexpr float kFocus_Y_Dia = 0.04;  // mm
 
 LDGraphyScanner::LDGraphyScanner(float exposure_factor)
     : exposure_factor_(roundf(exposure_factor))  // We only do integer for now.
@@ -154,12 +155,14 @@ bool LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
             1 / laser_dots_per_mm,
             kMirrorLineFrequency * kMirrorTicks / 1000.0,
             laser_dots_per_mm * 25.4);
-    if (img->width() > img->height()
+    if (img->width() > img->height() + 5.0 / image_resolution_mm_per_pixel
         && img->width() * image_resolution_mm_per_pixel <= bed_width) {
         fprintf(stderr, "\n[ TIP: Currently the long side is along the sled. It "
                 "would be faster in portrait orientation; give -R option ]\n\n");
     }
 #endif
+
+    if (debug_images) img->ToPGM(fopen("/tmp/ld_0_input.pgm", "w"));
 
     // Convert this into the image, tangens-corrected and rotated by
     // 90 degrees, so that we can send it line-by-line.
@@ -175,14 +178,12 @@ bool LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
     }
     delete img;
 
-    // Correct for physical laser dot thickness - taking off pixels off edges.
-    if (debug_images) exposure_image->ToPGM(fopen("/tmp/ld_1_tangens.pgm", "w"));
     const float laser_resolution_in_mm_per_pixel = bed_width / y_lookup.size();
     if (debug_images) fprintf(stderr, " Thinning structures...\n");
     ThinImageStructures(exposure_image,
-                        kFocus_X_Dia / laser_resolution_in_mm_per_pixel / 2,
-                        kFocus_Y_Dia / image_resolution_mm_per_pixel / 2);
-    if (debug_images) exposure_image->ToPGM(fopen("/tmp/ld_2_thinned.pgm", "w"));
+                        kFocus_Laser_Dia / laser_resolution_in_mm_per_pixel / 2,
+                        kFocus_Sled_Dia / image_resolution_mm_per_pixel / 2);
+    if (debug_images) exposure_image->ToPGM(fopen("/tmp/ld_1_tangens_and_thinned.pgm", "w"));
 
     // Now, convert it to the final bitmap to be sent to the output, padded
     // to the full data width.
