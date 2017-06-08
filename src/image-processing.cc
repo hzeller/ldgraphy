@@ -128,7 +128,8 @@ static void ThinOneDimension(int radius, int dither,
                              int max,
                              std::function<uint8_t& (int pos)> access_at) {
     // For debugging: choose a value != 0, so that we can see the effect
-    // of the adjustment in a ToPGM() output.
+    // of the adjustment in a ToPGM() output, but low enough that it gets cut
+    // off when converting to bitmap.
     constexpr char kVisualRemovedPixelLevel = 64;
     assert(dither >= 0 && dither <= 1);
     for (int pos = 0; pos < max; /**/) {
