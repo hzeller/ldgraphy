@@ -29,7 +29,7 @@
 #include "sled-control.h"
 
 // Output images to TMP to observe the image processing progress.
-constexpr bool debug_images = true;
+constexpr bool debug_images = false;
 
 // How fine can we get the focus ? Needs to be tuned per machine. The
 // focus often is slightly oval.
