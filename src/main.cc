@@ -226,20 +226,21 @@ int main(int argc, char *argv[]) {
     if (!filename && !do_focus && !mirror_adjust_exposure && !dot_size_chart)
         return usage(argv[0]);   // Nothing to do.
 
+    bool do_image = false;
     LDGraphyScanner *ldgraphy = new LDGraphyScanner(exposure_factor);
     if (dot_size_chart) {
-        ldgraphy->SetLaserDotSize(0, 0);  // The sizes are
+        do_image = true;
+        ldgraphy->SetLaserDotSize(0, 0);  // Chart already thinned image.
         ldgraphy->SetImage(dot_size_chart.release(), kThinningChartDPI);
+    } else {
+        do_image = LoadImage(ldgraphy, filename,
+                             commandline_dpi, invert, quarter_turns);
+        if (filename && !do_image) return 1;  // Got file, but failed loading.
     }
-    const bool do_image = LoadImage(ldgraphy, filename,
-                                    commandline_dpi, invert, quarter_turns);
+
     if (do_image) {
         fprintf(stderr, "Estimated time: %.0f seconds\n",
                 ldgraphy->estimated_time_seconds());
-    } else if (filename) {
-        // We got a file, so we were supposed to do something with it, alas
-        // that didn't work out.
-        return 1;
     }
 
     SledControl sled(4000, do_move && !dryrun);
