@@ -37,8 +37,15 @@ public:
     // baseline (NB: right now, this only rounds to full integers).
     LDGraphyScanner(float exposure_factor);
 
-    // Set new image. Image is a grayscale image that needs to already
-    // be quantized to black/white.
+    // Set the laser dot size in X and Y direction. This affects image
+    // correction in subsequent SetImage() calls. So this has to be called first.
+    // Negative values will just set the default value.
+    void SetLaserDotSize(float sled_dot_size_mm,
+                         float scan_dot_size_mm);
+
+    // Set new image with the given "dpi" resolution.
+    // Image is a grayscale image that needs to already be quantized to
+    // black/white.
     // Takes ownership of the image.
     // Returns boolean indicating if successful (e.g. it would not be successful
     // if it doesn't fit on the bed).
@@ -71,8 +78,9 @@ public:
     void ExposeJitterTest(int mirrors, int repeats);
 
 private:
-    std::unique_ptr<ScanLineSender> backend_;
     const int exposure_factor_;
+    float laser_sled_dot_size_, laser_scan_dot_size_;
+    std::unique_ptr<ScanLineSender> backend_;
     std::unique_ptr<BitmapImage> scan_image_;  // preprocessed.
     int scanlines_;
     float sled_step_per_image_pixel_;

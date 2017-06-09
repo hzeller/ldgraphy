@@ -29,12 +29,12 @@
 #include "sled-control.h"
 
 // Output images to TMP to observe the image processing progress.
-constexpr bool debug_images = false;
+constexpr bool debug_images = true;
 
 // How fine can we get the focus ? Needs to be tuned per machine. The
 // focus often is slightly oval.
-constexpr float kFocus_Sled_Dia = 0.06;  // mm
-constexpr float kFocus_Laser_Dia = 0.116;  // mm
+constexpr float kFocus_Sled_Dia = 0.06;   // mm sled direction X
+constexpr float kFocus_Scan_Dia = 0.116;  // mm scan direction Y
 
 constexpr int SCAN_PIXELS = SCANLINE_DATA_SIZE * 8;
 constexpr float deg2rad = 2*M_PI/360;
@@ -71,13 +71,23 @@ constexpr float kScanAngle = 40.0;   // Degrees
 constexpr float kRadiusMM = (bed_width/2) / tan(kScanAngle * deg2rad / 2);
 
 LDGraphyScanner::LDGraphyScanner(float exposure_factor)
-    : exposure_factor_(roundf(exposure_factor))  // We only do integer for now.
+    : exposure_factor_(roundf(exposure_factor)),  // We only do integer for now.
+      laser_sled_dot_size_(kFocus_Sled_Dia),
+      laser_scan_dot_size_(kFocus_Scan_Dia)
 {
     assert(exposure_factor >= 1);
 }
 
 LDGraphyScanner::~LDGraphyScanner() {
     if (backend_) backend_->Shutdown();
+}
+
+void LDGraphyScanner::SetLaserDotSize(float sled_dot_size_mm,
+                                      float scan_dot_size_mm) {
+    laser_sled_dot_size_ =
+        (sled_dot_size_mm < -1e-6) ? kFocus_Sled_Dia : sled_dot_size_mm;
+    laser_sled_dot_size_ =
+        (scan_dot_size_mm < -1e-6) ? kFocus_Scan_Dia : scan_dot_size_mm;
 }
 
 // Create lookup-table for a particular image resolution: what pixel to extract
@@ -180,9 +190,10 @@ bool LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
 
     const float laser_resolution_in_mm_per_pixel = bed_width / y_lookup.size();
     if (debug_images) fprintf(stderr, " Thinning structures...\n");
-    ThinImageStructures(exposure_image,
-                        kFocus_Laser_Dia / laser_resolution_in_mm_per_pixel / 2,
-                        kFocus_Sled_Dia / image_resolution_mm_per_pixel / 2);
+    ThinImageStructures(
+        exposure_image,
+        laser_scan_dot_size_ / laser_resolution_in_mm_per_pixel / 2,
+        laser_sled_dot_size_ / image_resolution_mm_per_pixel / 2);
     if (debug_images) exposure_image->ToPGM(fopen("/tmp/ld_1_tangens_and_thinned.pgm", "w"));
 
     // Now, convert it to the final bitmap to be sent to the output, padded
