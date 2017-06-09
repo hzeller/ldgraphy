@@ -47,9 +47,7 @@
 #define GPIO_SLED_DIR 18      // GPIO_1, PIN_P9_14
 #define GPIO_SLED_STEP 16     // GPIO_1, PIN_P9_15
 
-// Each mirror segment, we divide int number of ticks.
-#define TICK_PER_SEGMENT (2*8*SCANLINE_DATA_SIZE)
-#define JITTER_ALLOW (TICK_PER_SEGMENT/100)
+#define JITTER_ALLOW (TICKS_PER_MIRROR_SEGMENT/100)
 
 // Significant bit in the global time that toggles the mirror. A full mirror
 // clock loop is 2 * 2^(9 + 3) bits long (2^9 = 512; 2^3= 8 bits/byte, two
@@ -200,7 +198,7 @@ INIT:
 
 	;; switch the laser full on at this period so that we reliably hit the
 	;; hsync sensor.
-	MOV v.start_sync_after, TICK_PER_SEGMENT - 2*JITTER_ALLOW
+	MOV v.start_sync_after, TICKS_PER_MIRROR_SEGMENT - 2*JITTER_ALLOW
 
 	;; Set GPIO bits to writable. Output bits need to be set to 0.
 	;; GPIO-0
@@ -275,7 +273,7 @@ STATE_WAIT_STABLE:
 wait_stable_hsync_seen:
 	SUB r1, v.hsync_time, v.last_hsync_time
 	MOV v.last_hsync_time, v.hsync_time
-	branch_if_not_between wait_stable_not_synced_yet, r1, TICK_PER_SEGMENT-JITTER_ALLOW, TICK_PER_SEGMENT+JITTER_ALLOW
+	branch_if_not_between wait_stable_not_synced_yet, r1, TICKS_PER_MIRROR_SEGMENT-JITTER_ALLOW, TICKS_PER_MIRROR_SEGMENT+JITTER_ALLOW
 	CLR v.gpio_out0, GPIO_LASER_DATA   ; laser off for now
 	ADD v.sync_laser_on_time, v.hsync_time, v.start_sync_after ; laser on then
 	MOV v.state, STATE_CONFIRM_STABLE

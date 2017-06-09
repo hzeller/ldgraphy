@@ -28,6 +28,8 @@
 #include "laser-scribe-constants.h"
 #include "sled-control.h"
 
+#define LDGRAPHY_DEBUG_OUTPUTS 0
+
 // Output images to TMP to observe the image processing progress.
 constexpr bool debug_images = false;
 
@@ -48,7 +50,8 @@ constexpr int kHSyncShoulder = 200;   // Distance between sensor and start
 // choose in the future to create the mirror frequency with a different
 // fraction to utilize more of the data bits.
 constexpr float kLaserPixelFrequency = 200e6 / TICK_DELAY;
-constexpr float kMirrorLineFrequency = kLaserPixelFrequency / 8192;
+constexpr float kMirrorLineFrequency =
+    kLaserPixelFrequency / TICKS_PER_MIRROR_SEGMENT;
 
 // Mirror ticks as multiple of laser modulation time. This is a long way
 // to write 8192, which is currently baked in, see above.
@@ -76,6 +79,14 @@ LDGraphyScanner::LDGraphyScanner(float exposure_factor)
       laser_scan_dot_size_(kFocus_Scan_Dia)
 {
     assert(exposure_factor >= 1);
+#if LDGRAPHY_DEBUG_OUTPUTS
+    fprintf(stderr, "Mirror freq: %.1fHz; Pixel clock: %.3fMHz.\n"
+            "Data covering %.2f°/%.0f°, "
+            "mechanically used: %.2f°, using %.1f%% data bits.\n",
+            kMirrorLineFrequency, kLaserPixelFrequency / 1e6,
+            segment_data_angle / deg2rad, kMirrorThrowAngle / deg2rad,
+            kScanAngle, 100 * kScanAngle / (segment_data_angle / deg2rad));
+#endif
 }
 
 LDGraphyScanner::~LDGraphyScanner() {
@@ -111,7 +122,7 @@ static std::vector<int> PrepareTangensLookup(float radius_pixels,
             break;
         result.push_back(roundf(y_pixel));
     }
-#if 0
+#if LDGRAPHY_DEBUG_OUTPUTS
     fprintf(stderr, "Last Y coordinate full width = %d "
             "(Nerd-info: mapped to %d + %d shoulder = %d; scan angle: %.3f)\n",
             result.back(), (int)result.size(),
