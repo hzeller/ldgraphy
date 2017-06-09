@@ -19,8 +19,15 @@
 
 #include "image-processing.h"
 #include <png.h>
+#include <string.h>
+#include <math.h>
 
 #include <functional>
+
+SimpleImage::SimpleImage(const SimpleImage &other)
+    : SimpleImage(other.width(), other.height()) {
+    memcpy(buffer_, other.buffer_, width_ * height_);
+}
 
 void SimpleImage::ToPGM(FILE *file) const {
     fprintf(file, "P5\n%d %d\n255\n", width_, height_);
@@ -166,6 +173,39 @@ void ThinImageStructures(SimpleImage *img, int x_radius, int y_radius) {
         ThinOneDimension(y_radius, 0, img->height(),
                          [x, img](int p) -> uint8_t& { return img->at(x, p); });
     }
+}
+
+SimpleImage *CreateThinningTestChart(float dpi, float line_width_mm,
+                                     int count,
+                                     float start_diameter, float step) {
+    const float pixel_per_mm = dpi / 25.4f;
+    const float period = 2 * line_width_mm;
+    SimpleImage *const result = new SimpleImage(20 * pixel_per_mm,
+                                                10 * pixel_per_mm * count);
+    SimpleImage chart_template(20 * pixel_per_mm, 10 * pixel_per_mm);
+    const int chart_square_pixels = chart_template.height();
+    const int chart_cutoff = 0.95 * chart_square_pixels;
+    for (int i = 0; i < chart_cutoff; ++i) {
+        const bool in_strip = fmodf(i / pixel_per_mm, period) < line_width_mm;
+        for (int y = 0; y < chart_cutoff; ++y)
+            chart_template.at(i, y) = in_strip ? 255 : 0;
+        for (int x = 0; x < chart_cutoff; ++x)
+            chart_template.at(x + chart_square_pixels, i) = in_strip ? 255 : 0;
+    }
+    fprintf(stderr, "Chart squares:");
+    float dia_mm = start_diameter;
+    for (int i = 0; i < count; ++i) {
+        SimpleImage chart(chart_template);
+        int thin_radius = dia_mm * pixel_per_mm / 2;
+        fprintf(stderr, "[%.3fmm] ", dia_mm);
+        ThinImageStructures(&chart, thin_radius, thin_radius);
+        for (int y = 0; y < chart.height(); ++y)
+            for (int x = 0; x < chart.width(); ++x)
+                result->at(x, result->height() - 1 - y - i * chart_square_pixels) = chart.at(x, y);
+        dia_mm += step;
+    }
+    fprintf(stderr, "\n");
+    return result;
 }
 
 SimpleImage *CreateRotatedImage(const SimpleImage &img) {

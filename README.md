@@ -55,6 +55,7 @@ embedded DPI information). For converting Gerber files to PNG, see the
 
 Usage:
 ```
+Usage:
 ./ldgraphy [options] <png-image-file>
 Options:
         -d <val>   : Override DPI of input image. Default -1
@@ -62,14 +63,15 @@ Options:
         -x<val>    : Exposure factor. Default 1.
         -o<val>    : Offset in sled direction in mm
         -R         : Quarter image turn left; can be given multiple times.
-Mostly for testing:
+        -h         : This help
+Mostly for testing or calibration:
         -S         : Skip sled loading; assume board already loaded.
         -E         : Skip eject at end.
         -F         : Run a focus round until Ctrl-C
         -M         : Testing: Inhibit sled move.
         -n         : Dryrun. Do not do any scanning; laser off.
         -j<exp>    : Mirror jitter test with given exposure repeat
-        -h         : This help
+        -D<line-width:start,step> : Laser Dot Diameter test chart. Creates a test-strip 10cm x 2cm with 10 samples.
 ```
 
 Case

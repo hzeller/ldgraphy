@@ -35,6 +35,7 @@ public:
             , buffer_(new uint8_t [width * height]) {
         bzero(buffer_, width * height);
     }
+    SimpleImage(const SimpleImage &other);
     ~SimpleImage() { delete [] buffer_; }
 
     int width() const { return width_; }
@@ -96,6 +97,13 @@ void ConvertBlackWhite(SimpleImage *img, uint8_t threshold, bool invert);
 // Thin out contiguous regions in x and y direction by x_radius, y_radius,
 // but never in a way that pixels are eliminated entirely.
 void ThinImageStructures(SimpleImage *img, int x_radius, int y_radius);
+
+// Create a test-chart with pre-thinned lines of "line_width_mm" size. Creates
+// "count" sample charts, starting with "start_diameter" and steps.
+// Each sample will be 1 cm long and 2 cm wide.
+SimpleImage *CreateThinningTestChart(float dpi, float line_width_mm,
+                                     int count,
+                                     float start_diameter, float step);
 
 // Create a new image, that is rotated by 90 degrees.
 SimpleImage *CreateRotatedImage(const SimpleImage &img);

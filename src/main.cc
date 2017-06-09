@@ -38,6 +38,8 @@
 #include "scanline-sender.h"
 #include "sled-control.h"
 
+constexpr float kThinningChartDPI = 2000;
+
 // Interrupt handling. Provide a is_interrupted() function that reports
 // if Ctrl-C has been pressed. Requires ArmInterruptHandler() called before use.
 bool s_handler_installed = false;
@@ -71,14 +73,15 @@ static int usage(const char *progname, const char *errmsg = NULL) {
             "\t-o<val>    : Offset in sled direction in mm\n"
             "\t-R         : Quarter image turn left; "
             "can be given multiple times.\n"
-            "Mostly for testing:\n"
+            "\t-h         : This help\n"
+            "Mostly for testing or calibration:\n"
             "\t-S         : Skip sled loading; assume board already loaded.\n"
             "\t-E         : Skip eject at end.\n"
             "\t-F         : Run a focus round until Ctrl-C\n"
             "\t-M         : Testing: Inhibit sled move.\n"
             "\t-n         : Dryrun. Do not do any scanning; laser off.\n"
             "\t-j<exp>    : Mirror jitter test with given exposure repeat\n"
-            "\t-h         : This help\n");
+            "\t-D<line-width:start,step> : Laser Dot Diameter test chart. Creates a test-strip 10cm x 2cm with 10 samples.\n");
     return errmsg ? 1 : 0;
 }
 
@@ -144,13 +147,15 @@ int main(int argc, char *argv[]) {
     bool do_move = true;
     bool do_sled_loading_ui = true;
     bool do_sled_eject = true;
+    std::unique_ptr<SimpleImage> dot_size_chart;
+
     int quarter_turns = 0;
     int mirror_adjust_exposure = 0;
     float offset_x = 0;
     float exposure_factor = 1.0f;
 
     int opt;
-    while ((opt = getopt(argc, argv, "MFhnid:x:j:o:SER")) != -1) {
+    while ((opt = getopt(argc, argv, "MFhnid:x:j:o:SERD:")) != -1) {
         switch (opt) {
         case 'h': return usage(argv[0]);
         case 'd':
@@ -186,6 +191,18 @@ int main(int argc, char *argv[]) {
         case 'R':
             quarter_turns++;
             break;
+        case 'D': {
+            float line_w, start, step;
+            if (sscanf(optarg, "%f:%f,%f", &line_w, &start, &step) == 3) {
+                dot_size_chart.reset(
+                    CreateThinningTestChart(kThinningChartDPI,
+                                            line_w, 10, start, step));
+            } else {
+                return usage(argv[0], "Invalid Laser dot diameter chart params");
+            }
+            break;
+        }
+
         }
     }
 
@@ -197,14 +214,23 @@ int main(int argc, char *argv[]) {
         filename = argv[optind];
     }
 
-    if (!filename && !do_focus && !mirror_adjust_exposure)
-        return usage(argv[0]);   // Nothing to do.
-
     if (exposure_factor < 1.0f) {
         return usage(argv[0], "Exposure factor needs to be at least 1.");
     }
 
+    if (filename && dot_size_chart) {
+        return usage(argv[0], "You can either expose an image or create a "
+                     "dot size chart, but not both.");
+    }
+
+    if (!filename && !do_focus && !mirror_adjust_exposure && !dot_size_chart)
+        return usage(argv[0]);   // Nothing to do.
+
     LDGraphyScanner *ldgraphy = new LDGraphyScanner(exposure_factor);
+    if (dot_size_chart) {
+        ldgraphy->SetLaserDotSize(0, 0);  // The sizes are
+        ldgraphy->SetImage(dot_size_chart.release(), kThinningChartDPI);
+    }
     const bool do_image = LoadImage(ldgraphy, filename,
                                     commandline_dpi, invert, quarter_turns);
     if (do_image) {
