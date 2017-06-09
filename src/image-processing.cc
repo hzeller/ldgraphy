@@ -193,7 +193,7 @@ SimpleImage *CreateThinningTestChart(float dpi, float line_width_mm,
         for (int x = 0; x < chart_cutoff; ++x)
             chart_template.at(x + chart_square_pixels, i) = in_strip ? 255 : 0;
     }
-    fprintf(stderr, "Chart squares:");
+    fprintf(stderr, "\nChart squares:");
     float dia_mm = start_diameter;
     for (int i = 0; i < count; ++i) {
         SimpleImage chart(chart_template);
@@ -205,7 +205,7 @@ SimpleImage *CreateThinningTestChart(float dpi, float line_width_mm,
                 result->at(x, result->height() - 1 - y - i * chart_square_pixels) = chart.at(x, y);
         dia_mm += step;
     }
-    fprintf(stderr, "\n");
+    fprintf(stderr, "\n\n");
     return result;
 }
 
