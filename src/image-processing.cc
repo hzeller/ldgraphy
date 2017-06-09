@@ -25,7 +25,8 @@
 #include <functional>
 
 SimpleImage::SimpleImage(const SimpleImage &other)
-    : SimpleImage(other.width(), other.height()) {
+    : width_(other.width()), height_(other.height()),
+      buffer_(new uint8_t [width_ * height_]) {
     memcpy(buffer_, other.buffer_, width_ * height_);
 }
 
