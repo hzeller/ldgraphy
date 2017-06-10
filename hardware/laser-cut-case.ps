@@ -176,7 +176,7 @@
 /down-mirror-high polygon-mirror-high acrylic-t add def
 /down-mirror-w 10 mm def
 /down-mirror-t 4.3 mm def
-/down-mirror-slot true def            % if we want a slot for an overlong mirror
+/down-mirror-slot false def            % if we want a slot for an overlong mirror
 /down-mirror-backing-width 15.5 mm def  % might be calculated from curvature.
 /down-mirror-backing-glue-thick 0 mm def
 
@@ -1146,11 +1146,6 @@
     false  % do not cut outline
     0 0 polygon-mirror-footprint stroke
 
-    % Wire hole for polygon mirror
-    do-angle-test not {
-      -6 mm 43 mm moveto
-      12 mm 5 mm 2 mm rounded-corner-box stroke
-    } if
     grestore
     end
 } def
@@ -1239,7 +1234,7 @@
 
     % Laser mount
     70 mm laser-edge-mount-distance moveto laser-footprint  % Mounting the laser
-    10 mm 36 mm 3 mm circle stroke      % laser wires
+    %10 mm 36 mm 3 mm circle stroke      %cable laser wires
 
     % hsync photo diode
     laser-slot-distance laser-slot-h 2 div sub
@@ -1251,24 +1246,16 @@
     laser-slot-h laser-slot-w measure-box 3 mm rounded-corner-box
 
     do-angle-test {
-     /scan-angle 36.5 def         % Something < 120, better less than 60
-     /scan-redirect-mirror-distance 60 mm def  % Mirror distance
+     /scan-angle 40 def         % Something < 120, better less than 60
+     /scan-redirect-mirror-distance 75 mm def  % Mirror distance
      polygon-mirror-assembly
 
-     /scan-angle 45 def         % Something < 120, better less than 60
-     /scan-redirect-mirror-distance 40 mm def  % Mirror distance
+     /scan-angle 50 def         % Something < 120, better less than 60
+     /scan-redirect-mirror-distance 53 mm def  % Mirror distance
      polygon-mirror-assembly
 
-     /scan-angle 52 def         % Something < 120, better less than 60
-     /scan-redirect-mirror-distance 35 mm def  % Mirror distance
-     polygon-mirror-assembly
-
-     /scan-angle 60 def         % Something < 120, better less than 60
-     /scan-redirect-mirror-distance 30 mm def  % Mirror distance
-     polygon-mirror-assembly
-
-     /scan-angle 75 def         % Something < 120, better less than 60
-     /scan-redirect-mirror-distance 20 mm def  % Mirror distance
+     /scan-angle 55 def         % Something < 120, better less than 60
+     /scan-redirect-mirror-distance 50 mm def  % Mirror distance
      polygon-mirror-assembly
     } {
      polygon-mirror-assembly
@@ -1706,6 +1693,14 @@
     bed-w 2 div bed-drive-w 2 div sub moveto
     0 bed-drive-w slot-rlineto stroke
   grestore
+
+  gsave
+    % Finger hole to poke out PCB
+    /finger-hole-r 5 mm def
+    bed-h bed-pcb-off-h sub finger-hole-r sub 1 mm sub bed-w 2 div translate
+    1 1.5 scale 0 0 finger-hole-r circle stroke
+  grestore
+
   end
 } def
 
