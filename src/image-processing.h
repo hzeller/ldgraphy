@@ -101,7 +101,7 @@ void ThinImageStructures(SimpleImage *img, int x_radius, int y_radius);
 // Create a test-chart with pre-thinned lines of "line_width_mm" size. Creates
 // "count" sample charts, starting with "start_diameter" and steps.
 // Each sample will be 1 cm long and 2 cm wide.
-SimpleImage *CreateThinningTestChart(float dpi, float line_width_mm,
+SimpleImage *CreateThinningTestChart(float mm_per_pixel, float line_width_mm,
                                      int count,
                                      float start_diameter, float step);
 

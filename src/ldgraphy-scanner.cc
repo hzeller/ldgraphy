@@ -95,9 +95,10 @@ LDGraphyScanner::~LDGraphyScanner() {
 
 void LDGraphyScanner::SetLaserDotSize(float sled_dot_size_mm,
                                       float scan_dot_size_mm) {
+    // Negative values reset.
     laser_sled_dot_size_ =
         (sled_dot_size_mm < -1e-6) ? kFocus_Sled_Dia : sled_dot_size_mm;
-    laser_sled_dot_size_ =
+    laser_scan_dot_size_ =
         (scan_dot_size_mm < -1e-6) ? kFocus_Scan_Dia : scan_dot_size_mm;
 }
 
@@ -132,9 +133,8 @@ static std::vector<int> PrepareTangensLookup(float radius_pixels,
     return result;
 }
 
-bool LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
-    const float image_resolution_mm_per_pixel = 25.4f / dpi;
-
+bool LDGraphyScanner::SetImage(SimpleImage *img,
+                               float image_resolution_mm_per_pixel) {
     if (image_resolution_mm_per_pixel * img->width() > bed_length) {
         fprintf(stderr, "Board too long, does not fit in %.0fmm "
                 "bed along sled.\n", bed_length);
@@ -171,7 +171,7 @@ bool LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
             "(%.3fmm dots @ %.0fkHz laser pixel frequency (=%.0fdpi)).\n",
             img->width() * image_resolution_mm_per_pixel,
             img->height() * image_resolution_mm_per_pixel,
-            dpi, image_resolution_mm_per_pixel,
+            25.4f / image_resolution_mm_per_pixel, image_resolution_mm_per_pixel,
             sled_step_per_image_pixel_, laser_dots_per_image_pixel,
             1 / laser_dots_per_mm,
             kMirrorLineFrequency * kMirrorTicks / 1000.0,
@@ -202,7 +202,7 @@ bool LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
     const float laser_resolution_in_mm_per_pixel = bed_width / y_lookup.size();
     if (debug_images) fprintf(stderr, " Thinning structures..."
                               "%.2f X sled, %.2f Y laser\n",
-                              laser_sled_dot_size_, laser_sled_dot_size_);
+                              laser_sled_dot_size_, laser_scan_dot_size_);
     ThinImageStructures(
         exposure_image,
         laser_scan_dot_size_ / laser_resolution_in_mm_per_pixel / 2,

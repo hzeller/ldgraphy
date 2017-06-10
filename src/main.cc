@@ -38,7 +38,7 @@
 #include "scanline-sender.h"
 #include "sled-control.h"
 
-constexpr float kThinningChartDPI = 2000;
+constexpr float kThinningChartResolution = 0.005; // mm per pixel
 
 // Interrupt handling. Provide a is_interrupted() function that reports
 // if Ctrl-C has been pressed. Requires ArmInterruptHandler() called before use.
@@ -109,7 +109,7 @@ bool LoadImage(LDGraphyScanner *scanner,
 
     ConvertBlackWhite(img.get(), 128, invert);
 
-    return scanner->SetImage(img.release(), input_dpi);
+    return scanner->SetImage(img.release(), 25.4 / input_dpi);
 }
 
 // Output a line with dots in regular distance for testing the set-up.
@@ -123,8 +123,7 @@ void RunFocusLine(LDGraphyScanner *scanner) {
     for (int mm = 0; mm < bed_width; mm += mark_interval) {
         img->at(0, mm * res) = 255;
     }
-    const float dpi = 1000.0 / (100.0 / 25.4);  // 10 dots per mm
-    scanner->SetImage(img, dpi);
+    scanner->SetImage(img, 0.01);
     ArmInterruptHandler();
     while (!is_interrupted()) {
         if (!scanner->ScanExpose(false,
@@ -195,7 +194,7 @@ int main(int argc, char *argv[]) {
             float line_w, start, step;
             if (sscanf(optarg, "%f:%f,%f", &line_w, &start, &step) == 3) {
                 dot_size_chart.reset(
-                    CreateThinningTestChart(kThinningChartDPI,
+                    CreateThinningTestChart(kThinningChartResolution,
                                             line_w, 10, start, step));
             } else {
                 return usage(argv[0], "Invalid Laser dot diameter chart params");
@@ -231,7 +230,7 @@ int main(int argc, char *argv[]) {
     if (dot_size_chart) {
         do_image = true;
         ldgraphy->SetLaserDotSize(0, 0);  // Chart already thinned image.
-        ldgraphy->SetImage(dot_size_chart.release(), kThinningChartDPI);
+        ldgraphy->SetImage(dot_size_chart.release(), kThinningChartResolution);
     } else {
         do_image = LoadImage(ldgraphy, filename,
                              commandline_dpi, invert, quarter_turns);

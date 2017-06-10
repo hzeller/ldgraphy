@@ -43,13 +43,13 @@ public:
     void SetLaserDotSize(float sled_dot_size_mm,
                          float scan_dot_size_mm);
 
-    // Set new image with the given "dpi" resolution.
+    // Set new image with the given "mm_per_pixel" resolution.
     // Image is a grayscale image that needs to already be quantized to
     // black/white.
     // Takes ownership of the image.
     // Returns boolean indicating if successful (e.g. it would not be successful
     // if it doesn't fit on the bed).
-    bool SetImage(SimpleImage *img, float dpi);
+    bool SetImage(SimpleImage *img, float mm_per_pixel);
 
     // Give an estimation how long a ScanExpose() would take with current image.
     float estimated_time_seconds() const;

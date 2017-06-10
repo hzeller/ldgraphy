@@ -176,10 +176,10 @@ void ThinImageStructures(SimpleImage *img, int x_radius, int y_radius) {
     }
 }
 
-SimpleImage *CreateThinningTestChart(float dpi, float line_width_mm,
+SimpleImage *CreateThinningTestChart(float mm_per_pixel, float line_width_mm,
                                      int count,
                                      float start_diameter, float step) {
-    const float pixel_per_mm = dpi / 25.4f;
+    const float pixel_per_mm = 1 / mm_per_pixel;
     const float period = 2 * line_width_mm;
     SimpleImage *const result = new SimpleImage(20 * pixel_per_mm,
                                                 10 * pixel_per_mm * count);
