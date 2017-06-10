@@ -49,14 +49,7 @@
 
 #define JITTER_ALLOW (TICKS_PER_MIRROR_SEGMENT/100)
 
-// Significant bit in the global time that toggles the mirror. A full mirror
-// clock loop is 2 * 2^(9 + 3) bits long (2^9 = 512; 2^3= 8 bits/byte, two
-// times, as we only get data for the first half). We want to toggle every
-// half cycle so if we are looking at that bit, which is the clock bit for
-// the mirror.
-#define MIRROR_COUNT_BIT (9 + 3)
-
-// Cycles to spin up mirror. roughly 1 second per 1 million.
+// Cycles to spin up mirror.
 #define SPINUP_TICKS         4000000 ; Spinup, laser off
 #define MAX_WAIT_STABLE_TIME 3000000 ; laser on, while waiting for sync.
 #define END_OF_DATA_WAIT     2000000 ; No data for this time - finish.
@@ -70,20 +63,24 @@
 	.u32 gpio_1_read
 	.u32 gpio_0_write
 	.u32 gpio_1_write
-	.u32 start_sync_after	; constant: time after which we should start sync
-
-	.u32 global_time	; our cycle time.
 
 	.u32 ringbuffer_size
 	.u32 item_size
 
+	.u32 start_sync_after	; time after which we should start sync.
+
+	;; Variables used.
+	.u32 gpio_out0	   ; Stuff we write out GPIO. Bits for polygon + laser
+	.u32 gpio_out1	   ; Stuff we write out to GPIO. Bits step/dir/enable
+
+	.u32 global_time	; our cycle time.
+
+	.u32 polygon_time
 	.u32 wait_countdown	; countdown used in states  for certain states to finish
 	.u32 hsync_time		; time when we have seen the hsync
 	.u32 last_hsync_time
 	.u32 sync_laser_on_time
 
-	.u32 gpio_out0	   ; Stuff we write out to GPIO. Bits for polygon + laser
-	.u32 gpio_out1	   ; Stuff we write out to GPIO. Bits step/dir/enable
 
 	.u32 item_start	   ; Start position of current item in ringbuffer
 	.u32 item_pos		; position within item.
@@ -92,7 +89,7 @@
 	.u8  bit_loop		; bit loop
 	.u8  last_hsync_bit	; so that we can trigger on an edge
 .ends
-.assign Variables, r12, r28, v
+.assign Variables, r10, r27, v
 
 ;; Registers
 ;; r1 ... r9 : common use
@@ -238,6 +235,7 @@ STATE_IDLE:
 	QBEQ MAIN_LOOP_NEXT, r1.b0, CMD_EMPTY
 	MOV v.global_time, 0	; have monotone increasing time for 1h or so
 	MOV v.wait_countdown, SPINUP_TICKS
+	MOV v.polygon_time, 0
 	MOV v.state, STATE_SPINUP
 	CLR v.gpio_out1, GPIO_MOTORS_ENABLE ; negative logic
 
@@ -387,15 +385,20 @@ MAIN_LOOP_NEXT:
 	;; The current state set whatever state it needed, now wait for the
 	;; end of our period to execute the actions: set GPIO bits.
 	wait_to_next_tick_and_reset TICK_DELAY
-	XOR r30, r30, (1<<5)
+	XOR r30, r30, (1<<5)	; debug output
 
 	;; Global time update. The global time wraps around after 1h or so
 	;; but it is sufficient for the typical exposure times of a few minutes.
 	ADD v.global_time, v.global_time, 1
 
-	;; Extract the counting bit and send to gpio.
-	LSR r1, v.global_time, MIRROR_COUNT_BIT
-	set_laser_mirror_bit GPIO_MIRROR_CLOCK, r1
+	;; time for mirror toggle ?
+	ADD v.polygon_time, v.polygon_time, 1
+	MOV r1, TICKS_PER_MIRROR_SEGMENT/2
+	QBLT mirror_toggle_done, r1, v.polygon_time
+	MOV r1, (1<<GPIO_MIRROR_CLOCK)
+	XOR v.gpio_out0, v.gpio_out0, r1
+	MOV v.polygon_time, 0
+mirror_toggle_done:
 
 	;; GPIO out, once per loop.
 	SBBO v.gpio_out0, v.gpio_0_write, 0, 4

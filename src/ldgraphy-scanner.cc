@@ -200,7 +200,9 @@ bool LDGraphyScanner::SetImage(SimpleImage *img, float dpi) {
     delete img;
 
     const float laser_resolution_in_mm_per_pixel = bed_width / y_lookup.size();
-    if (debug_images) fprintf(stderr, " Thinning structures...\n");
+    if (debug_images) fprintf(stderr, " Thinning structures..."
+                              "%.2f X sled, %.2f Y laser\n",
+                              laser_sled_dot_size_, laser_sled_dot_size_);
     ThinImageStructures(
         exposure_image,
         laser_scan_dot_size_ / laser_resolution_in_mm_per_pixel / 2,
