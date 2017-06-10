@@ -35,8 +35,8 @@ constexpr bool debug_images = false;
 
 // How fine can we get the focus ? Needs to be tuned per machine. The
 // focus often is slightly oval.
-constexpr float kFocus_Sled_Dia = 0.06;   // mm sled direction X
-constexpr float kFocus_Scan_Dia = 0.116;  // mm scan direction Y
+constexpr float kFocus_Sled_Dia = 0.07; // mm sled direction X
+constexpr float kFocus_Scan_Dia = 0.1;  // mm scan direction Y
 
 constexpr int SCAN_PIXELS = SCANLINE_DATA_SIZE * 8;
 constexpr float deg2rad = 2*M_PI/360;
