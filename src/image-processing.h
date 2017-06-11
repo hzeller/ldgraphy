@@ -89,6 +89,7 @@ public:
     }
     uint8_t *GetMutableRow(int r) { return bits_->buffer() + r * width_ / 8; }
 
+    bool CopyFrom(const BitmapImage &other);
     void ToPBM(FILE *file) const;
 
 private:

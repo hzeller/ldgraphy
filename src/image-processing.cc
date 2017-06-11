@@ -42,6 +42,11 @@ void BitmapImage::ToPBM(FILE *file) const {
     fclose(file);
 }
 
+bool BitmapImage::CopyFrom(const BitmapImage &other) {
+    if (other.width_ != width_ || other.height_ != height_) return false;
+    memcpy(bits_->buffer(), other.bits_->buffer(), bits_->size_bits() / 8);
+    return true;
+}
 SimpleImage *LoadPNGImage(const char *filename, double *dpi) {
     //  More or less textbook libpng tutorial.
     FILE *fp = fopen(filename, "r");
@@ -127,19 +132,17 @@ SimpleImage *LoadPNGImage(const char *filename, double *dpi) {
 BitmapImage *ConvertBlackWhite(const SimpleImage &img,
                                uint8_t threshold, bool invert) {
     BitmapImage *result = new BitmapImage(img.width(), img.height());
-    uint8_t current_mask = 0x80;
-
     for (int y = 0; y < img.height(); ++y) {
         uint8_t *row_byte = result->GetMutableRow(y);
+        uint8_t current_mask = 0x80;
         for (int x = 0; x < img.width(); ++x) {
             if ((img.at(x, y) > threshold) ^ invert) {
                 *row_byte |= current_mask;
             }
-            if (current_mask == 0x1) {
-                row_byte++;
+            current_mask >>= 1;
+            if (!current_mask) {
+                ++row_byte;
                 current_mask = 0x80;
-            } else {
-                current_mask >>= 1;
             }
         }
     }
@@ -178,21 +181,23 @@ static void ThinOneDimension(int radius, int max,
 // erosion, but keep the last bit.
 // TODO: this can use some optimization with a kernel; also: speed.
 void ThinImageStructures(BitmapImage *img, int x_radius, int y_radius) {
+    BitmapImage res(*img);
     //fprintf(stderr, "Thin pixel structure by %dx%d\n", x_radius, y_radius);
-    if (y_radius) {
-        for (int x = 0; x < img->width(); ++x) {
-            ThinOneDimension(y_radius, img->height(),
-                             [x, img](int p) -> bool { return img->Get(x, p); },
-                             [x, img](int p, bool v) { img->Set(x, p, v); });
-        }
-    }
     if (x_radius) {
         for (int y = 0; y < img->height(); ++y) {
             ThinOneDimension(x_radius, img->width(),
                              [y, img](int p) -> bool { return img->Get(p, y); },
-                             [y, img](int p, bool v) { img->Set(p, y, v); });
+                             [y, &res](int p, bool v) { res.Set(p, y, v); });
         }
     }
+    if (y_radius) {
+        for (int x = 0; x < img->width(); ++x) {
+            ThinOneDimension(y_radius, img->height(),
+                             [x, img](int p) -> bool { return img->Get(x, p); },
+                             [x, &res](int p, bool v) { res.Set(x, p, v); });
+        }
+    }
+    img->CopyFrom(res);
 }
 
 BitmapImage *CreateThinningTestChart(float mm_per_pixel, float line_width_mm,

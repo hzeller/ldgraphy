@@ -49,7 +49,7 @@ public:
     }
 
     uint8_t *buffer() { return buffer_; }
-    int size() const { return size_; }
+    int size_bits() const { return size_; }
 
 private:
     const int size_;
