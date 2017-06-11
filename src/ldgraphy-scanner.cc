@@ -46,16 +46,10 @@ constexpr float deg2rad = 2*M_PI/360;
  */
 constexpr int kHSyncShoulder = 200;   // Distance between sensor and start
 
-// Right now, the frequencies are just factor 8192 apart, but we might
-// choose in the future to create the mirror frequency with a different
-// fraction to utilize more of the data bits.
+// The kMirrorFrequency is a multiple of the laser pixel clock frequency.
+constexpr float kMirrorTicks = TICKS_PER_MIRROR_SEGMENT;
 constexpr float kLaserPixelFrequency = 200e6 / TICK_DELAY;
-constexpr float kMirrorLineFrequency =
-    kLaserPixelFrequency / TICKS_PER_MIRROR_SEGMENT;
-
-// Mirror ticks as multiple of laser modulation time. This is a long way
-// to write 8192, which is currently baked in, see above.
-constexpr float kMirrorTicks = kLaserPixelFrequency / kMirrorLineFrequency;
+constexpr float kMirrorLineFrequency = kLaserPixelFrequency / kMirrorTicks;
 
 // The SCAN_PIXELS only cover part of the full segment, to better utilize
 // the bits in the usable area.
@@ -69,7 +63,11 @@ constexpr float segment_data_angle = kMirrorThrowAngle * kDataFraction;
 // TODO(hzeller): read these numbers from the same source in the PostScript
 // file and here.
 constexpr float bed_length = 162.0;  // Sled length.
-constexpr float bed_width  = 102.0;  // Width of the laser to throw.
+
+// Width of the laser to throw. Comes from the case calculation.
+// Fudge value from real life :)
+constexpr float bed_width_fudge_value = -2.0;  // Measured :)
+constexpr float bed_width  = 102.0 + bed_width_fudge_value;
 constexpr float kScanAngle = 40.0;   // Degrees
 constexpr float kRadiusMM = (bed_width/2) / tan(kScanAngle * deg2rad / 2);
 
