@@ -124,85 +124,105 @@ SimpleImage *LoadPNGImage(const char *filename, double *dpi) {
 
 // Convert all values to 0 or 255 depending on the threshold. If "invert", then
 // flip the values.
-void ConvertBlackWhite(SimpleImage *img, uint8_t threshold, bool invert) {
-    for (int y = 0; y < img->height(); ++y) {
-        for (int x = 0; x < img->width(); ++x) {
-            img->at(x, y) = ((img->at(x, y) > threshold) ^ invert) ? 255 : 0;
+BitmapImage *ConvertBlackWhite(const SimpleImage &img,
+                               uint8_t threshold, bool invert) {
+    BitmapImage *result = new BitmapImage(img.width(), img.height());
+    uint8_t current_mask = 0x80;
+
+    for (int y = 0; y < img.height(); ++y) {
+        uint8_t *row_byte = result->GetMutableRow(y);
+        for (int x = 0; x < img.width(); ++x) {
+            if ((img.at(x, y) > threshold) ^ invert) {
+                *row_byte |= current_mask;
+            }
+            if (current_mask == 0x1) {
+                row_byte++;
+                current_mask = 0x80;
+            } else {
+                current_mask >>= 1;
+            }
         }
     }
+    return result;
 }
 
-static void ThinOneDimension(int radius, int dither,
-                             int max,
-                             std::function<uint8_t& (int pos)> access_at) {
+static void ThinOneDimension(int radius, int max,
+                             std::function<bool (int pos)> get_at,
+                             std::function<void (int pos, bool)> set_at) {
     // For debugging: choose a value != 0, so that we can see the effect
     // of the adjustment in a ToPGM() output, but low enough that it gets cut
     // off when converting to bitmap.
-    constexpr char kVisualRemovedPixelLevel = 64;
-    assert(dither >= 0 && dither <= 1);
     for (int pos = 0; pos < max; /**/) {
-        while (pos < max && access_at(pos) == 0)
+        while (pos < max && get_at(pos) == 0)
             ++pos;  // skip 'blackspace'.
         int start_on = pos;
-        while (pos < max && access_at(pos) != 0)
+        while (pos < max && get_at(pos) != 0)
             ++pos;
         int end_on = pos;
         if (end_on - start_on <= 2*radius) {
             // Less than radius; erase all and keep single middle pixel.
             for (int i = start_on; i < end_on; ++i)
-                access_at(i) = kVisualRemovedPixelLevel;
+                set_at(i, false);
             if (start_on < max)
-                access_at((start_on + end_on) / 2
-                          - (pos <= 1 ? 0 : dither)) = 255;
+                set_at((start_on + end_on) / 2, true);
         } else {
             for (int i = start_on; i < start_on + radius && i < max; ++i)
-                access_at(i) = kVisualRemovedPixelLevel;
+                set_at(i, false);
             for (int i = end_on - radius; i < end_on; ++i)
-                access_at(i) = kVisualRemovedPixelLevel;
+                set_at(i, false);
         }
     }
 }
 
-// (very simplistic for now, adjusting each direction separately.).
-void ThinImageStructures(SimpleImage *img, int x_radius, int y_radius) {
+// (very simplistic for now, adjusting each direction separately.). Essentially
+// erosion, but keep the last bit.
+// TODO: this can use some optimization with a kernel; also: speed.
+void ThinImageStructures(BitmapImage *img, int x_radius, int y_radius) {
     //fprintf(stderr, "Thin pixel structure by %dx%d\n", x_radius, y_radius);
-    for (int y = 0; y < img->height(); ++y) {
-        ThinOneDimension(x_radius, 0, img->width(),
-                         [y, img](int p) -> uint8_t& { return img->at(p, y); });
+    if (y_radius) {
+        for (int x = 0; x < img->width(); ++x) {
+            ThinOneDimension(y_radius, img->height(),
+                             [x, img](int p) -> bool { return img->Get(x, p); },
+                             [x, img](int p, bool v) { img->Set(x, p, v); });
+        }
     }
-    for (int x = 0; x < img->width(); ++x) {
-        ThinOneDimension(y_radius, 0, img->height(),
-                         [x, img](int p) -> uint8_t& { return img->at(x, p); });
+    if (x_radius) {
+        for (int y = 0; y < img->height(); ++y) {
+            ThinOneDimension(x_radius, img->width(),
+                             [y, img](int p) -> bool { return img->Get(p, y); },
+                             [y, img](int p, bool v) { img->Set(p, y, v); });
+        }
     }
 }
 
-SimpleImage *CreateThinningTestChart(float mm_per_pixel, float line_width_mm,
+BitmapImage *CreateThinningTestChart(float mm_per_pixel, float line_width_mm,
                                      int count,
                                      float start_diameter, float step) {
     const float pixel_per_mm = 1 / mm_per_pixel;
     const float period = 2 * line_width_mm;
-    SimpleImage *const result = new SimpleImage(20 * pixel_per_mm,
+    BitmapImage *const result = new BitmapImage(20 * pixel_per_mm,
                                                 10 * pixel_per_mm * count);
-    SimpleImage chart_template(20 * pixel_per_mm, 10 * pixel_per_mm);
+    BitmapImage chart_template(20 * pixel_per_mm, 10 * pixel_per_mm);
     const int chart_square_pixels = chart_template.height();
     const int chart_cutoff = 0.95 * chart_square_pixels;
     for (int i = 0; i < chart_cutoff; ++i) {
         const bool in_strip = fmodf(i / pixel_per_mm, period) < line_width_mm;
         for (int y = 0; y < chart_cutoff; ++y)
-            chart_template.at(i, y) = in_strip ? 255 : 0;
+            chart_template.Set(i, y, in_strip);
         for (int x = 0; x < chart_cutoff; ++x)
-            chart_template.at(x + chart_square_pixels, i) = in_strip ? 255 : 0;
+            chart_template.Set(x + chart_square_pixels, i, in_strip);
     }
     fprintf(stderr, "\nChart squares:");
     float dia_mm = start_diameter;
     for (int i = 0; i < count; ++i) {
-        SimpleImage chart(chart_template);
+        BitmapImage chart(chart_template);
         int thin_radius = dia_mm * pixel_per_mm / 2;
         fprintf(stderr, "[%.3fmm] ", dia_mm);
         ThinImageStructures(&chart, thin_radius, thin_radius);
         for (int y = 0; y < chart.height(); ++y)
             for (int x = 0; x < chart.width(); ++x)
-                result->at(x, result->height() - 1 - y - i * chart_square_pixels) = chart.at(x, y);
+                result->Set(x, result->height() - 1 - y - i * chart_square_pixels,
+                            chart.Get(x, y));
         dia_mm += step;
     }
     fprintf(stderr, "\n\n");

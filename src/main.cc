@@ -107,9 +107,8 @@ bool LoadImage(LDGraphyScanner *scanner,
     while (quarter_turns--)
         img.reset(CreateRotatedImage(*img));
 
-    ConvertBlackWhite(img.get(), 128, invert);
-
-    return scanner->SetImage(img.release(), 25.4 / input_dpi);
+    return scanner->SetImage(ConvertBlackWhite(*img, 128, invert),
+                             25.4 / input_dpi);
 }
 
 // Output a line with dots in regular distance for testing the set-up.
@@ -119,9 +118,9 @@ void RunFocusLine(LDGraphyScanner *scanner) {
     constexpr int bed_width = 100;   // 100 mm bed
     constexpr int res = 10;          // 1/10 mm resolution
     constexpr int mark_interval = 5; // every 5 mm
-    SimpleImage *img = new SimpleImage(1, bed_width * res);
+    BitmapImage *img = new BitmapImage(1, bed_width * res);
     for (int mm = 0; mm < bed_width; mm += mark_interval) {
-        img->at(0, mm * res) = 255;
+        img->Set(0, mm * res, true);
     }
     scanner->SetImage(img, 0.01);
     ArmInterruptHandler();
@@ -146,7 +145,7 @@ int main(int argc, char *argv[]) {
     bool do_move = true;
     bool do_sled_loading_ui = true;
     bool do_sled_eject = true;
-    std::unique_ptr<SimpleImage> dot_size_chart;
+    std::unique_ptr<BitmapImage> dot_size_chart;
 
     int quarter_turns = 0;
     int mirror_adjust_exposure = 0;

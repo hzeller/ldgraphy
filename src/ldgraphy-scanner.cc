@@ -133,7 +133,7 @@ static std::vector<int> PrepareTangensLookup(float radius_pixels,
     return result;
 }
 
-bool LDGraphyScanner::SetImage(SimpleImage *img,
+bool LDGraphyScanner::SetImage(BitmapImage *img,
                                float image_resolution_mm_per_pixel) {
     if (image_resolution_mm_per_pixel * img->width() > bed_length) {
         fprintf(stderr, "Board too long, does not fit in %.0fmm "
@@ -183,45 +183,33 @@ bool LDGraphyScanner::SetImage(SimpleImage *img,
     }
 #endif
 
-    if (debug_images) img->ToPGM(fopen("/tmp/ld_0_input.pgm", "w"));
+    if (debug_images) img->ToPBM(fopen("/tmp/ld_0_input.pbm", "w"));
 
     // Convert this into the image, tangens-corrected and rotated by
     // 90 degrees, so that we can send it line-by-line.
     if (debug_images) fprintf(stderr, " Tangens correct...\n");
-    SimpleImage *exposure_image = new SimpleImage(y_lookup.size(), img->width());
+    scan_image_.reset(new BitmapImage(SCAN_PIXELS, img->width()));
     for (int x_pixel = 0; x_pixel < img->width(); ++x_pixel) {
         for (size_t i = 0; i < y_lookup.size(); ++i) {
             const int y_pixel = img->height() - 1 - y_lookup[i];
             if (y_pixel < 0)
                 break;
-            exposure_image->at(i, x_pixel) = img->at(x_pixel, y_pixel);
+            scan_image_->Set(i + kHSyncShoulder, x_pixel,
+                             img->Get(x_pixel, y_pixel));
         }
     }
     delete img;
 
+    if (debug_images) scan_image_->ToPBM(fopen("/tmp/ld_1_tangens.pbm", "w"));
     const float laser_resolution_in_mm_per_pixel = bed_width / y_lookup.size();
     if (debug_images) fprintf(stderr, " Thinning structures..."
-                              "%.2f X sled, %.2f Y laser\n",
+                              "%.2fmm X sled, %.2fmm Y laser\n",
                               laser_sled_dot_size_, laser_scan_dot_size_);
     ThinImageStructures(
-        exposure_image,
+        scan_image_.get(),
         laser_scan_dot_size_ / laser_resolution_in_mm_per_pixel / 2,
         laser_sled_dot_size_ / image_resolution_mm_per_pixel / 2);
-    if (debug_images) exposure_image->ToPGM(fopen("/tmp/ld_1_tangens_and_thinned.pgm", "w"));
-
-    // Now, convert it to the final bitmap to be sent to the output, padded
-    // to the full data width.
-    if (debug_images) fprintf(stderr, " Convert to Bitmap...\n");
-    scan_image_.reset(new BitmapImage(SCAN_PIXELS, exposure_image->height()));
-    for (int y = 0; y < exposure_image->height(); ++y) {
-        for (int x = 0; x < exposure_image->width(); ++x) {
-            scan_image_->Set(x + kHSyncShoulder, y,
-                             exposure_image->at(x, y) > 127);
-        }
-    }
-    if (debug_images) fprintf(stderr, "[image preparation done].\n");
-    if (debug_images) scan_image_->ToPBM(fopen("/tmp/ld_3_bitmap.pbm", "w"));
-    delete exposure_image;
+    if (debug_images) scan_image_->ToPBM(fopen("/tmp/ld_2_thinned.pbm", "w"));
 
     return true;
 }

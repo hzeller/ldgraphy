@@ -49,7 +49,7 @@ public:
     // Takes ownership of the image.
     // Returns boolean indicating if successful (e.g. it would not be successful
     // if it doesn't fit on the bed).
-    bool SetImage(SimpleImage *img, float mm_per_pixel);
+    bool SetImage(BitmapImage *img, float mm_per_pixel);
 
     // Give an estimation how long a ScanExpose() would take with current image.
     float estimated_time_seconds() const;

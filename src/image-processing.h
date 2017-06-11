@@ -35,7 +35,7 @@ public:
             , buffer_(new uint8_t [width * height]) {
         bzero(buffer_, width * height);
     }
-    SimpleImage(const SimpleImage &other);
+    explicit SimpleImage(const SimpleImage &other);
     ~SimpleImage() { delete [] buffer_; }
 
     int width() const { return width_; }
@@ -58,17 +58,27 @@ private:
     uint8_t *const buffer_;
 };
 
-// A bitmap image with packed bits and direct access
+// A bitmap image with packed bits and direct access.
+// Image width is aligned to the next full byte.
 class BitmapImage {
 public:
     BitmapImage(int width, int height)
-        : width_(width), height_(height), bits_(new BitArray(width * height)) {}
+        : width_((width + 7) & ~0x7), height_(height),
+          bits_(new BitArray(width_ * height)) {}
+    BitmapImage(const BitmapImage &o)
+        : width_(o.width_), height_(o.height_), bits_(new BitArray(*o.bits_)) {
+    }
+
     ~BitmapImage() { delete bits_; }
 
     int width() const { return width_; }
     int height() const { return height_; }
 
-    void Set(int x, int y, bool value) {
+    inline bool Get(int x, int y) const {
+        assert(x >= 0 && x < width_ && y >= 0 && y < height_);
+        return bits_->Get(width_ * y + x);
+    }
+    inline void Set(int x, int y, bool value) {
         assert(x >= 0 && x < width_ && y >= 0 && y < height_);
         bits_->Set(width_ * y + x, value);
     }
@@ -77,6 +87,7 @@ public:
     const uint8_t *GetRow(int r) const {
         return bits_->buffer() + r * width_ / 8;
     }
+    uint8_t *GetMutableRow(int r) { return bits_->buffer() + r * width_ / 8; }
 
     void ToPBM(FILE *file) const;
 
@@ -91,17 +102,18 @@ private:
 SimpleImage *LoadPNGImage(const char *filename, double *dpi);
 
 // Convert all values to 0 or 255 depending on the threshold. If "invert", then
-// flip the values.
-void ConvertBlackWhite(SimpleImage *img, uint8_t threshold, bool invert);
+// flip the values. Returns a freshly allocated bitmap image.
+BitmapImage *ConvertBlackWhite(const SimpleImage &img, uint8_t threshold,
+                               bool invert);
 
 // Thin out contiguous regions in x and y direction by x_radius, y_radius,
 // but never in a way that pixels are eliminated entirely.
-void ThinImageStructures(SimpleImage *img, int x_radius, int y_radius);
+void ThinImageStructures(BitmapImage *img, int x_radius, int y_radius);
 
 // Create a test-chart with pre-thinned lines of "line_width_mm" size. Creates
 // "count" sample charts, starting with "start_diameter" and steps.
 // Each sample will be 1 cm long and 2 cm wide.
-SimpleImage *CreateThinningTestChart(float mm_per_pixel, float line_width_mm,
+BitmapImage *CreateThinningTestChart(float mm_per_pixel, float line_width_mm,
                                      int count,
                                      float start_diameter, float step);
 

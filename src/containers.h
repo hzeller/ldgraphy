@@ -19,28 +19,36 @@
 #ifndef LDGRAPHY_CONTAINERS_H
 #define LDGRAPHY_CONTAINERS_H
 
-#include <strings.h>
 #include <stdio.h>
+#include <string.h>
+#include <strings.h>
 
 class BitArray {
 public:
-    BitArray(size_t size)
-        : size_(size), buffer_(new uint8_t[(size+7)/8]) {
+    explicit BitArray(size_t size)
+        : size_(size), buffer_(new uint8_t[(size_+7)/8]) {
         Clear();
+    }
+    BitArray(const BitArray &other)
+        : size_(other.size_), buffer_(new uint8_t[(size_+7)/8]) {
+        memcpy(buffer_, other.buffer_, (size_+7)/8);
     }
     ~BitArray() { delete [] buffer_; }
 
     void Clear() {  bzero(buffer_, (size_+7)/8); }
 
-    void Set(int bit, bool value) {
+    inline void Set(int bit, bool value) {
         if (bit < 0 || bit >= size_) return;
         if (value)
             buffer_[bit / 8] |= 1 << (7 - bit % 8);
         else
             buffer_[bit / 8] &= ~(1 << (7 - bit % 8));
     }
+    inline bool Get(int bit) const {
+        return buffer_[bit / 8] & (1 << (7 - bit % 8));
+    }
 
-    const uint8_t *buffer() const { return buffer_; }
+    uint8_t *buffer() { return buffer_; }
     int size() const { return size_; }
 
 private:
