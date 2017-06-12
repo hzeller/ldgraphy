@@ -1,37 +1,51 @@
 LDgraphy - Laser Direct Lithography
 ===================================
 
-Or Laser Direct Imaging, whatever you prefer.
+http://ldgraphy.org/
 
-_([work in progress][LDGraphy-posts], don't expect a polished result yet)_
+A process also known as Laser Direct Imaging.
 
-Simple implementation of photo resist exposure directly using a 405nm laser.
+[![First Test][run-vid]](https://youtu.be/G9-JK2Nc7w0)
 
-![Case](./img/sample-case.jpg)
+Simple implementation of photo resist exposure using a 405nm laser.
+Goal is to have this Open Source/Open Hardware system easy to reproduce with
+commonly available parts. The BOM is in the order of $100 including the
+Beaglebone Green.
 
-Uses
   * 500mW 405nm laser
   * Commonly available polygon mirror scanner (from laser printers)
   * Stepper motor for linear axis (plus end-stop switches)
   * Photo diode to determine start-of-line (as the polygon mirrors have
     slightly different long faces and also phase-drift over time).
+  * Local electronics: fast Laser diode driver and stepmotor driver.
   * Beaglebone Black/Green to control it all (using the PRU to generate precise
     timings for motors and laser).
 
+Stay tuned for a putting-it-together video once the design is settled.
+
 Work in Progress
 ----------------
-Currently, the design is work-in-progress while testing various different
-types of commonly available Polygon Mirrors and Lasers. Also the
-[PCBs](./pcb) for the [Cape] and the [Laser current driver] are in their
-first iteration with focus on easy measurements and removable parts
+Currently, the design is [work in progress][LDGraphy-posts] while testing
+various different types of commonly available polygon mirrors and lasers. The
+[PCBs](./pcb) for the [cape] and the [laser current driver] are in their
+first iteration with more focus on easy measurements and removable parts
 (e.g. stepper driver and DC/DC converter are external modules) than compact
-design. And of course, the software would need a little more bells and whistles.
+design. This part of the hardware is likely to change in the
+short term; it turns out, for instance, that some polygon mirrors have not
+perfectly perpendicular faces. So an additional sensor is needed to correct
+for that.
+
+And of course, the software would need a little more bells and whistles
+(e.g. a web-server to easily upload Gerber designs).
 
 Having said that, the device is fully operational with a reliable
-resolution of 0.2mm (goal: reliable 0.1mm (4mil) traces with 0.1mm gaps).
+resolution of ~0.15mm/6mil (goal: reliable 0.1mm (4mil) traces with 0.1mm gaps).
 
-Build
------
+Compile
+-------
+This compiles on a BeagleBone Green/Black; it requires the PRU on these
+computers for hard realtime-switching of the Laser.
+
 ```
 git clone --recursive https://github.com/hzeller/ldgraphy.git
 ```
@@ -49,8 +63,14 @@ cd ldgraphy/src
 make
 ```
 
-At this point, the input is very simply a PNG image (as that has
-embedded DPI information). For converting Gerber files to PNG, see the
+To properly prepare the GPIOs and the PRU to be used, you have to install
+the device tree overlay on your Beaglebone:
+```
+cd ldgraphy/device-tree
+sudo ./start-devicetree-overlay.sh LDGraphy.dts
+```
+
+The input is a PNG image. For converting Gerber files to PNG, see the
 `gerber2png` tool in the [scripts/](./scripts) directory.
 
 Usage:
@@ -76,13 +96,17 @@ Mostly for testing or calibration:
 
 Case
 ----
-The first test-device was put together with extruded aluminum
-(see below). The current version is made out of [laser-cut acrylic](./hardware)
-parts to have it simple and cheaply build for everyone who has
+The current version is made out of [laser-cut acrylic](./hardware)
+parts to have it easily and cheaply build for everyone who has
 access to a laser cutter (hint: your local Hackerspace might have one).
 
+Here, all electronics is mounted on the top for easier measurements and
+such. The final version will fit everything inside.
+
+![Case](./img/sample-case.jpg)
+
 Above is current status of the case, which went through some refinements (here
-a previous [intermediate case](./img/intermediate-case.jpg) which shows better
+an [earlier case](./img/intermediate-case.jpg) which better shows
 the internal arrangement).
 
 This was the first experiment
@@ -94,16 +118,19 @@ This was the first experiment
 -----------------------|---------------------------------
 ![](./img/setup.jpg)   | ![](./img/firstexposure.jpg)
 
-Somewhat crappy first result, but has potential. Exposure time for this 30 mm
+The first test-device was put together with extruded aluminum.
+Somewhat crappy first result, but had potential. Exposure time for this 30 mm
 long patch was around 90 seconds (for reference: on the right is how the
 geometry _should_ look like).
 
 As you can see, the early stages had some issues, e.g. you can't trust the "PLL"
 of the mirror to properly lock - it has a phase drift over
-time (hence the 'curve'). Overall the [progress] after that improved various
+time (hence the warped square). The current design has a HSync line sensor.
+Overall the [progress] after that improved various
 issues seen up to the point where it starts to be usable for PCB work.
 
 [progress]: https://plus.google.com/u/0/+HennerZeller/posts/FeqdPoEZ3AT
 [Laser current driver]: ./pcb/laser-drive
 [Cape]: ./pcb/cape
 [LDGraphy-posts]: https://plus.google.com/u/0/s/%23ldgraphy/top
+[run-vid]: ./img/ldgraphy-yt.jpg
