@@ -39,7 +39,10 @@ And of course, the software would need a little more bells and whistles
 (e.g. a web-server to easily upload Gerber designs).
 
 Having said that, the device is fully operational with a reliable
-resolution of ~0.15mm/6mil (goal: reliable 0.1mm (4mil) traces with 0.1mm gaps).
+resolution of ~0.15mm/6mil, which is right up there with basic fab-house
+offerings (goal: reliable 0.1mm (4mil) traces and clearance).
+
+[![Resolution test][resolution-thumb]][resolution]
 
 Compile
 -------
@@ -134,3 +137,5 @@ issues seen up to the point where it starts to be usable for PCB work.
 [Cape]: ./pcb/cape
 [LDGraphy-posts]: https://plus.google.com/u/0/s/%23ldgraphy/top
 [run-vid]: ./img/ldgraphy-yt.jpg
+[resolution-thumb]: ./img/line-resolution-small.jpg
+[resolution]: https://goo.gl/photos/gayWxuV28KC95az99
