@@ -138,4 +138,4 @@ issues seen up to the point where it starts to be usable for PCB work.
 [LDGraphy-posts]: https://plus.google.com/u/0/s/%23ldgraphy/top
 [run-vid]: ./img/ldgraphy-yt.jpg
 [resolution-thumb]: ./img/line-resolution-small.jpg
-[resolution]: https://goo.gl/photos/gayWxuV28KC95az99
+[resolution]: https://plus.google.com/u/0/+HennerZeller/posts/a8taHWeL5CC
