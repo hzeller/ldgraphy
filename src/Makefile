@@ -50,7 +50,7 @@ ldgraphy: main.o $(OBJECTS)
 	$(CROSS_COMPILE)$(CXX) $(CXXFLAGS) -c  $< -o $@
 	@$(CROSS_COMPILE)$(CXX) $(CXXFLAGS) -MM $< > $@.d
 
-%_bin.h : %.p $(PASM)
+%_bin.h : %.p laser-scribe-constants.h $(PASM)
 	$(PASM) -I$(CAPE_INCLUDE) -V3 -c $<
 
 $(PASM):

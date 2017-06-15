@@ -38,7 +38,7 @@
 // This is the CPU cycles (on the 200Mhz CPU) between each laser dot,
 // determining the pixel clock.
 // Other values are derived from this.
-#define TICK_DELAY 80
+#define TICK_DELAY 110
 
 // Each mirror segment is this number of pixel ticks long (only the first
 // 8*SCANLINE_DATA_SIZE are filled with pixels, the rest is dead part of the
