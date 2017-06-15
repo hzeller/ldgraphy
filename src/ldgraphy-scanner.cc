@@ -66,7 +66,7 @@ constexpr float bed_length = 162.0;  // Sled length.
 
 // Width of the laser to throw. Comes from the case calculation.
 // Fudge value from real life :)
-constexpr float bed_width_fudge_value = -2.0;  // Measured :)
+constexpr float bed_width_fudge_value = -1.9;  // Measured :)
 constexpr float bed_width  = 102.0 + bed_width_fudge_value;
 constexpr float kScanAngle = 40.0;   // Degrees
 constexpr float kRadiusMM = (bed_width/2) / tan(kScanAngle * deg2rad / 2);
