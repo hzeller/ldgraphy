@@ -27,37 +27,6 @@
 
 #include "containers.h"
 
-// An Image .. 2D container essentially with convenient x, y access.
-class SimpleImage {
-public:
-    SimpleImage(int width, int height)
-	    : width_(width), height_(height)
-            , buffer_(new uint8_t [width * height]) {
-        bzero(buffer_, width * height);
-    }
-    explicit SimpleImage(const SimpleImage &other);
-    ~SimpleImage() { delete [] buffer_; }
-
-    int width() const { return width_; }
-    int height() const { return height_; }
-
-    uint8_t &at(int x, int y) {
-        assert(x >= 0 && x < width_ && y >= 0 && y < height_);
-        return buffer_[width_ * y + x];
-    }
-
-    const uint8_t &at(int x, int y) const {
-        assert(x >= 0 && x < width_ && y >= 0 && y < height_);
-        return buffer_[width_ * y + x];
-    }
-
-    void ToPGM(FILE *file) const;
-
-private:
-    const int width_, height_;
-    uint8_t *const buffer_;
-};
-
 // A bitmap image with packed bits and direct access.
 // Image width is aligned to the next full byte.
 class BitmapImage {
@@ -100,12 +69,7 @@ private:
 // Load PNG file, convert to grayscale and return result as allocated
 // SimpleImage. NULL on failure.
 // Returns the image dpi if it was stored in the meta data.
-SimpleImage *LoadPNGImage(const char *filename, double *dpi);
-
-// Convert all values to 0 or 255 depending on the threshold. If "invert", then
-// flip the values. Returns a freshly allocated bitmap image.
-BitmapImage *ConvertBlackWhite(const SimpleImage &img, uint8_t threshold,
-                               bool invert);
+BitmapImage *LoadPNGImage(const char *filename, bool invert, double *dpi);
 
 // Thin out contiguous regions in x and y direction by x_radius, y_radius,
 // but never in a way that pixels are eliminated entirely.
@@ -118,7 +82,7 @@ BitmapImage *CreateThinningTestChart(float mm_per_pixel, float line_width_mm,
                                      int count,
                                      float start_diameter, float step);
 
-// Create a new image, that is rotated by 90 degrees.
-SimpleImage *CreateRotatedImage(const SimpleImage &img);
+// Create a new bitmap, that is rotated by 90 degrees.
+BitmapImage *CreateRotatedImage(const BitmapImage &img);
 
 #endif  // LDGRAPHY_IMAGE_PROCESSING_H

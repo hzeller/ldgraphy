@@ -92,7 +92,7 @@ bool LoadImage(LDGraphyScanner *scanner,
                bool invert, int quarter_turns) {
     if (!filename) return false;
     double input_dpi = -1;
-    std::unique_ptr<SimpleImage> img(LoadPNGImage(filename, &input_dpi));
+    std::unique_ptr<BitmapImage> img(LoadPNGImage(filename, invert, &input_dpi));
     if (img == nullptr) return false;
 
     if (override_dpi > 0 || input_dpi < 100 || input_dpi > 20000)
@@ -107,8 +107,7 @@ bool LoadImage(LDGraphyScanner *scanner,
     while (quarter_turns--)
         img.reset(CreateRotatedImage(*img));
 
-    return scanner->SetImage(ConvertBlackWhite(*img, 128, invert),
-                             25.4 / input_dpi);
+    return scanner->SetImage(img.release(), 25.4 / input_dpi);
 }
 
 // Output a line with dots in regular distance for testing the set-up.
@@ -232,7 +231,7 @@ int main(int argc, char *argv[]) {
         ldgraphy->SetImage(dot_size_chart.release(), kThinningChartResolution);
     } else {
         do_image = LoadImage(ldgraphy, filename,
-                             commandline_dpi, invert, quarter_turns);
+                             commandline_dpi, invert, quarter_turns  % 4);
         if (filename && !do_image) return 1;  // Got file, but failed loading.
     }
 

@@ -21,7 +21,6 @@
 
 class ScanLineSender;
 class BitmapImage;
-class SimpleImage;
 
 #include <memory>
 #include <functional>

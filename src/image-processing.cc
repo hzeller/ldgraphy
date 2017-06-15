@@ -24,18 +24,6 @@
 
 #include <functional>
 
-SimpleImage::SimpleImage(const SimpleImage &other)
-    : width_(other.width()), height_(other.height()),
-      buffer_(new uint8_t [width_ * height_]) {
-    memcpy(buffer_, other.buffer_, width_ * height_);
-}
-
-void SimpleImage::ToPGM(FILE *file) const {
-    fprintf(file, "P5\n%d %d\n255\n", width_, height_);
-    fwrite(buffer_, 1, width_ * height_, file);
-    fclose(file);
-}
-
 void BitmapImage::ToPBM(FILE *file) const {
     fprintf(file, "P4\n%d %d\n", width_, height_);
     fwrite(bits_->buffer(), 1, width_ * height_ / 8, file);
@@ -47,7 +35,8 @@ bool BitmapImage::CopyFrom(const BitmapImage &other) {
     memcpy(bits_->buffer(), other.bits_->buffer(), bits_->size_bits() / 8);
     return true;
 }
-SimpleImage *LoadPNGImage(const char *filename, double *dpi) {
+
+BitmapImage *LoadPNGImage(const char *filename, bool invert, double *dpi) {
     //  More or less textbook libpng tutorial.
     FILE *fp = fopen(filename, "r");
     if (!fp) {
@@ -78,6 +67,8 @@ SimpleImage *LoadPNGImage(const char *filename, double *dpi) {
         png_set_palette_to_rgb(png);
 
     // PNG_COLOR_TYPE_GRAY_ALPHA is always 8 or 16bit depth.
+    // So, for anyone who knows the libpng: is there no way to get a bitmap
+    // out of it directly ?
     if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
         png_set_expand_gray_1_2_4_to_8(png);
 
@@ -100,52 +91,41 @@ SimpleImage *LoadPNGImage(const char *filename, double *dpi) {
     *dpi = (unit == PNG_RESOLUTION_METER) ? res_x / (1000 / 25.4) : res_x;
 
     png_read_update_info(png, info);
-    png_bytep *const row_pointers = new png_bytep[height];
-    const int rowbytes = png_get_rowbytes(png, info);
-    png_byte *const data = new png_byte[height * rowbytes];
-    for (int y = 0; y < height; y++) {
-        row_pointers[y] = data + rowbytes * y;
-    }
 
-    png_read_image(png, row_pointers);
+    // Let's make sure our image is already multiple to 8x8 pixels and round
+    // up the values is needed. That way, we can rotate without reading from
+    // invalid locations. Width is already internally rounded to the next byte,
+    // we only need to make sure height properly rounded.
+    BitmapImage *result = new BitmapImage(width, (height + 7) & ~0x7);
+
+    const int bytes_per_pixel = png_get_rowbytes(png, info) / width;
+
+    // Our BitmapImage rounds up to the next full byte, so make sure that
+    // we allocate potential free space beyond what png would write.
+    png_byte *const row_data = new png_byte[bytes_per_pixel * result->width()]();
 
     //fprintf(stderr, "Reading %dx%d image (res=%.f).\n", width, height, *dpi);
-    const int bytes_per_pixel = rowbytes / width;
-    png_byte *pixel = data;
-    SimpleImage *result = new SimpleImage(width, height);
     for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            result->at(x, y) = *pixel;
-            pixel += bytes_per_pixel;
+        png_read_row(png, row_data, NULL);
+        png_byte *from_pixel = row_data;
+        uint8_t *to_byte = result->GetMutableRow(y);
+        for (int x = 0; x < result->width(); x+= 8) {
+            *to_byte |= (*from_pixel > 128) << 7; from_pixel += bytes_per_pixel;
+            *to_byte |= (*from_pixel > 128) << 6; from_pixel += bytes_per_pixel;
+            *to_byte |= (*from_pixel > 128) << 5; from_pixel += bytes_per_pixel;
+            *to_byte |= (*from_pixel > 128) << 4; from_pixel += bytes_per_pixel;
+            *to_byte |= (*from_pixel > 128) << 3; from_pixel += bytes_per_pixel;
+            *to_byte |= (*from_pixel > 128) << 2; from_pixel += bytes_per_pixel;
+            *to_byte |= (*from_pixel > 128) << 1; from_pixel += bytes_per_pixel;
+            *to_byte |= (*from_pixel > 128) << 0; from_pixel += bytes_per_pixel;
+            if (invert) *to_byte = ~*to_byte;
+            to_byte += 1;
         }
     }
 
-    delete [] data;
-    delete [] row_pointers;
+    delete [] row_data;
 
     fclose(fp);
-    return result;
-}
-
-// Convert all values to 0 or 255 depending on the threshold. If "invert", then
-// flip the values.
-BitmapImage *ConvertBlackWhite(const SimpleImage &img,
-                               uint8_t threshold, bool invert) {
-    BitmapImage *result = new BitmapImage(img.width(), img.height());
-    for (int y = 0; y < img.height(); ++y) {
-        uint8_t *row_byte = result->GetMutableRow(y);
-        uint8_t current_mask = 0x80;
-        for (int x = 0; x < img.width(); ++x) {
-            if ((img.at(x, y) > threshold) ^ invert) {
-                *row_byte |= current_mask;
-            }
-            current_mask >>= 1;
-            if (!current_mask) {
-                ++row_byte;
-                current_mask = 0x80;
-            }
-        }
-    }
     return result;
 }
 
@@ -234,11 +214,40 @@ BitmapImage *CreateThinningTestChart(float mm_per_pixel, float line_width_mm,
     return result;
 }
 
-SimpleImage *CreateRotatedImage(const SimpleImage &img) {
-    SimpleImage *const result = new SimpleImage(img.height(), img.width());
-    for (int x = 0; x < img.width(); ++x) {
-        for (int y = 0; y < img.height(); ++y) {
-            result->at(y, result->height() - x - 1) = img.at(x, y);
+// "Transposing a 8x8 bit matrix", Hacker's Delight. It is delightful.
+static void transpose8(const uint8_t *in, int m,
+                       uint8_t *out, int n) {
+    uint32_t x, y, t;
+
+    // Load the array and pack it into x and y.
+
+    x = (in[0*m]<<24) | (in[1*m]<<16) | (in[2*m]<<8) | in[3*m];
+    y = (in[4*m]<<24) | (in[5*m]<<16) | (in[6*m]<<8) | in[7*m];
+
+    t = (x ^ (x >> 7)) & 0x00AA00AA;  x = x ^ t ^ (t << 7);
+    t = (y ^ (y >> 7)) & 0x00AA00AA;  y = y ^ t ^ (t << 7);
+
+    t = (x ^ (x >>14)) & 0x0000CCCC;  x = x ^ t ^ (t <<14);
+    t = (y ^ (y >>14)) & 0x0000CCCC;  y = y ^ t ^ (t <<14);
+
+    t = (x & 0xF0F0F0F0) | ((y >> 4) & 0x0F0F0F0F);
+    y = ((x << 4) & 0xF0F0F0F0) | (y & 0x0F0F0F0F);
+    x = t;
+
+    out[7*n]=x>>24;  out[6*n]=x>>16;  out[5*n]=x>>8;  out[4*n]=x;
+    out[3*n]=y>>24;  out[2*n]=y>>16;  out[1*n]=y>>8;  out[0*n]=y;
+}
+
+BitmapImage *CreateRotatedImage(const BitmapImage &img) {
+    BitmapImage *const result = new BitmapImage(img.height(), img.width());
+    const int in_stride = img.width() / 8;
+    const int out_stride = result->width() / 8;
+    for (int y = 0; y < img.height(); y+=8) {
+        const uint8_t *in_row = img.GetRow(y);
+        for (int x = 0; x < img.width(); x+=8) {
+            uint8_t *out_row = result->GetMutableRow(result->height()-x-8)+y/8;
+            transpose8(in_row, in_stride, out_row, out_stride);
+            in_row++;
         }
     }
     return result;
