@@ -140,7 +140,7 @@ uint8_t flip_bits(uint8_t b) {
 // Copy and mirror line. Essentially memcpy() but backwards and bits reversed
 static void mirror_copy(uint8_t *to, const uint8_t *const src, size_t n) {
     const uint8_t *from = src + n - 1;
-    while (from != src)
+    while (from >= src)
         *to++ = flip_bits(*from--);
 }
 
