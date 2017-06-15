@@ -131,6 +131,19 @@ static std::vector<int> PrepareTangensLookup(float radius_pixels,
     return result;
 }
 
+uint8_t flip_bits(uint8_t b) {
+    b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+    b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+    b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+    return b;
+}
+// Copy and mirror line. Essentially memcpy() but backwards and bits reversed
+static void mirror_copy(uint8_t *to, const uint8_t *const src, size_t n) {
+    const uint8_t *from = src + n - 1;
+    while (from != src)
+        *to++ = flip_bits(*from--);
+}
+
 bool LDGraphyScanner::SetImage(BitmapImage *img,
                                float image_resolution_mm_per_pixel) {
     if (image_resolution_mm_per_pixel * img->width() > bed_length) {
@@ -186,17 +199,16 @@ bool LDGraphyScanner::SetImage(BitmapImage *img,
     // Convert this into the image, tangens-corrected and rotated by
     // 90 degrees, so that we can send it line-by-line.
     if (debug_images) fprintf(stderr, " Tangens correct...\n");
-    scan_image_.reset(new BitmapImage(SCAN_PIXELS, img->width()));
-    for (int x_pixel = 0; x_pixel < img->width(); ++x_pixel) {
-        for (size_t i = 0; i < y_lookup.size(); ++i) {
-            const int y_pixel = img->height() - 1 - y_lookup[i];
-            if (y_pixel < 0)
-                break;
-            scan_image_->Set(i + kHSyncShoulder, x_pixel,
-                             img->Get(x_pixel, y_pixel));
-        }
+    scan_image_.reset(new BitmapImage(img->width(), SCAN_PIXELS));
+    for (size_t i = 0; i < y_lookup.size(); ++i) {
+        const int from_y_pixel = img->height() - 1 - y_lookup[i];
+        if (from_y_pixel < 0) break;  // done.
+        const int to_y_pixel = i + kHSyncShoulder;
+        mirror_copy(scan_image_->GetMutableRow(to_y_pixel),
+                    img->GetRow(from_y_pixel), img->width() / 8);
     }
     delete img;
+    scan_image_.reset(CreateRotatedImage(*scan_image_));
 
     if (debug_images) scan_image_->ToPBM(fopen("/tmp/ld_1_tangens.pbm", "w"));
     const float laser_resolution_in_mm_per_pixel = bed_width / y_lookup.size();
