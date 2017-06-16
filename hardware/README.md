@@ -52,6 +52,8 @@ PostScript is not the very best 2D CAD software and updating things is not
 so easy. I'd be happy if someone could translate that
 into e.g. [Solvespace] CAD. Pull requests welcome :)
 
+### Cut pattern
+
 ![](../img/laser-cut-outline.png)
 ![](../img/sample-case.jpg)
 

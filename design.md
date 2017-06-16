@@ -104,12 +104,8 @@ So let's review our options
        * :thumbsdown: we need longer exposure time because we only have a limited
        	  on-time.
 
-So, for this first version of LDGraphy, we use the last variant.
-
-Now, to get a picture on a photo-sensitive material, we just need to scan,
-line by line, over the area. The laser passes over in a line and switches
-on and off where needed. A sled then moves the whole circuit board forward so
-that we expose the whole image.
+Since ease-of-build for everyone with limited access to tools is a priority,
+we use the last variant for this first version of LDGraphy.
 
 ### Practice
 
@@ -121,7 +117,7 @@ see all relevant components for the laser scanning:
 
 |   Drawing                      | Reality
 |--------------------------------|---------------------------------
-|![](./img/top-view-drawing.png) | ![](./img/top-view.jpg)
+|![](./img/top-view-drawing.png)[See full drawing here][hardware] | ![](./img/top-view.jpg)
 
 
 To keep things more compact, the laser is mounted in one corner and the light
@@ -211,3 +207,4 @@ go inside the case.
 [early-experiment]: ./img/arc-projection-vid.jpg
 [arc-project-vid]: https://youtu.be/8tyT4CI-1io
 [ldgraphy-vid]: https://youtu.be/G9-JK2Nc7w0
+[hardware]: ./hardware#cut-pattern
