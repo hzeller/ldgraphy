@@ -12,16 +12,19 @@ Goal is to have this Open Source/Open Hardware system easy to reproduce with
 commonly available parts. The BOM is in the order of $100 including the
 Beaglebone Green.
 
-  * 500mW 405nm laser
-  * Commonly available polygon mirror scanner (from laser printers)
-  * Stepper motor for linear axis (plus end-stop switches)
-  * Photo diode to determine start-of-line (as the polygon mirrors have
-    slightly different long faces and also phase-drift over time).
-  * Local electronics: fast Laser diode driver and stepmotor driver.
+  * 500mW 405nm laser ($30ish)
+  * Commonly available polygon mirror scanner (from laser printers) ($20ish)
   * Beaglebone Black/Green to control it all (using the PRU to generate precise
-    timings for motors and laser).
+    timings for motors and laser) ($40ish)
+  * Stepper motor for linear axis (plus end-stop switches) (scratch box)
+  * Photo diode to determine start-of-line (as the polygon mirrors have
+    slightly different long faces and also phase-drift over time) (SFH203P)
+  * Local electronics: fast Laser diode driver and stepmotor driver (few $$)
 
 Stay tuned for a putting-it-together video once the design is settled.
+
+Here is some [rough design outline][design] in case you are interested in more
+details.
 
 Work in Progress
 ----------------
@@ -117,9 +120,9 @@ This was the first experiment
 
 #### First Light
 
-   Setup               | Result
------------------------|---------------------------------
-![](./img/setup.jpg)   | ![](./img/firstexposure.jpg)
+|   Setup                | Result
+|------------------------|---------------------------------
+| ![](./img/setup.jpg)   | ![](./img/firstexposure.jpg)
 
 The first test-device was put together with extruded aluminum.
 Somewhat crappy first result, but had potential. Exposure time for this 30 mm
@@ -139,3 +142,4 @@ issues seen up to the point where it starts to be usable for PCB work.
 [run-vid]: ./img/ldgraphy-yt.jpg
 [resolution-thumb]: ./img/line-resolution-small.jpg
 [resolution]: https://plus.google.com/u/0/+HennerZeller/posts/a8taHWeL5CC
+[design]: ./design.md
