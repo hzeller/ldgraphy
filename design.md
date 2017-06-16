@@ -26,13 +26,14 @@ Now, with this arrangement, we could project a full 120 degree arc (each mirror
 face represents 60 degrees, so the angle between incident ray and reflected ray
 reaches 120 degrees).
 
+Here, we just shine (a fast blinking) laser at an angle from the top, it is
+reflected at the rotating mirror and projected downwards.
 <img src="img/handheld-project.jpg" width="50%"/>
 
-Here, we just shine (a fast blinking) laser at an angle from the top, it is
-reflected at the rotating mirror and projected downwards. We can make
-a scanning device with this if we correct for the arc in software; in fact,
-[in an early experiment :movie_camera:][early-experiment] I was doing
-exactly that.
+We can make a scanning device with this if we correct for the arc in software;
+in fact, in an early experiment for LDGraphy I was doing exactly that:
+
+[![Early experiment][early-experiment]][arc-project-vid]
 
 There are advantages for this set-up: we use a large angle range, so
 essentially can utilize the full laser on-time. Also, the laser is always
@@ -178,7 +179,8 @@ acceptable quality
 
 Everything is controlled by a BeagleBone Black or Green. It has the nice property
 that it is a common ARM machine running Linux (so offers the comfortable
-environment of a full operating system including networking), but it also has
+environment of a full operating system including networking and can do all the
+work like converting Gerbers and do image processing), but it also has
 a built-in Programmable Realtime Unit (PRU) - a fast (200Mhz), independent
 microcontroller essentially to help do the timing-accurate parts interfacing
 the hardware.
@@ -189,7 +191,7 @@ right times (we have about 2Mhz pixel clock), and generally keep track of where
 the laser is. And before you ask: of course, this could be done with an external
 Cortex M4 or so, connected via SPI to some other computer (it would be more
 expensive of course, but it works). I just had the BeagleBone lying around and
-I already had [experience] programming the realtime unit.
+had used the PRU in a [previous project][beagleg].
 
 The laser requires a current source, in our case it needs to be switched in the
 low Mhz range. Some lasers (that you get from e.g. Aliexepress) already have a
@@ -204,7 +206,8 @@ go inside the case.
 
 [resolution-thumb]: ./img/line-resolution-small.jpg
 [resolution]: https://plus.google.com/u/0/+HennerZeller/posts/a8taHWeL5CC
-[experience]: https://github.com/hzeller/beagleg
+[beagleg]: https://github.com/hzeller/beagleg
 [Laser current driver]: ./pcb/laser-drive
-[early-experiment]: https://www.youtube.com/watch?v=8tyT4CI-1io
+[early-experiment]: ./img/arc-projection-vid.jpg
+[arc-project-vid]: https://youtu.be/8tyT4CI-1io
 [ldgraphy-vid]: https://youtu.be/G9-JK2Nc7w0

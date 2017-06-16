@@ -16,7 +16,7 @@ Beaglebone Green.
   * Commonly available polygon mirror scanner (from laser printers) ($20ish)
   * Beaglebone Black/Green to control it all (using the PRU to generate precise
     timings for motors and laser) ($40ish)
-  * Stepper motor for linear axis (plus end-stop switches) (scratch box)
+  * Stepper motor for linear axis (plus end-stop switches) (scrap box)
   * Photo diode to determine start-of-line (as the polygon mirrors have
     slightly different long faces and also phase-drift over time) (SFH203P)
   * Local electronics: fast Laser diode driver and stepmotor driver (few $$)
