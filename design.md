@@ -35,12 +35,18 @@ in fact, in an early experiment for LDGraphy I was doing exactly that:
 
 [![Early experiment][early-experiment]][arc-project-vid]
 
-There are advantages for this set-up: we use a large angle range, so
-essentially can utilize the full laser on-time. Also, the laser is always
-in focus where it hits the board because it always is the same distance from
-the lens. The disadvantages is that the laser dot hits the
-photo resist at a shallow angle. This of course increases the size of the
-exposure point seen by the photoresist.
+There are advantages for this set-up: we can utilize a large fraction of the
+laser on-time by covering the majority of the available scan range.
+Also, the scanning laser is almost in focus for the scan range where it hits
+the board.
+
+Here is a simulation of such a scanning in which we use 105 out of 120 degrees
+(the laser is off only for 15 degrees). In the exaggerated laser thickness, we
+can see that the laser dot is a little bit oval in the extreme angles: in
+places where we are not quite in focus, the shallow angle deforms the larger
+'focus' circle to an oval.
+
+![](./img/anim-plain-arc-scan.gif)
 
 This could be fixed, if we had a mirror that points the laser-arc downwards, so
 that it hits the resist perpendicularly. The mirror would need to be a circular
@@ -87,22 +93,23 @@ So let's review our options
 
    * Build a scanner by pointing the laser at a shallow angle at the polygon
      mirror:
-       * :thumbsup: very simple; full use of the laser; No light losses.
-       * :thumbsdown: hitting photo resist at a shallow angle; Large build.
+       * :thumbsup: fewest parts needed; almost full use of the laser; No light losses.
+       * :thumbsdown: not always in focus; hitting photo resist at a shallow angle.
 
    * Build a scanner with a 45 degree cone mirror:
-       * :thumbsup: full use of laser; no light losses; hitting resist
-       	  perpendicularly.
+       * :thumbsup: almost full use of laser; no light losses; hitting resist
+       	  perpendicularly; always in focus.
        * :thumbsdown: Hard to build.
 
    * Build an f-theta lens and use a straight scanning projection:
-       * :thumbsup: Full use of the laser; hitting resist perpendicularly.
-       * :thumbsdown: hard to build. Might have optical losses in the material.
+       * :thumbsup: Almost full use of the laser; hitting resist perpendicularly.
+       * :thumbsdown: hard to build; might have optical losses in the material if
+         not transparent enough for near UV light.
 
    * Only use part of the scanning range and use a straight mirror:
        * :thumbsup: easy to build.
-       * :thumbsdown: we need longer exposure time because we only have a limited
-       	  on-time.
+       * :thumbsdown: we need longer exposure time because we only use a fraction
+       	  of available on-time.
 
 Since ease-of-build for everyone with limited access to tools is a priority,
 we use the last variant for this first version of LDGraphy.

@@ -109,7 +109,7 @@ access to a laser cutter (hint: your local Hackerspace might have one).
 Here, all electronics is mounted on the top for easier measurements and
 such. The final version will fit everything inside.
 
-![Case](./img/sample-case.jpg)
+[![Case][case-pic]](./hardware)
 
 Above is current status of the case, which went through some refinements (here
 an [earlier case](./img/intermediate-case.jpg) which better shows
@@ -143,3 +143,4 @@ issues seen up to the point where it starts to be usable for PCB work.
 [resolution-thumb]: ./img/line-resolution-small.jpg
 [resolution]: https://plus.google.com/u/0/+HennerZeller/posts/a8taHWeL5CC
 [design]: ./design.md
+[case-pic]: ./img/sample-case.jpg
