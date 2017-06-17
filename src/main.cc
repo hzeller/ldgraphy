@@ -236,8 +236,9 @@ int main(int argc, char *argv[]) {
     }
 
     if (do_image) {
-        fprintf(stderr, "Estimated time: %.0f seconds\n",
-                ldgraphy->estimated_time_seconds());
+        const int eta = ldgraphy->estimated_time_seconds();
+        fprintf(stderr, "Estimated time: %d:%02d min (%.1fmm/min)\n",
+                eta / 60, eta % 60, ldgraphy->exposure_speed() * 60);
     }
 
     SledControl sled(4000, do_move && !dryrun);

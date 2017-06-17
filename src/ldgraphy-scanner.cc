@@ -66,7 +66,7 @@ constexpr float bed_length = 162.0;  // Sled length.
 
 // Width of the laser to throw. Comes from the case calculation.
 // Fudge value from real life :)
-constexpr float bed_width_fudge_value = -1.9;  // Measured :)
+constexpr float bed_width_fudge_value = -1.88;  // Measured :)
 constexpr float bed_width  = 102.0 + bed_width_fudge_value;
 constexpr float kScanAngle = 40.0;   // Degrees
 constexpr float kRadiusMM = (bed_width/2) / tan(kScanAngle * deg2rad / 2);
@@ -222,6 +222,10 @@ bool LDGraphyScanner::SetImage(BitmapImage *img,
     if (debug_images) scan_image_->ToPBM(fopen("/tmp/ld_2_thinned.pbm", "w"));
 
     return true;
+}
+
+float LDGraphyScanner::exposure_speed() const {
+    return (SledControl::kSledMMperStep * kMirrorLineFrequency) / exposure_factor_;
 }
 
 float LDGraphyScanner::estimated_time_seconds() const {

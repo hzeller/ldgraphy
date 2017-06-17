@@ -50,6 +50,9 @@ public:
     // if it doesn't fit on the bed).
     bool SetImage(BitmapImage *img, float mm_per_pixel);
 
+    // Returns the current exposure speed in mm/sec
+    float exposure_speed() const;
+
     // Give an estimation how long a ScanExpose() would take with current image.
     float estimated_time_seconds() const;
 
