@@ -44,7 +44,7 @@ the board.
 This is a simulation of such a scanning in which we use 105° out of 120°
 (the laser is off only for 15 degrees). We can see that the laser dot is oval
 in the extreme angles but also even in the center. This is because the actual
-focal plane of the laser (indicated with a gray circle at the sharpest focus)
+focal plane of the laser (indicated with a gray disc at the sharpest focus)
 is hitting the surface at an angle, resulting in an oval exposure.
 
 ![](./img/anim-plain-arc-scan.gif)
