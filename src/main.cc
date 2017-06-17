@@ -293,8 +293,8 @@ int main(int argc, char *argv[]) {
                 // Only update if any number would change.
                 if (percent != prev_percent || remain_time != prev_remain_time) {
                     fprintf(stderr, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b"
-                            "%3d%%; %d sec left",
-                            percent, remain_time);
+                            "%3d%%; %d:%02d left",
+                            percent, remain_time / 60, remain_time % 60);
                     fflush(stderr);
                     prev_percent = percent;
                     prev_remain_time = remain_time;
