@@ -13,7 +13,7 @@ of dry-film photoresist) can be found cheaply with around 500mW power.
 
 As for scanning, there are several techniques. A common one is to have a mirror
 that rotates to deflect a laser. Since it would take a while for a mirror
-to turn around full 360 degrees after a segment is scanned, they come as
+to turn around full 360° after a segment is scanned, they come as
 a polygon mirror: a polygon that has mirror-reflective edges.
 A typical mirror that is used in Laser printers 6 sides; you notice that
 the actual mirror face is not that high - but we only need to deflect a laser dot.
@@ -22,97 +22,141 @@ the actual mirror face is not that high - but we only need to deflect a laser do
 |-----------------------------|-------------------------------
 | ![](./img/polygon-top.jpg)  | ![](./img/polygon-side.jpg)
 
-Now, with this arrangement, we could project a full 120 degree arc (each mirror
-face represents 60 degrees, so the angle between incident ray and reflected ray
-reaches 120 degrees).
+With this hexagon, we can project a 120° arc (each mirror
+face is 60°, so the angle between incident ray and reflected ray is 120°).
 
 Here, we just shine (a fast blinking) laser at an angle from the top, it is
 reflected at the rotating mirror and projected downwards.
 <img src="img/handheld-project.jpg" width="50%"/>
 
-We can make a scanning device with this if we correct for the arc in software;
-in fact, in an early experiment for LDGraphy I was doing exactly that:
+#### Direct angled arc exposure
+We can make a scanning device with this simple set-up if we correct for the
+arc distortion in software; in fact, in an early experiment for LDGraphy
+I was doing exactly that:
 
 [![Early experiment][early-experiment]][arc-project-vid]
 
 There are advantages for this set-up: we can utilize a large fraction of the
 laser on-time by covering the majority of the available scan range.
-Also, the scanning laser is almost in focus for the scan range where it hits
+The scanning laser is "almost" in focus for the scan range where it hits
 the board.
 
-Here is a simulation of such a scanning in which we use 105 out of 120 degrees
-(the laser is off only for 15 degrees). In the exaggerated laser thickness, we
-can see that the laser dot is a little bit oval in the extreme angles: in
-places where we are not quite in focus, the shallow angle deforms the larger
-'focus' circle to an oval.
+This is a simulation of such a scanning in which we use 105° out of 120°
+(the laser is off only for 15 degrees). We can see that the laser dot is oval
+in the extreme angles but also even in the center. This is because the actual
+focal plane of the laser (indicated with a gray circle at the sharpest focus)
+is hitting the surface at an angle, resulting in an oval exposure.
 
 ![](./img/anim-plain-arc-scan.gif)
 
-This could be fixed, if we had a mirror that points the laser-arc downwards, so
-that it hits the resist perpendicularly. The mirror would need to be a circular
-segment with a downwards angle -- essentially the slice of a cone.
+This set-up is very simple to build, but the oval exposure dot is an issue.
+Also it is very sensitive to angle variations: just small changes in the
+shallow angle moves the projected arc-line forward and backwards.
 
-[ todo: make an illustration ]
+#### Cone mirror arc exposure
+This could be fixed, if we had a mirror that points the laser-arc downwards, so
+that it hits the resist perpendicularly and is also always in focus.
+The mirror would need to be a circular segment with a downwards
+angle -- essentially a segment of
+an inner slice of a cone. Now we hit the photo resist always at a sharp
+focus point, even for the wide scan angle of 105 degrees as the geometry
+keeps the focal plane of the laser exactly on the exposed surface.
+
+![](./img/anim-cone-arc-scan.gif)
 
 However, making custom mirrors in such a shape at home is not really feasible
-(Someone who has access to a lathe: this would essentially be a 45 degree bevel
+(Someone who has access to a lathe: this would essentially be a 45° bevel
 on the inside of a large diameter stainless steel pipe with a wall thickness
 of about 2-3mm. Then mirror finish polishing this bevel. I don't have
 access to a lathe though :/).
 
-We want to build this machine at home or with minimal accessible tools, so this
+We want to build this machine with minimal accessible tools, so this
 is a hurdle.
 
-So we can simplify and use a straight mirror to project downwards and get a line.
-however, the focus point then is of course not always in the plane of the
-photo sensitive material. In particular if we cover a full 120 degrees, the
+#### Straight mirror line exposure
+We can simplify and use a straight mirror to project downwards to get a line.
+However, the focus point then is of course not always in the plane of the
+photo sensitive material. In particular if we cover a large scan angle, the
 focus variants are significant.
 
-[ todo: make an illustration ]
+![](./img/anim-straight-scan.gif)
 
-In professional scanning applications, they use a trick to get this in focus:
-a so-called f-theta lens is a specially ground lens that makes sure that the
-laser dot always focuses in a plane. This is also somewhat out of reach
-for the hobbyist (though I still want to try making one with transparent
-acrylic). If you take apart a laser printer, you will see a weirdly shaped
-lens set in the laser assembly: that is an f-theta lens.
+The exposure point now is very large at the fringes. We could alleviate some of
+it by "plunging" the focus plane below the surface at the center, but it will
+still be too much of a variant.
 
-What else we can do ?
+The advantages for the home-build is, that this works with a very simple straight
+mirror (easy to come by with) and does not have the problem of being sensitive
+to the shallow angle variations like the angled direct arc exposure.
 
-If we choose to do the straight projection, but limit ourselves to a smaller
-angle, the focus variation is not _that_ much and we get an acceptable
-compromise.
+The issue though is the focus, even more pronounced than in the direct arc scan.
 
-[ todo: make an illustration ]
+#### F-Theta lens corrected line exposure
+In professional scanning applications, a so-called [f-theta lens][f-theta-images]
+is used to keep a straightly projected laser dot always focused to a plane.
+
+If you take apart a laser printer, you will see a lens set in the
+laser assembly: that is the f-theta lens.
+
+However, this is also somewhat out of reach for the hobbyist to make (though
+I still consider to try making one with transparent acrylic). It also does not
+seem to be available as off-the-shelf part like the Polygon mirrors and the laser
+does (you can get them, but they are very expensive).
+
+If you find some, it is probably meant for a laser printer and optimized for
+infrared light not UV light.
+
+What else can we do ?
+
+#### Straight mirror line exposure with small throw
+
+If we choose to do the straight projection, but only use the 'center piece'
+and limit ourselves to a smaller angle, the focus variation is not _that_ much
+and we get an acceptable compromise in exposure dot size.
+
+![](./img/anim-straight-scan-smallthrow.gif)
 
 We don't need any special mirror or lens. The disadvantage is, that we only
-can use part of the time of the laser: if we use 40 degree scanning out
-of 120 degree, we only use the laser for 1/3 of the time.
+can use part of the time of the laser: if we use 40° scanning out
+of 120°, we only use the laser for 1/3 of the time (you see the laser is
+dark for a long period in the illustration). Also, we need much more space as
+we need to be further away to cover the same PCB width.
 
-So let's review our options
+### Design Options Review
+Let's review our options
 
-   * Build a scanner by pointing the laser at a shallow angle at the polygon
+   * Angled direct arc exposure
      mirror:
        * :thumbsup: fewest parts needed; almost full use of the laser; No light losses.
-       * :thumbsdown: not always in focus; hitting photo resist at a shallow angle.
+       * :thumbsdown: focus plane intersects with exposed board at an angle creating oval dots; susceptible to small angle changes; large build.
 
-   * Build a scanner with a 45 degree cone mirror:
+   * Cone mirror arc exposure
        * :thumbsup: almost full use of laser; no light losses; hitting resist
-       	  perpendicularly; always in focus.
-       * :thumbsdown: Hard to build.
+       	  perpendicularly; always in focus; very compact.
+       * :thumbsdown: Requires to build a custom shaped mirror.
 
-   * Build an f-theta lens and use a straight scanning projection:
-       * :thumbsup: Almost full use of the laser; hitting resist perpendicularly.
-       * :thumbsdown: hard to build; might have optical losses in the material if
-         not transparent enough for near UV light.
+   * Straight mirror line exposure with _large_ throw
+       * :thumbsup: easy to build; very compact.
+       * :thumbsdown: very noticeable focus issues in far angels.
 
-   * Only use part of the scanning range and use a straight mirror:
-       * :thumbsup: easy to build.
-       * :thumbsdown: we need longer exposure time because we only use a fraction
-       	  of available on-time.
+   * F-Theta lens corrected line exposure
+       * :thumbsup: Almost full use of the laser; hitting resist perpendicularly; always in focus.
+       * :thumbsdown: Requires to build a custom shaped lens; might have optical
+         losses in the material.
 
-Since ease-of-build for everyone with limited access to tools is a priority,
-we use the last variant for this first version of LDGraphy.
+   * Straight mirror line exposure with _small_ throw
+       * :thumbsup: easy to build; focus issues less pronounced than with
+          large throw.
+       * :thumbsdown: need longer exposure time; large build.
+
+Overall, the most promising is the cone mirror solution: it creates sharp focus
+points, makes good use of the laser time and building a custom mirror
+is somewhat more feasible than building a f-theta lens.
+
+However, since ease-of-build for everyone with limited access to tools is a
+priority, we start with the small throw line exposure for this first version
+of LDGraphy - it doesn't require any manufacturing of a mirror and is a
+good compromise.
 
 ### Practice
 
@@ -215,3 +259,4 @@ go inside the case.
 [arc-project-vid]: https://youtu.be/8tyT4CI-1io
 [ldgraphy-vid]: https://youtu.be/G9-JK2Nc7w0
 [hardware]: ./hardware#cut-pattern
+[f-theta-images]: https://www.google.com/images?q=f+theta+lens
