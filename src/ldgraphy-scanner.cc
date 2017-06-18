@@ -147,13 +147,15 @@ static void mirror_copy(uint8_t *to, const uint8_t *const src, size_t n) {
 bool LDGraphyScanner::SetImage(BitmapImage *img,
                                float image_resolution_mm_per_pixel) {
     if (image_resolution_mm_per_pixel * img->width() > bed_length) {
-        fprintf(stderr, "Board too long, does not fit in %.0fmm "
-                "bed along sled.\n", bed_length);
+        fprintf(stderr, "Board too long (%.1fmm), does not fit in %.0fmm "
+                "bed along sled.\n",
+                image_resolution_mm_per_pixel * img->width(), bed_length);
         return false;
     }
     if (image_resolution_mm_per_pixel * img->height() > bed_width) {
-        fprintf(stderr, "Board too high, does not fit in %.0fmm bed "
-                "along laser scan.\n", bed_width);
+        fprintf(stderr, "Board too high (%.1fmm), does not fit in %.0fmm bed "
+                "along laser scan.\n",
+                image_resolution_mm_per_pixel * img->height(), bed_width);
         return false;
     }
 
