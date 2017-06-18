@@ -1,0 +1,135 @@
+%!PS-Adobe-3.0
+%%BoundingBox: 0 0 200 284
+% not pretty, totally hacked together
+
+/mm { 72 25.4 div mul } bind def
+/thou { 72 mul 1000 div } bind def
+
+/measure-mark-thick 0.2 mm def
+/start-res-micrometer 70 def
+/end-res-micrometer 310 def
+/lines-around-center 10 def
+
+% Either with steps or 'continuous'
+%/fan-steps end-res-micrometer start-res-micrometer sub 10 div 1 exch div def
+/fan-steps 1 1000 div def
+
+% Draw a resolution fan in vertial direction
+% min-res max-res lines-around-center show-scale length
+/resolution-fan {
+    10 dict begin
+    /len exch def
+    /show-scale exch def
+    /lines exch def
+    /max-res exch def
+    /min-res exch def
+
+    /prev-y 0 def
+    0 fan-steps 1 fan-steps 2 div add {
+      /fraction exch def
+      /res max-res min-res sub fraction mul min-res add def
+      res setlinewidth
+      /new-y len fraction mul def
+      lines neg 1 lines {
+ 	res 2 mul mul /x-pos exch def
+ 	x-pos prev-y moveto
+	x-pos new-y lineto stroke
+      } for
+      /prev-y new-y def
+    } for
+
+    /res-range max-res min-res sub def
+    measure-mark-thick setlinewidth
+
+    % Draw the ticks. The Ticks are always fan-steps/2 above to center
+    /draw-res 0.1 mm def
+    show-scale {
+      7 1 end-res-micrometer 10 div 1 sub {
+          /i exch def
+  	  /res-val i 10 div draw-res mul def
+	  /fraction res-val min-res sub res-range div def
+	  /y-pos fraction fan-steps 2 div add len mul def
+	  /x-pos res-val 2 mul lines 0.5 add mul 0.3 mm add def
+	  /dash-len i 10 mod 0 eq { 2 mm } { i 5 mod 0 eq { 1 mm } { 0.5 mm } ifelse } ifelse def
+	  x-pos dash-len add y-pos moveto x-pos y-pos lineto stroke
+	  i 10 mod 0 eq show-scale i 20 gt or and {
+	      x-pos 1 mm add y-pos 0.3 mm add moveto
+	      i 10 div 0.1 mul 1000 mul cvi (     ) cvs show
+	  } if
+      } for
+    } if
+
+    end
+} def
+
+% len in mm
+/print-scale {
+   2 dict begin
+   0 1 3 -1 roll {
+       1 dict begin
+       /i exch def
+       /tick-len i 5 mod 0 eq {
+	   i 10 mod 0 eq { 4.5 mm } { 3 mm } ifelse
+       } {
+	   2 mm
+       } ifelse def
+       % some special cases. In the beginning, they should be shorter so
+       % that we can make a corner scale.
+       i 0 eq { /tick-len 0 def } if
+       i 1 eq { /tick-len 1 mm def } if
+       i 2 eq { /tick-len 2 mm def } if
+       0 mm i mm exch moveto
+       0 tick-len rlineto stroke
+       end
+   } for
+   end
+} def
+
+gsave
+/Helvetica findfont 2.2 mm scalefont setfont
+12 mm 15 mm translate
+
+gsave
+-90 rotate
+0 1 4 {
+ /i exch def
+ start-res-micrometer 1000 div mm
+ end-res-micrometer 1000 div mm
+ lines-around-center
+ i 0 eq 45 mm resolution-fan stroke
+ -16 mm 0 translate
+} for
+grestore
+
+gsave
+38 mm 82.5 mm 10.5 mm sub translate
+90 rotate
+0 1 4 {
+ /i exch def
+ start-res-micrometer 1000 div mm
+ end-res-micrometer 1000 div mm
+ lines-around-center
+ i 0 eq 45 mm resolution-fan stroke
+ -16 mm 0 translate
+} for
+grestore
+
+grestore
+
+measure-mark-thick setlinewidth
+60 print-scale
+gsave -1 1 scale 90 rotate 99 print-scale stroke grestore
+
+/Helvetica-Bold findfont 2.8 mm scalefont setfont
+5 mm 6 mm moveto (LDGraphy) show
+
+/Helvetica findfont 3 mm scalefont setfont
+gsave
+  60 mm 10 mm translate
+  90 rotate
+  0 0 moveto
+  (Resolution test in scan direction over full throw.) show
+  0 -3 mm moveto
+  (Testing focus and mirror jitter.) show
+grestore
+showpage
