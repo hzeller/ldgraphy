@@ -223,6 +223,13 @@ int main(int argc, char *argv[]) {
     if (!filename && !do_focus && !mirror_adjust_exposure && !dot_size_chart)
         return usage(argv[0]);   // Nothing to do.
 
+    fprintf(stdout, "LDGraphy Copyright (C) 2017 Henner Zeller | http://ldgraphy.org/\n"
+            "This program comes with ABSOLUTELY NO WARRANTY.\n"
+            "This is free software and hardware, and you are welcome to "
+            "redistribute\nand modify it if the conditions of the GPL version 3 "
+            "are met.\n"
+            "See https://www.gnu.org/licenses/gpl.txt for details.\n\n");
+
     bool do_image = false;
     LDGraphyScanner *ldgraphy = new LDGraphyScanner(exposure_factor);
     if (dot_size_chart) {
@@ -237,7 +244,7 @@ int main(int argc, char *argv[]) {
 
     if (do_image) {
         const int eta = ldgraphy->estimated_time_seconds();
-        fprintf(stderr, "Estimated time: %d:%02d min (%.1fmm/min)\n",
+        fprintf(stderr, "Estimated exposure time: %d:%02d min (%.1fmm/min)\n",
                 eta / 60, eta % 60, ldgraphy->exposure_speed() * 60);
     }
 
@@ -294,7 +301,7 @@ int main(int argc, char *argv[]) {
                 // Only update if any number would change.
                 if (percent != prev_percent || remain_time != prev_remain_time) {
                     fprintf(stderr, "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b"
-                            "%3d%%; %d:%02d left",
+                            "%3d%%; %d:%02d left ",
                             percent, remain_time / 60, remain_time % 60);
                     fflush(stderr);
                     prev_percent = percent;

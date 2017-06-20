@@ -78,10 +78,14 @@ LDGraphyScanner::LDGraphyScanner(float exposure_factor)
 {
     assert(exposure_factor >= 1);
 #if LDGRAPHY_DEBUG_OUTPUTS
-    fprintf(stderr, "Mirror freq: %.1fHz; Pixel clock: %.3fMHz.\n"
+    constexpr float laser_dots_per_mm =
+        SCAN_PIXELS * (kScanAngle * deg2rad / segment_data_angle) / bed_width;
+    fprintf(stderr, "Mirror freq: %.1fHz; Pixel clock: %.3fMHz; "
+            "Avg. laser resolution: %.4fmm (%.0fdpi)\n"
             "Data covering %.2f°/%.0f°, "
             "mechanically used: %.2f°, using %.1f%% data bits.\n",
             kMirrorLineFrequency, kLaserPixelFrequency / 1e6,
+            1 / laser_dots_per_mm, laser_dots_per_mm * 25.4,
             segment_data_angle / deg2rad, kMirrorThrowAngle / deg2rad,
             kScanAngle, 100 * kScanAngle / (segment_data_angle / deg2rad));
 #endif
@@ -122,11 +126,10 @@ static std::vector<int> PrepareTangensLookup(float radius_pixels,
         result.push_back(roundf(y_pixel));
     }
 #if LDGRAPHY_DEBUG_OUTPUTS
-    fprintf(stderr, "Last Y coordinate full width = %d "
-            "(Nerd-info: mapped to %d + %d shoulder = %d; scan angle: %.3f)\n",
+    fprintf(stderr, "Last Y coordinate full width = %d; "
+            "mapped to %d + %d shoulder = %d\n",
             result.back(), (int)result.size(),
-            kHSyncShoulder, (int)result.size() + kHSyncShoulder,
-            scan_angle_range / deg2rad);
+            kHSyncShoulder, (int)result.size() + kHSyncShoulder);
 #endif
     return result;
 }
@@ -144,20 +147,36 @@ static void mirror_copy(uint8_t *to, const uint8_t *const src, size_t n) {
         *to++ = flip_bits(*from--);
 }
 
+static bool WouldFitRotated(const BitmapImage &img, float mm_per_pixel) {
+    return img.width() * mm_per_pixel <= bed_width
+        && img.height() * mm_per_pixel <= bed_length;
+}
+
+static bool TestImageFitsOnBed(const BitmapImage &img, float mm_per_pixel) {
+    if (mm_per_pixel * img.width() > bed_length) {
+        fprintf(stderr, "Board too long (%.1fmm), does not fit in %.0fmm "
+                "bed along sled.", mm_per_pixel * img.width(), bed_length);
+        fprintf(stderr, WouldFitRotated(img, mm_per_pixel)
+                ? "; it would fit rotated; use -R.\n"
+                : "; it would not even fit rotated.\n");
+        return false;
+    }
+
+    if (mm_per_pixel * img.height() > bed_width) {
+        fprintf(stderr, "Board too high (%.1fmm), does not fit in %.0fmm bed "
+                "along laser scan", mm_per_pixel * img.height(), bed_width);
+        fprintf(stderr, WouldFitRotated(img, mm_per_pixel)
+                ? "; it would fit rotated, use -R.\n"
+                : "; it would not even fit rotated.\n");
+        return false;
+    }
+    return true;
+}
+
 bool LDGraphyScanner::SetImage(BitmapImage *img,
                                float image_resolution_mm_per_pixel) {
-    if (image_resolution_mm_per_pixel * img->width() > bed_length) {
-        fprintf(stderr, "Board too long (%.1fmm), does not fit in %.0fmm "
-                "bed along sled.\n",
-                image_resolution_mm_per_pixel * img->width(), bed_length);
+    if (!TestImageFitsOnBed(*img, image_resolution_mm_per_pixel))
         return false;
-    }
-    if (image_resolution_mm_per_pixel * img->height() > bed_width) {
-        fprintf(stderr, "Board too high (%.1fmm), does not fit in %.0fmm bed "
-                "along laser scan.\n",
-                image_resolution_mm_per_pixel * img->height(), bed_width);
-        return false;
-    }
 
     sled_step_per_image_pixel_ = (image_resolution_mm_per_pixel
                                   / SledControl::kSledMMperStep);
@@ -179,9 +198,9 @@ bool LDGraphyScanner::SetImage(BitmapImage *img,
     // Let's see what the range is we need to scan.
     fprintf(stderr, "Exposure size: "
             "(X=%.1fmm along sled; Y=%.1fmm wide laser scan).\n"
-            "Resolution %.0fdpi (%.3fmm/pixel)\n"
+            "Input image resolution %.0fdpi (%.3fmm/pixel)\n"
             "  %5.2f Sled steps per X-pixel.\n  %5.2f Laser dots per Y-pixel "
-            "(%.3fmm dots @ %.0fkHz laser pixel frequency (=%.0fdpi)).\n",
+            "(Worst res: %.3fmm dots @ %.0fkHz pixel frequency (=%.0fdpi)).\n",
             img->width() * image_resolution_mm_per_pixel,
             img->height() * image_resolution_mm_per_pixel,
             25.4f / image_resolution_mm_per_pixel, image_resolution_mm_per_pixel,
@@ -189,8 +208,8 @@ bool LDGraphyScanner::SetImage(BitmapImage *img,
             1 / laser_dots_per_mm,
             kMirrorLineFrequency * kMirrorTicks / 1000.0,
             laser_dots_per_mm * 25.4);
-    if (img->width() > img->height() + 5.0 / image_resolution_mm_per_pixel
-        && img->width() * image_resolution_mm_per_pixel <= bed_width) {
+    if (img->width() > img->height() + 5.0/image_resolution_mm_per_pixel
+        && WouldFitRotated(*img, image_resolution_mm_per_pixel)) {
         fprintf(stderr, "\n[ TIP: Currently the long side is along the sled. It "
                 "would be faster in portrait orientation; give -R option ]\n\n");
     }
@@ -200,7 +219,7 @@ bool LDGraphyScanner::SetImage(BitmapImage *img,
 
     // Convert this into the image, tangens-corrected and rotated by
     // 90 degrees, so that we can send it line-by-line.
-    if (debug_images) fprintf(stderr, " Tangens correct...\n");
+    fprintf(stderr, " Geometry preprocess...\n");
     scan_image_.reset(new BitmapImage(img->width(), SCAN_PIXELS));
     for (size_t i = 0; i < y_lookup.size(); ++i) {
         const int from_y_pixel = img->height() - 1 - y_lookup[i];
@@ -214,9 +233,8 @@ bool LDGraphyScanner::SetImage(BitmapImage *img,
 
     if (debug_images) scan_image_->ToPBM(fopen("/tmp/ld_1_tangens.pbm", "w"));
     const float laser_resolution_in_mm_per_pixel = bed_width / y_lookup.size();
-    if (debug_images) fprintf(stderr, " Thinning structures..."
-                              "%.2fmm X sled, %.2fmm Y laser\n",
-                              laser_sled_dot_size_, laser_scan_dot_size_);
+    fprintf(stderr, " Thinning structures for (%.2f, %.2f) laser dot size...\n",
+            laser_sled_dot_size_, laser_scan_dot_size_);
     ThinImageStructures(
         scan_image_.get(),
         laser_scan_dot_size_ / laser_resolution_in_mm_per_pixel / 2,
