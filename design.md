@@ -64,14 +64,19 @@ keeps the focal plane of the laser exactly on the exposed surface.
 
 ![](./img/anim-cone-arc-scan.gif)
 
-However, making custom mirrors in such a shape at home is not really feasible
-(Someone who has access to a lathe: this would essentially be a 45° bevel
-on the inside of a large diameter stainless steel pipe with a wall thickness
-of about 2-3mm. Then mirror finish polishing this bevel. I don't have
-access to a lathe though :/).
+However, making custom mirrors in such a shape at home is not easy.
 
-We want to build this machine with minimal accessible tools, so this
-is a hurdle.
+Possible ways:
+ * With a lathe: this would essentially be a 45° bevel on the inside of a
+   large diameter stainless steel pipe with a wall thickness of about 2-3mm.
+   Then mirror finish polishing this bevel. Stainless steel or aluminum are
+   both nicely polisheable, so these could be materials of choice.
+ * [John M. suggests on his blog][NaN-cone-mirror] to build such a mirror using
+   laser cut parts that, snapped together, defining the shape.
+
+We want to build this machine with minimal accessible tools, so these techniques
+have to be explored if they can be done with minimal tools. Till then, let's
+see what else we can do.
 
 #### Straight mirror line exposure
 We can simplify and use a straight mirror to project downwards to get a line.
@@ -260,3 +265,4 @@ go inside the case.
 [ldgraphy-vid]: https://youtu.be/G9-JK2Nc7w0
 [hardware]: ./hardware#cut-pattern
 [f-theta-images]: https://www.google.com/images?q=f+theta+lens
+[NaN-cone-mirror]: http://notanumber.net/archives/228/circular-mirror-idea-laser-lithography
