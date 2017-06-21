@@ -29,6 +29,15 @@
 
 class ScanLineSender {
 public:
+    enum Status {
+        STATUS_NOT_RUNNING      = -1,
+        STATUS_RUNNING          = 0,  // no error; See laser-scribe-consants
+        STATUS_DEBUG_BREAK      = 1,
+        STATUS_ERR_MIRROR_SYNC  = 2,
+        STATUS_ERR_TIME_OVERRUN = 3,
+    };
+    static const char *StatusToString(Status s);
+
     virtual ~ScanLineSender() {}
 
     // Enqueue next scanline. Blocks until there is space in the ring buffer.
@@ -39,7 +48,15 @@ public:
 
     // Shutdown the system.
     virtual bool Shutdown() = 0;
+
+    // Get current status.
+    virtual Status status() = 0;
 };
+
+/* Here follow the implementations of the ScanlineSender. Below is one for
+ * PRU and a dummy implementation. This should be followed by Cortex M4 based
+ * or other microcontrollers.
+ */
 
 // Lower-level interface with the hardware: send scan lines to the ring-buffer
 // in the PRU.
@@ -55,16 +72,17 @@ public:
     bool EnqueueNextData(const uint8_t *data, size_t size, bool sled_on) override;
     bool Shutdown() override;
 
+    Status status() override { return status_; }
 private:
+    struct PRUCommunication;
+
     PRUScanLineSender();
     bool Init();
 
-    struct QueueElement;
-
     void WaitUntil(int pos, int state);
 
-    volatile QueueElement *ring_buffer_;
-    bool running_;
+    volatile PRUCommunication *pru_data_;
+    Status status_;
     int queue_pos_;
     UioPrussInterface pru_;
 };
@@ -76,6 +94,7 @@ public:
     bool EnqueueNextData(const uint8_t *data, size_t size, bool sled_on) override;
     bool Shutdown() override;
 
+    Status status() override { return STATUS_RUNNING; }
 private:
     int lines_enqueued_;
 };

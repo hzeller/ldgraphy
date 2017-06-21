@@ -265,16 +265,18 @@ bool LDGraphyScanner::ScanExpose(bool do_move,
         const int scan_pixel = roundf(scan / sled_step_per_image_pixel_);
         if (scan_pixel >= max) break;   // could be due to rounding.
         const uint8_t *row_data = scan_image_->GetRow(scan_pixel);
-        if (!backend_->EnqueueNextData(row_data, SCANLINE_DATA_SIZE, do_move)) {
-            // TODO: For now, the only error condition is getting a sync. Later
-            // we might need to make this message more diverse.
-            fprintf(stderr, "\nIssue synchronizing. Shutting down.\n");
-            return false;
-        }
+        if (!backend_->EnqueueNextData(row_data, SCANLINE_DATA_SIZE, do_move))
+            break;
 	for (int i = 1; i < exposure_factor_; ++i) {
             backend_->EnqueueNextData(row_data, SCANLINE_DATA_SIZE, false);
 	}
     }
+    if (backend_->status() != ScanLineSender::STATUS_RUNNING) {
+        fprintf(stderr, "Issue: %s\nShutting down.\n",
+                ScanLineSender::StatusToString(backend_->status()));
+        return false;
+    }
+
     return true;
 }
 

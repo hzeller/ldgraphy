@@ -28,6 +28,9 @@
 #define PRU0_ARM_INTERRUPT 19
 #define CONST_PRUDRAM	   C24
 
+#define ERROR_RESULT_POS 0
+#define START_RINGBUFFER 1
+
 #define PRUSS_PRU_CTL      0x22000
 #define CYCLE_COUNTER_OFFSET  0x0C
 
@@ -95,16 +98,6 @@
 ;; r1 ... r9 : common use
 ;; r10 ... named variables
 
-// 5 CPU cycles
-.macro set_laser_mirror_bit
-.mparam which_bit, to_value
-	MOV r5, to_value
-	AND r5, r5, 1
-	LSL r5, r5, which_bit
-	CLR v.gpio_out0, which_bit
-	OR v.gpio_out0, v.gpio_out0, r5
-.endm
-
 .macro branch_if_not_between
 .mparam to_label, value, min_cmp, max_cmp
 	MOV r5, min_cmp
@@ -113,10 +106,8 @@
 	QBGT to_label, r6, value
 .endm
 
-// Sets hsync_time and jumps to label if hsync seen. HSync is defined as
-// the laser just finishing the fluorescencing hsync block. Electrically
-// the rising edge after we have been low for a bit (while laser is over block).
-.macro branch_if_hsync
+// HSync reading via LBBO. Seems to be pretty slow.
+.macro branch_if_hsync_gpio
 .mparam to_label
 	LBBO r5, v.gpio_1_read, 0, 4
 	QBBC bit_is_clear, r5, GPIO_HSYNC_IN
@@ -129,9 +120,11 @@ bit_is_clear:
 no_hsync:
 .endm
 
-// Experimental alternative: reading from r31. But that only makes sense once
-// we have an accurate time source.
-.macro branch_if_hsync_r31
+// Sets hsync_time and jumps to label if hsync seen. HSync is defined as
+// the laser just finishing the fluorescencing hsync block. Electrically
+// the rising edge after we have been low for a bit (while laser is over block).
+// Reading from r31
+.macro branch_if_hsync
 .mparam to_label
 	QBBC bit_is_clear, r31, 16	   ; direct PRU input
 	QBEQ no_hsync, v.last_hsync_bit, 1 ; we are only interested in 0->1 edge
@@ -166,16 +159,18 @@ no_hsync:
 	// then do the remaining time with a busy loop.
 	LBBO r9, r7, CYCLE_COUNTER_OFFSET, 4 ; get current counter
 	MOV r8, (value - 10)		     ; account for some overhead
-	QBGT reset_cycle, r8, r9             ; already past time
+	QBGT REPORT_ERROR_TIME_OVERRUN, r8, r9 ; Error. Optimize state machine!
 	SUB r9, r8, r9			     ; remaining CPU cycles
-	LSR r9, r9, 1			     ; each busy loop is 2 cycles
-	QBGE reset_cycle, r9, 1
-wait_loop:
-	SUB r9, r9, 1
-	QBLT wait_loop, r9, 0
+	QBGE end_loop, r9, 1		     ; if (i <= 1) goto end_loop
+wait_loop:                                   ; do {
+	SUB r9, r9, 2                        ;   i-=2;  // loop takes two cycles
+	QBLT wait_loop, r9, 1		     ; } while (i > 1)
 
+end_loop:
+	QBEQ reset_cycle, r9, 0	       ; already at zero ?
+	MOV r9, 0		       ; othewise we have to waste another cycle
 reset_cycle:
-	// r9 is already set to remaining time.
+	;; in any case, r9 is zero now.
 	SBBO r9, r7, CYCLE_COUNTER_OFFSET, 4 ; reset
 .endm
 
@@ -215,22 +210,22 @@ INIT:
 	CLR v.gpio_out1, GPIO_SLED_DIR ; direction needs changing later.
 	CLR v.gpio_out1, GPIO_SLED_STEP
 
-	MOV v.item_start, 0		    ; Byte position in DRAM
+	MOV v.item_start, START_RINGBUFFER    ; Byte position in DRAM
 	MOV v.state, STATE_IDLE
 
 	start_cpu_cycle_counter
 
 MAIN_LOOP:
-	/* for now, as we don't send data */
 	LBCO r1.b0, CONST_PRUDRAM, v.item_start, 1 ; read header
-	QBEQ FINISH, r1.b0, CMD_EXIT
-	/* end debug */
+	QBEQ FINISH, r1.b0, CMD_EXIT		   ; react to exit immediately
 
 	JMP v.state		; switch/case with direct jump :)
 
+	;; Each of these states must not use more than TICK_DELAY steps
+
 	;; Waiting for Data to arrive
 STATE_IDLE:
-	LBCO r1.b0, CONST_PRUDRAM, v.item_start, 1 ; read header
+	;; Command is in r1.b0
 	QBEQ FINISH, r1.b0, CMD_EXIT
 	QBEQ MAIN_LOOP_NEXT, r1.b0, CMD_EMPTY
 	MOV v.global_time, 0	; have monotone increasing time for 1h or so
@@ -252,7 +247,7 @@ STATE_SPINUP:
 	QBEQ spinup_done, v.wait_countdown, 0
 	JMP MAIN_LOOP_NEXT
 spinup_done:
-	set_laser_mirror_bit GPIO_LASER_DATA, 1 ; Now: laser on
+	SET v.gpio_out0, GPIO_LASER_DATA	; Now: laser on
 	MOV v.wait_countdown, MAX_WAIT_STABLE_TIME
 	MOV v.state, STATE_WAIT_STABLE
 	JMP MAIN_LOOP_NEXT
@@ -264,7 +259,7 @@ STATE_WAIT_STABLE:
 	;; If we are too long waiting for a sync, assume there is an issue
 	;; with the laser not properly rotating or no feedback.
 	SUB v.wait_countdown, v.wait_countdown, 1
-	QBEQ ERROR_FINISH, v.wait_countdown, 0
+	QBEQ REPORT_ERROR_MIRROR, v.wait_countdown, 0
 
 	branch_if_hsync wait_stable_hsync_seen
 	JMP MAIN_LOOP_NEXT	; todo: account for cpu-cycles
@@ -322,14 +317,18 @@ STATE_DATA_RUN:
 	MOV v.state, STATE_ADVANCE_RINGBUFFER
 	JMP MAIN_LOOP_NEXT
 data_run_data_output:
-	;; super lazy, we read the full byte every time, but there is
-	;; enough time.
+	;; super lazy, we read the full byte every time, this needs
+	;; to be optimized.
 	MOV r2, v.item_start
 	ADD r2, r2, v.item_pos
 	LBCO r1.b0, CONST_PRUDRAM, r2, 1
 
-	LSR r1.b0, r1.b0, v.bit_loop
-	set_laser_mirror_bit GPIO_LASER_DATA, r1.b0
+	QBBS data_laser_set_on, r1.b0, v.bit_loop
+	CLR v.gpio_out0, GPIO_LASER_DATA
+	JMP data_laser_set_done
+data_laser_set_on:
+	SET v.gpio_out0, GPIO_LASER_DATA
+data_laser_set_done:
 
 	QBEQ data_run_next_byte, v.bit_loop, 0
 	SUB v.bit_loop, v.bit_loop, 1
@@ -355,7 +354,7 @@ advance_sled_done:
 
 	ADD v.item_start, v.item_start, v.item_size ; advance in ringbuffer
 	QBLT rb_advanced, v.ringbuffer_size, v.item_start ; item_start < rb_sizes
-	MOV v.item_start, 0		; Wrap around
+	MOV v.item_start, START_RINGBUFFER	; Wrap around
 rb_advanced:
 	MOV v.wait_countdown, END_OF_DATA_WAIT
 	MOV v.state, STATE_AWAIT_MORE_DATA
@@ -406,8 +405,6 @@ mirror_toggle_done:
 
 	JMP MAIN_LOOP
 
-ERROR_FINISH:
-	;; maybe do something here reporting back state.
 FINISH:
 	MOV r1, 0		; Switch off all GPIO bits.
 	SBBO r1, v.gpio_0_write, 0, 4
@@ -421,3 +418,19 @@ FINISH:
 	MOV R31.b0, PRU0_ARM_INTERRUPT+16 ; Tell that we're done.
 
 	HALT
+
+REPORT_ERROR_MIRROR:
+	MOV r1.b0, ERROR_MIRROR_SYNC
+	JMP ERROR_SET_VALUE
+
+REPORT_ERROR_TIME_OVERRUN:
+	MOV r1.b0, ERROR_TIME_OVERRUN
+	JMP ERROR_SET_VALUE
+
+REPORT_DEBUG_BREAK:
+	MOV r1.b0, ERROR_DEBUG_BREAK
+	JMP ERROR_SET_VALUE
+
+ERROR_SET_VALUE:
+	SBCO r1.b0, CONST_PRUDRAM, ERROR_RESULT_POS, 1
+	JMP FINISH
