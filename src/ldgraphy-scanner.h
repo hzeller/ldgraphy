@@ -48,8 +48,12 @@ public:
     // if it doesn't fit on the bed).
     bool SetImage(BitmapImage *img, float mm_per_pixel);
 
+    // Returns normalized exposure energy in J/cm^2 (guess unless we know
+    // the actual laser diode output).
+    float exposure_joule_per_cm2() const;
+
     // Returns the current exposure speed in mm/sec
-    float exposure_speed() const;
+    float exposure_speed_mm_per_sec() const;
 
     // Give an estimation how long a ScanExpose() would take with current image.
     float estimated_time_seconds() const;

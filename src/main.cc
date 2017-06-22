@@ -244,8 +244,14 @@ int main(int argc, char *argv[]) {
 
     if (do_image) {
         const int eta = ldgraphy->estimated_time_seconds();
-        fprintf(stderr, "Estimated exposure time: %d:%02d min (%.1fmm/min)\n",
-                eta / 60, eta % 60, ldgraphy->exposure_speed() * 60);
+        fprintf(stderr, "Estimated exposure time: %d:%02d min "
+                "(%.1fmm/min, "
+                // We don't actually know the optical power output of the
+                // laser diode, so let's just give it as comparative figure.
+                //"%.0fmJ/cm²)\n",
+                "normalized %.0f energy units/area)\n",
+                eta / 60, eta % 60, ldgraphy->exposure_speed_mm_per_sec() * 60,
+                ldgraphy->exposure_joule_per_cm2() * 1000);
     }
 
     SledControl sled(4000, do_move && !dryrun);

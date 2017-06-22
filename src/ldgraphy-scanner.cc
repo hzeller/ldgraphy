@@ -28,10 +28,32 @@
 #include "laser-scribe-constants.h"
 #include "sled-control.h"
 
-#define LDGRAPHY_DEBUG_OUTPUTS 0
+#ifndef LDGRAPHY_DEBUG_OUTPUTS
+#  define LDGRAPHY_DEBUG_OUTPUTS 0
+#endif
 
 // Output images to TMP to observe the image processing progress.
 constexpr bool debug_images = false;
+
+/*
+ * Most of the following parameters are dependent on the particular
+ * machine built. We should probably have a common header or configuration
+ * where all these go.
+ */
+
+// Actual power that arrives as light at the output of the laser and after
+// all optical losses along the path.
+//
+// This is a guess at this point (taking a fraction of the probably hugly
+// overstated 500mW figure printed on these lasers).
+// It would be really sweet if we could measure the actual value.
+//
+// All the datasheets of photosensitive material give mJ/cm^2 for sensitivity,
+// so having something that we directly can relate to would be nice.
+//
+// Even without accurate power value here, we can have comparable energy
+// units/area that take out the influence of lead-screw pitch or scan angle.
+constexpr float kLaserOpticalPowerMilliwatt = 100;
 
 // How fine can we get the focus ? Needs to be tuned per machine. The
 // focus often is slightly oval.
@@ -57,8 +79,8 @@ constexpr float kDataFraction = SCAN_PIXELS / kMirrorTicks;
 
 constexpr int kMirrorFaces = 6;
 // Reflection is 2*angle.
-constexpr float kMirrorThrowAngle = 2 * (360 / kMirrorFaces) * deg2rad;
-constexpr float segment_data_angle = kMirrorThrowAngle * kDataFraction;
+constexpr float kMirrorThrowAngleRad = 2 * (360 / kMirrorFaces) * deg2rad;
+constexpr float kSegmentAngleRad = kMirrorThrowAngleRad * kDataFraction;
 
 // TODO(hzeller): read these numbers from the same source in the PostScript
 // file and here.
@@ -68,8 +90,8 @@ constexpr float bed_length = 162.0;  // Sled length.
 // Fudge value from real life :)
 constexpr float bed_width_fudge_value = -1.88;  // Measured :)
 constexpr float bed_width  = 102.0 + bed_width_fudge_value;
-constexpr float kScanAngle = 40.0;   // Degrees
-constexpr float kRadiusMM = (bed_width/2) / tan(kScanAngle * deg2rad / 2);
+constexpr float kScanAngleRad = 40.0 * deg2rad;
+constexpr float kRadiusMM = (bed_width/2) / tan(kScanAngleRad / 2);
 
 LDGraphyScanner::LDGraphyScanner(float exposure_factor)
     : exposure_factor_(roundf(exposure_factor)),  // We only do integer for now.
@@ -79,15 +101,15 @@ LDGraphyScanner::LDGraphyScanner(float exposure_factor)
     assert(exposure_factor >= 1);
 #if LDGRAPHY_DEBUG_OUTPUTS
     constexpr float laser_dots_per_mm =
-        SCAN_PIXELS * (kScanAngle * deg2rad / segment_data_angle) / bed_width;
+        SCAN_PIXELS * (kScanAngleRad / kSegmentAngleRad) / bed_width;
     fprintf(stderr, "Mirror freq: %.1fHz; Pixel clock: %.3fMHz; "
             "Avg. laser resolution: %.4fmm (%.0fdpi)\n"
             "Data covering %.2f°/%.0f°, "
             "mechanically used: %.2f°, using %.1f%% data bits.\n",
             kMirrorLineFrequency, kLaserPixelFrequency / 1e6,
             1 / laser_dots_per_mm, laser_dots_per_mm * 25.4,
-            segment_data_angle / deg2rad, kMirrorThrowAngle / deg2rad,
-            kScanAngle, 100 * kScanAngle / (segment_data_angle / deg2rad));
+            kSegmentAngleRad / deg2rad, kMirrorThrowAngleRad / deg2rad,
+            kScanAngleRad/deg2rad, 100 * kScanAngleRad / kSegmentAngleRad);
 #endif
 }
 
@@ -115,7 +137,7 @@ static std::vector<int> PrepareTangensLookup(float radius_pixels,
     std::vector<int> result;
     const float scan_angle_range = 2 * atan(scan_range_pixels/2 / radius_pixels);
     const float scan_angle_start = -scan_angle_range/2;
-    const float angle_step = segment_data_angle / num;  // Overall arc mapped to full
+    const float angle_step = kSegmentAngleRad / num;  // Overall arc mapped to full
     const float scan_center = scan_range_pixels / 2;
     // only the values between -angle_range/2 .. angle_range/2
     for (size_t i = 0; i < num; ++i) {
@@ -244,8 +266,17 @@ bool LDGraphyScanner::SetImage(BitmapImage *img,
     return true;
 }
 
-float LDGraphyScanner::exposure_speed() const {
+float LDGraphyScanner::exposure_speed_mm_per_sec() const {
     return (SledControl::kSledMMperStep * kMirrorLineFrequency) / exposure_factor_;
+}
+
+float LDGraphyScanner::exposure_joule_per_cm2() const {
+    constexpr float kLaserUseFraction = kScanAngleRad / kMirrorThrowAngleRad;
+    return kLaserOpticalPowerMilliwatt * kLaserUseFraction   // -> mJ/s
+        / exposure_speed_mm_per_sec()      // -> mJ/mm travelled
+        / bed_width                        // -> mJ/mm^2 spread over this
+        / 10;                              // mm^2 = 100*cm^2; mJ/1000 = J
+    return 1;
 }
 
 float LDGraphyScanner::estimated_time_seconds() const {
