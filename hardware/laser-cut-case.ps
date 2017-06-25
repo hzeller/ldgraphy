@@ -38,7 +38,7 @@
 
 % Show measurement lines and descriptions. Switch these off before generating
 % the DXF to save acrylic material (there are more gaps for the measurements)
-/print-measures true def
+/print-measures false def
 
 % For testing while tweaking finger/slot output on your laser cutter.
 % Typical tweak parameters are /acrylic-t, /do-reliefs, /relief-r, /slot-thick
@@ -1673,6 +1673,19 @@
   center-spring-pos  bed-w spring-len x-spring    % center spring.
   bed-h spring-len sub bed-w spring-len x-spring  % spring at end of part
   stroke
+
+  % some rough centimeter scale on the bed
+  vector-engraving-cut
+  0 10 pcb-w-mm {
+      mm bed-pcb-off-w add bed-pcb-off-h exch moveto
+      pcb-h 0 rlineto
+  } for
+  0 10 pcb-h-mm {
+      mm bed-pcb-off-h add bed-pcb-off-w moveto
+      0 pcb-w rlineto
+  } for
+  stroke
+
   grestore
 
   pcbframe-alignment-holes
