@@ -38,7 +38,7 @@
 
 % Show measurement lines and descriptions. Switch these off before generating
 % the DXF to save acrylic material (there are more gaps for the measurements)
-/print-measures false def
+/print-measures true def
 
 % For testing while tweaking finger/slot output on your laser cutter.
 % Typical tweak parameters are /acrylic-t, /do-reliefs, /relief-r, /slot-thick
@@ -117,7 +117,9 @@
 
 % the corresponding assembly on the sled
 /bed-drive-screw-w acrylic-t def      % distance between driving holders
-/bed-drive-screw-r 10.6 2 div mm def  % outer radius of nut driving the thing.
+% outer radius of hex-nut driving the thing. Since it is easier to measure, we
+% base it on the distance between two oppsing flat ends.
+/bed-drive-screw-r 9.33 mm 0.866 div 2 div def
 
 /bed-drive-wobble 0.5 mm def  % amount of 'wobble' we should give the drive screw
 
@@ -758,6 +760,7 @@
 /x-spring {
   7 dict begin
  /line-len exch def     % total length of line
+ 2 copy  % so that we later can move to the end of the line
 
  % Some hardcodes, probably would be good as
  /arc-x 5 mm def        % curve up and down part
@@ -765,9 +768,10 @@
  /spring-thick 2 mm def % thickness of the bendable part
  /spring-short 2 mm def % how much shorter the bendable part should be to length
  /bend-radius 1.2 mm def
+ /overcut arc-y def     % cut starting outside edge
 
   gsave
-  simple-cut
+  outer-cut
   translate 0 0 moveto
   line-len arc-x 2 mul sub 0 mm lineto    % start of hump
   arc-x 2 div   0                         % hump up
@@ -777,8 +781,12 @@
   arc-x 2 div 0                           % hump down
   arc-x 2 div arc-y neg
   arc-x arc-y neg rcurveto
+  stroke
 
-  0 spring-thick neg rlineto              % down; should be arc
+  % Now, cut out the area that will provide the springiness
+  simple-cut
+  line-len overcut moveto
+  line-len spring-thick neg lineto              % down; should be arc
 
   % line backwards to form spring span; might be better with bezier ?
   line-len spring-short sub bend-radius sub neg 0 rlineto
@@ -792,9 +800,12 @@
   line-len 0.5 mm add
   spring-thick neg down-bend sub lineto
 
-  0 spring-thick down-bend add rlineto
+  0 spring-thick down-bend add overcut add rlineto
   stroke
   grestore
+
+  % Go to the end of the spring, so that this just behaves as a line segment
+  exch line-len add exch moveto
   end
 } def
 
@@ -1462,6 +1473,13 @@
       % A little larger for now to do some fitting.
       20.325 mm 1 mm add back-height 20 mm sub moveto
       19 mm 18 mm box
+
+      % Place for the USB port. Rough placement right now, needs measurement
+      5 mm 1 mm add back-height 8 mm sub moveto
+      16 mm 6 mm box
+
+      % 12V input DC jack.
+      65 mm back-height 10 mm sub 8 mm 2 div circle
    end
    stroke
 
@@ -1520,6 +1538,8 @@
 } def
 
 /pcbframe-alignment-holes {
+   gsave
+   inner-cut
    bed-pcb-off-h 2 div
    bed-pcb-off-w acrylic-t add 2 div 0.5 mm circle
 
@@ -1532,6 +1552,7 @@
    bed-h bed-pcb-off-h 2 div sub
    bed-w bed-pcb-off-w acrylic-t add 2 div sub 0.5 mm circle
    stroke
+   grestore
 } def
 
 /part-pcbframe {
@@ -1632,7 +1653,7 @@
   % Messed up, the below needs to be rotated. Quick hack around:
   bed-h bed-w translate 180 rotate
 
-  simple-cut  % ideally, we need an outer kerf-cut, but polygon is not closed
+  outer-cut
 
   % Starting at top left. Move to the beginning of spring, then arc left around
   center-spring-pos bed-w moveto
@@ -2078,11 +2099,15 @@ print-TEST-finger-slot {
 print-TEST-x-spring {
     gsave
     /spring-len bed-h 4 div 10 mm sub def
-    simple-cut
-    0 10 mm spring-len x-spring
-    0 10 mm moveto 0 0 lineto
-    spring-len 0 lineto
-    spring-len 10 mm lineto
+    outer-cut
+    0 0 moveto
+    0 10 mm lineto
+    5 mm 0 rlineto stroke
+    5 mm 10 mm spring-len x-spring
+    outer-cut
+    60 mm 10 mm lineto
+    60 mm 0 mm lineto
+    0 0 lineto
     stroke
     grestore
 } if
