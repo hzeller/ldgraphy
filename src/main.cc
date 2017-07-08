@@ -81,7 +81,9 @@ static int usage(const char *progname, const char *errmsg = NULL) {
             "\t-M         : Testing: Inhibit sled move.\n"
             "\t-n         : Dryrun. Do not do any scanning; laser off.\n"
             "\t-j<exp>    : Mirror jitter test with given exposure repeat\n"
-            "\t-D<line-width:start,step> : Laser Dot Diameter test chart. Creates a test-strip 10cm x 2cm with 10 samples.\n");
+            "\t-D<line-width:start,step> : Laser Dot Diameter test chart.\n"
+            "\t\tCreates a test-strip 10cm x 2cm with 10 samples with 'line-width' trace/clearance.\n"
+            "\t\tApply thinning to line beginning with 'start', increase for each of the 10 samples by 'step'. e.g. -D0.15:0.04,0.01\n");
     return errmsg ? 1 : 0;
 }
 
