@@ -11,8 +11,6 @@ plotDir = sys.argv[2] if len(sys.argv) > 2 else "plot/"
 
 board = LoadBoard(filename)
 
-plotDir = "plot/"
-
 pctl = PLOT_CONTROLLER(board)
 
 popt = pctl.GetPlotOptions()
