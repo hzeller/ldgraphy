@@ -71,7 +71,7 @@ drlwriter.SetMapFileFormat( PLOT_FORMAT_PDF )
 
 mirror = False
 minimalHeader = False
-offset = wxPoint(0,0)
+offset = board.GetAuxOrigin()
 mergeNPTH = True   # non-plated through-hole
 drlwriter.SetOptions( mirror, minimalHeader, offset, mergeNPTH )
 
