@@ -248,7 +248,7 @@ $Comp
 L R R3
 U 1 1 58D4958F
 P 5600 2000
-F 0 "R3" V 5700 1950 50  0000 L CNN
+F 0 "R3" V 5600 1950 50  0000 L CNN
 F 1 "470" V 5500 1950 50  0000 L CNN
 F 2 "Resistors_SMD:R_0603" V 5530 2000 50  0001 C CNN
 F 3 "" H 5600 2000 50  0000 C CNN
@@ -471,7 +471,7 @@ Text Label 6200 1650 0    60   ~ 0
 CurrentTP
 Text Label 4850 1900 2    60   ~ 0
 VRef
-Text Label 5450 2000 3    60   ~ 0
+Text Label 5400 2000 3    60   ~ 0
 ControlOut
 $Comp
 L C C11
@@ -543,4 +543,20 @@ F 3 "" H 5250 3150 50  0000 C CNN
 	1    5250 3150
 	1    0    0    -1  
 $EndComp
+$Comp
+L C C10
+U 1 1 59B52DAB
+P 5600 2200
+F 0 "C10" V 5750 2050 50  0000 L CNN
+F 1 "100p" V 5750 2250 50  0000 L CNN
+F 2 "Capacitors_SMD:C_0603" H 5638 2050 50  0001 C CNN
+F 3 "" H 5600 2200 50  0000 C CNN
+	1    5600 2200
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	5450 2000 5450 2200
+Wire Wire Line
+	5750 2200 5750 2000
+Connection ~ 5750 2000
 $EndSCHEMATC
