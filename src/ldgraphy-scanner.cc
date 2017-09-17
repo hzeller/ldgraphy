@@ -32,6 +32,9 @@
 #  define LDGRAPHY_DEBUG_OUTPUTS 0
 #endif
 
+// Experimental.
+#define LDGRAPHY_CONE_MIRROR 0
+
 // Output images to TMP to observe the image processing progress.
 constexpr bool debug_images = false;
 
@@ -88,10 +91,18 @@ constexpr float bed_length = 162.0;  // Sled length.
 
 // Width of the laser to throw. Comes from the case calculation.
 // Fudge value from real life :)
+#if !LDGRAPHY_CONE_MIRROR
+// straight mirror
 constexpr float bed_width_fudge_value = -1.88;  // Measured :)
 constexpr float bed_width  = 102.0 + bed_width_fudge_value;
 constexpr float kScanAngleRad = 40.0 * deg2rad;
 constexpr float kRadiusMM = (bed_width/2) / tan(kScanAngleRad / 2);
+#else
+// Cone mirror. Experimental.
+constexpr float kScanAngleRad = 90.0f * deg2rad;
+constexpr float kRadiusMM = 53.0f;
+constexpr float bed_width = 2 * sin(kScanAngleRad/2) * kRadiusMM;
+#endif
 
 LDGraphyScanner::LDGraphyScanner(float exposure_factor)
     : exposure_factor_(roundf(exposure_factor)),  // We only do integer for now.
@@ -111,6 +122,9 @@ LDGraphyScanner::LDGraphyScanner(float exposure_factor)
             kSegmentAngleRad / deg2rad, kMirrorThrowAngleRad / deg2rad,
             kScanAngleRad/deg2rad, 100 * kScanAngleRad / kSegmentAngleRad);
 #endif
+    // Need to have enough data fraction to cover our angle. More mechanically
+    // used than our data fraction allows. See above output.
+    assert(kSegmentAngleRad >= kScanAngleRad);
 }
 
 LDGraphyScanner::~LDGraphyScanner() {
@@ -131,21 +145,23 @@ void LDGraphyScanner::SetLaserDotSize(float sled_dot_size_mm,
 // Radius is given in pixels; output is a vector given a data position shows
 // where to look up the pixel in the original image. Maximum of 'num' values, but
 // will return less as we only cover a smaller segment.
-static std::vector<int> PrepareTangensLookup(float radius_pixels,
-                                             float scan_range_pixels,
-                                             size_t num) {
+#if LDGRAPHY_CONE_MIRROR
+static std::vector<int> PrepareYLookup(float radius_pixels, float angle_rad,
+                                       float scan_range_pixels,
+                                       size_t num) {
     std::vector<int> result;
-    const float scan_angle_range = 2 * atan(scan_range_pixels/2 / radius_pixels);
+    const float scan_angle_range = angle_rad;
     const float scan_angle_start = -scan_angle_range/2;
     const float angle_step = kSegmentAngleRad / num;  // Overall arc mapped to full
     const float scan_center = scan_range_pixels / 2;
     // only the values between -angle_range/2 .. angle_range/2
     for (size_t i = 0; i < num; ++i) {
-        const float y_pixel = roundf(tan(scan_angle_start + i * angle_step)
+        const float y_pixel = roundf(sin(scan_angle_start + i * angle_step)
                                      * radius_pixels + scan_center);
+        assert(y_pixel >= 0);  // Otherwise radius/size is wrongly calculated.
         if (y_pixel > scan_range_pixels)
             break;
-        result.push_back(roundf(y_pixel));
+        result.push_back(y_pixel);
     }
 #if LDGRAPHY_DEBUG_OUTPUTS
     fprintf(stderr, "Last Y coordinate full width = %d; "
@@ -156,6 +172,63 @@ static std::vector<int> PrepareTangensLookup(float radius_pixels,
     return result;
 }
 
+// Given data position, what is the x-offset there. For a arc-cone mirror, this
+// is obviously circular shaped, but there can be additional factors such
+// inaccuracies in mirrors that we can calibrate here.
+static std::vector<int> PrepareXOffset(float radius_pixels, float angle_rad,
+                                       size_t num, int *max_offset) {
+    std::vector<int> result;
+    const float scan_angle_range = angle_rad;
+    const float scan_angle_start = -scan_angle_range/2;
+    const float angle_step = kSegmentAngleRad / num;
+    // only the values between -angle_range/2 .. angle_range/2
+    for (size_t i = 0; i < num; ++i) {
+        const float a = scan_angle_start + i * angle_step;
+        const float x_pixel = roundf(cos(a) * radius_pixels);
+        if (a > angle_rad/2) break;
+        result.push_back(roundf(radius_pixels - x_pixel));
+    }
+    *max_offset = result[0];
+    return result;
+}
+#else
+static std::vector<int> PrepareYLookup(float radius_pixels, float angle_rad,
+                                       float scan_range_pixels,
+                                       size_t num) {
+    std::vector<int> result;
+    const float scan_angle_range = angle_rad;
+    const float scan_angle_start = -scan_angle_range/2;
+    const float angle_step = kSegmentAngleRad / num;  // Overall arc mapped to full
+    const float scan_center = scan_range_pixels / 2;
+    // only the values between -angle_range/2 .. angle_range/2
+    for (size_t i = 0; i < num; ++i) {
+        const float y_pixel = roundf(tan(scan_angle_start + i * angle_step)
+                                     * radius_pixels + scan_center);
+        if (y_pixel > scan_range_pixels)
+            break;
+        result.push_back(y_pixel);
+    }
+#if LDGRAPHY_DEBUG_OUTPUTS
+    fprintf(stderr, "Last Y coordinate full width = %d; "
+            "mapped to %d + %d shoulder = %d\n",
+            result.back(), (int)result.size(),
+            kHSyncShoulder, (int)result.size() + kHSyncShoulder);
+#endif
+    return result;
+}
+
+// Given data position, what is the x-offset there. For a arc-cone mirror, this
+// is obviously circular shaped, but there can be additional factors such
+// inaccuracies in mirrors that we can calibrate here.
+static std::vector<int> PrepareXOffset(float, float,
+                                       size_t num, int *max_offset) {
+    // With a straight mirror, we never offset in X axis.
+    std::vector<int> result(num, 0);
+    *max_offset = 0;
+    return result;
+}
+#endif
+
 uint8_t flip_bits(uint8_t b) {
     b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
     b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
@@ -163,7 +236,11 @@ uint8_t flip_bits(uint8_t b) {
     return b;
 }
 // Copy and mirror line. Essentially memcpy() but backwards and bits reversed
-static void mirror_copy(uint8_t *to, const uint8_t *const src, size_t n) {
+static void mirror_copy(uint8_t *to, size_t offset,
+                        const uint8_t *const src, size_t n) {
+    // TODO: we should allow bit-wise offset. For now, we're a bit more
+    // coarse-grained.
+    to += offset / 8;
     const uint8_t *from = src + n - 1;
     while (from >= src)
         *to++ = flip_bits(*from--);
@@ -202,13 +279,20 @@ bool LDGraphyScanner::SetImage(BitmapImage *img,
 
     sled_step_per_image_pixel_ = (image_resolution_mm_per_pixel
                                   / SledControl::kSledMMperStep);
-    scanlines_ = img->width() * sled_step_per_image_pixel_;
 
     // Create lookup-table: data pixel position to actual position in image.
+    // This is dependend on the resolution of the incoming image.
     std::vector<int> y_lookup
-        = PrepareTangensLookup(kRadiusMM / image_resolution_mm_per_pixel,
-                               bed_width / image_resolution_mm_per_pixel,
-                               SCAN_PIXELS);
+        = PrepareYLookup(kRadiusMM / image_resolution_mm_per_pixel,
+                         kScanAngleRad,
+                         bed_width / image_resolution_mm_per_pixel,
+                         SCAN_PIXELS);
+    int max_offset;
+    std::vector<int> x_offset
+        = PrepareXOffset(kRadiusMM / image_resolution_mm_per_pixel,
+                         kScanAngleRad,
+                         SCAN_PIXELS, &max_offset);
+
 #if 1
     // Due to the tangens, we have worse resolution at the edges. So look at the
     // beginning to report a worst-case resolution.
@@ -241,19 +325,23 @@ bool LDGraphyScanner::SetImage(BitmapImage *img,
 
     // Convert this into the image, tangens-corrected and rotated by
     // 90 degrees, so that we can send it line-by-line.
-    fprintf(stderr, " Geometry preprocess...\n");
-    scan_image_.reset(new BitmapImage(img->width(), SCAN_PIXELS));
+    scan_image_.reset(new BitmapImage(img->width() + max_offset, SCAN_PIXELS));
+    scanlines_ = scan_image_->width() * sled_step_per_image_pixel_;
+    fprintf(stderr, " Geometry preprocess to output image %dx%d\n",
+            scan_image_->width(), scan_image_->height());
     for (size_t i = 0; i < y_lookup.size(); ++i) {
         const int from_y_pixel = img->height() - 1 - y_lookup[i];
         if (from_y_pixel < 0) break;  // done.
         const int to_y_pixel = i + kHSyncShoulder;
+        // TODO: the x offset should actually happen after thinning
         mirror_copy(scan_image_->GetMutableRow(to_y_pixel),
+                    x_offset[i],
                     img->GetRow(from_y_pixel), img->width() / 8);
     }
     delete img;
     scan_image_.reset(CreateRotatedImage(*scan_image_));
 
-    if (debug_images) scan_image_->ToPBM(fopen("/tmp/ld_1_tangens.pbm", "w"));
+    if (debug_images) scan_image_->ToPBM(fopen("/tmp/ld_1_geometry.pbm", "w"));
     const float laser_resolution_in_mm_per_pixel = bed_width / y_lookup.size();
     fprintf(stderr, " Thinning structures for (%.2f, %.2f) laser dot size...\n",
             laser_sled_dot_size_, laser_scan_dot_size_);

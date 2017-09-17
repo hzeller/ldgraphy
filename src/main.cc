@@ -39,6 +39,7 @@
 #include "sled-control.h"
 
 constexpr float kThinningChartResolution = 0.005; // mm per pixel
+constexpr float kInitialSledOffsetMM = 3; // sled skip initial markings.
 
 // Interrupt handling. Provide a is_interrupted() function that reports
 // if Ctrl-C has been pressed. Requires ArmInterruptHandler() called before use.
@@ -270,7 +271,7 @@ int main(int argc, char *argv[]) {
 
     sled.Move(-180);   // Back to base.
 
-    float forward_move = 3;  // Forward until we reach begin.
+    float forward_move = kInitialSledOffsetMM;  // Forward until we reach begin.
     if (mirror_adjust_exposure) forward_move += 5;
     forward_move += offset_x;
     sled.Move(forward_move);
