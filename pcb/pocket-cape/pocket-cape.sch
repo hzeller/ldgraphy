@@ -156,17 +156,6 @@ F 3 "" H 2700 2600 60  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L VDD_3V3B #SUPPLY011
-U 1 1 59922D07
-P 6200 3200
-F 0 "#SUPPLY011" H 6200 3360 70  0001 L BNN
-F 1 "VDD_3V3B" V 6100 3100 70  0000 L BNN
-F 2 "" H 6200 3200 60  0001 C CNN
-F 3 "" H 6200 3200 60  0001 C CNN
-	1    6200 3200
-	0    1    1    0   
-$EndComp
-$Comp
 L USB_DC #SUPPLY012
 U 1 1 59922D6B
 P 2600 2900
@@ -443,17 +432,9 @@ Wire Wire Line
 Text Label 7400 3200 0    65   ~ 0
 SYS_5V
 Wire Wire Line
-	6100 3700 4800 3700
-Text Label 5000 3700 0    65   ~ 0
-SYS_5V
-Wire Wire Line
 	2700 2900 4300 2900
 Text Label 2900 2900 0    65   ~ 0
 USB_DC
-Wire Wire Line
-	6100 3200 4800 3200
-Text Label 5000 3200 0    65   ~ 0
-VDD_3V3B
 Wire Wire Line
 	7050 3700 8500 3700
 Text Label 7400 3700 0    65   ~ 0
@@ -610,15 +591,11 @@ Text GLabel 8450 3200 0    10   UnSpc ~ 0
 SYS_5V
 Text GLabel 6100 3700 0    10   UnSpc ~ 0
 SYS_5V
-Text GLabel 4850 3700 2    10   UnSpc ~ 0
-SYS_5V
 Text GLabel 4250 2900 0    10   UnSpc ~ 0
 USB_DC
 Text GLabel 2700 2900 2    10   UnSpc ~ 0
 USB_DC
 Text GLabel 6100 3200 0    10   UnSpc ~ 0
-VDD_3V3B
-Text GLabel 4850 3200 2    10   UnSpc ~ 0
 VDD_3V3B
 Text GLabel 7050 3700 2    10   UnSpc ~ 0
 VDD_3V3B
