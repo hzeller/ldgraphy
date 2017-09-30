@@ -30,7 +30,6 @@ LIBS:contrib
 LIBS:valves
 LIBS:ldgraphy
 LIBS:pocket-cape-cache
-LIBS:ldgraphy-cape-cache
 EELAYER 26 0
 EELAYER END
 $Descr D 34000 22000
@@ -132,17 +131,6 @@ F 2 "" H 7100 3200 60  0001 C CNN
 F 3 "" H 7100 3200 60  0001 C CNN
 	1    7100 3200
 	0    -1   -1   0   
-$EndComp
-$Comp
-L SYS_5V #SUPPLY06
-U 1 1 59922B77
-P 6200 3700
-F 0 "#SUPPLY06" H 6200 3860 70  0001 L BNN
-F 1 "SYS_5V" V 6400 3650 70  0000 L BNN
-F 2 "" H 6200 3700 60  0001 C CNN
-F 3 "" H 6200 3700 60  0001 C CNN
-	1    6200 3700
-	0    1    1    0   
 $EndComp
 $Comp
 L VDD_5V #SUPPLY09
@@ -589,8 +577,6 @@ Text GLabel 7200 3200 2    10   UnSpc ~ 0
 SYS_5V
 Text GLabel 8450 3200 0    10   UnSpc ~ 0
 SYS_5V
-Text GLabel 6100 3700 0    10   UnSpc ~ 0
-SYS_5V
 Text GLabel 4250 2900 0    10   UnSpc ~ 0
 USB_DC
 Text GLabel 2700 2900 2    10   UnSpc ~ 0
@@ -810,10 +796,10 @@ U 1 1 59CBCAA7
 P 6000 5150
 F 0 "J1" H 6000 5300 50  0000 C CNN
 F 1 "Sync1" H 6050 5000 50  0000 C CNN
-F 2 "Pin_Headers:Pin_Header_Angled_1x02_Pitch2.00mm" H 6000 5150 50  0001 C CNN
+F 2 "Connectors_JST:JST_PH_S2B-PH-K_02x2.00mm_Angled" H 6000 5150 50  0001 C CNN
 F 3 "" H 6000 5150 50  0001 C CNN
 	1    6000 5150
-	-1   0    0    -1  
+	-1   0    0    1   
 $EndComp
 $Comp
 L GND #PWR011
@@ -970,10 +956,10 @@ U 1 1 59CBE568
 P 6000 6400
 F 0 "J3" H 6000 6550 50  0000 C CNN
 F 1 "Sync2" H 6050 6250 50  0000 C CNN
-F 2 "Pin_Headers:Pin_Header_Angled_1x02_Pitch2.00mm" H 6000 6400 50  0001 C CNN
+F 2 "Connectors_JST:JST_PH_S2B-PH-K_02x2.00mm_Angled" H 6000 6400 50  0001 C CNN
 F 3 "" H 6000 6400 50  0001 C CNN
 	1    6000 6400
-	-1   0    0    -1  
+	-1   0    0    1   
 $EndComp
 $Comp
 L GND #PWR018
@@ -1181,7 +1167,7 @@ U 1 1 59CD217B
 P 2500 4900
 F 0 "J2" H 2500 5050 50  0000 C CNN
 F 1 "12V" H 2550 4750 50  0000 C CNN
-F 2 "Pin_Headers:Pin_Header_Straight_1x02_Pitch2.54mm" H 2500 4900 50  0001 C CNN
+F 2 "Connectors_JST:JST_XH_B02B-XH-A_02x2.50mm_Straight" H 2500 4900 50  0001 C CNN
 F 3 "" H 2500 4900 50  0001 C CNN
 	1    2500 4900
 	-1   0    0    1   
@@ -1216,8 +1202,8 @@ L CONN_01X05 J4
 U 1 1 59CDCDA1
 P 10400 5050
 F 0 "J4" H 10478 5091 50  0000 L CNN
-F 1 "Sled-Stepper" H 10478 5000 50  0000 L CNN
-F 2 "Pin_Headers:Pin_Header_Straight_1x05_Pitch2.54mm" H 10400 5050 50  0001 C CNN
+F 1 "Sled" H 10478 5000 50  0000 L CNN
+F 2 "Connectors_JST:JST_XH_B05B-XH-A_05x2.50mm_Straight" H 10400 5050 50  0001 C CNN
 F 3 "" H 10400 5050 50  0001 C CNN
 	1    10400 5050
 	1    0    0    -1  
@@ -1320,7 +1306,7 @@ U 1 1 59CE5777
 P 3050 5950
 F 0 "J5" H 3250 5950 50  0000 C CNN
 F 1 "Laser1" V 3150 5950 50  0000 C CNN
-F 2 "Pin_Headers:Pin_Header_Straight_1x02_Pitch2.54mm" H 3050 5950 50  0001 C CNN
+F 2 "Connectors_JST:JST_XH_B02B-XH-A_02x2.50mm_Straight" H 3050 5950 50  0001 C CNN
 F 3 "" H 3050 5950 50  0001 C CNN
 	1    3050 5950
 	1    0    0    1   
@@ -1331,7 +1317,7 @@ U 1 1 59CE59F8
 P 3050 6400
 F 0 "J8" H 3250 6400 50  0000 C CNN
 F 1 "Laser2" V 3150 6400 50  0000 C CNN
-F 2 "Pin_Headers:Pin_Header_Straight_1x02_Pitch2.54mm" H 3050 6400 50  0001 C CNN
+F 2 "Connectors_JST:JST_XH_B02B-XH-A_02x2.50mm_Straight" H 3050 6400 50  0001 C CNN
 F 3 "" H 3050 6400 50  0001 C CNN
 	1    3050 6400
 	1    0    0    1   
