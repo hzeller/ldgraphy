@@ -1,3 +1,4 @@
 (fp_lib_table
   (lib (name PocketBeagle.pretty)(type KiCad)(uri $KIPRJMOD/pocketbeagle.pretty)(options "")(descr ""))
+  (lib (name ldgraphy.pretty)(type KiCad)(uri $KIPRJMOD/../ldgraphy.pretty)(options "")(descr ""))
 )
