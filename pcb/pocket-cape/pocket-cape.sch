@@ -843,9 +843,9 @@ Text GLabel 9150 2750 2    40   Output ~ 0
 STEP_B1
 Text GLabel 9150 2250 2    40   Output ~ 0
 STEP_A1
-Text GLabel 4950 2850 2    40   Output ~ 0
+Text GLabel 1750 3350 0    40   Output ~ 0
 LASER1
-Text GLabel 4950 3550 2    40   Output ~ 0
+Text GLabel 1750 3550 0    40   Output ~ 0
 LASER2
 $Comp
 L +3.3V #PWR026
@@ -903,7 +903,7 @@ F 3 "" H 5850 5100 50  0001 C CNN
 $EndComp
 Text GLabel 9150 3350 2    40   Input ~ 0
 Sync2
-Text GLabel 9150 3450 2    40   Input ~ 0
+Text GLabel 9150 3250 2    40   Input ~ 0
 Sync1
 $Comp
 L +12V #PWR01
@@ -964,8 +964,8 @@ $Comp
 L CONN_01X04 J9
 U 1 1 59D1AEC3
 P 9400 5450
-F 0 "J9" H 9550 5450 50  0000 C CNN
-F 1 "Inputs" V 9500 5300 50  0000 C CNN
+F 0 "J9" H 9400 5700 50  0000 C CNN
+F 1 "Switches" V 9500 5450 50  0000 C CNN
 F 2 "Connectors_JST:JST_PH_B4B-PH-K_04x2.00mm_Straight" H 9400 5450 50  0001 C CNN
 F 3 "" H 9400 5450 50  0001 C CNN
 	1    9400 5450
@@ -1351,4 +1351,16 @@ Wire Wire Line
 	8050 4400 8050 4500
 Wire Wire Line
 	8050 4500 7750 4500
+Text GLabel 9150 2850 2    40   Output ~ 0
+BUTT_3
+Text GLabel 6250 2750 0    40   Output ~ 0
+BUTT_1
+Text GLabel 6250 2850 0    40   Output ~ 0
+BUTT_2
+Text GLabel 9200 5500 0    40   Input ~ 0
+BUTT_1
+Text GLabel 9200 5400 0    40   Input ~ 0
+BUTT_2
+Text GLabel 9200 5300 0    40   Input ~ 0
+BUTT_3
 $EndSCHEMATC
