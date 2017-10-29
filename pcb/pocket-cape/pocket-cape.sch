@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2
+EESchema Schematic File Version 3
 LIBS:power
 LIBS:device
 LIBS:transistors
@@ -47,13 +47,13 @@ $EndDescr
 $Comp
 L GND #GND013
 U 1 1 599213A3
-P 1750 2650
-F 0 "#GND013" H 1651 2550 70  0001 L BNN
-F 1 "GND" V 1800 2300 70  0000 L BNN
-F 2 "" H 1750 2650 60  0001 C CNN
-F 3 "" H 1750 2650 60  0001 C CNN
-	1    1750 2650
-	0    1    1    0   
+P 1550 2650
+F 0 "#GND013" H 1451 2550 70  0001 L BNN
+F 1 "GND" V 1600 2300 70  0000 L BNN
+F 2 "" H 1550 2650 60  0001 C CNN
+F 3 "" H 1550 2650 60  0001 C CNN
+	1    1550 2650
+	1    0    0    -1  
 $EndComp
 $Comp
 L GND #GND014
@@ -276,8 +276,6 @@ Text Label 8100 2650 0    65   ~ 0
 BAT.TEMP
 Text Label 6350 2550 0    65   ~ 0
 SYS_5V
-Text Label 1850 2250 0    65   ~ 0
-USB_DC
 Text Label 6350 3050 0    65   ~ 0
 VDD_3V3B
 Text Label 8100 2550 0    65   ~ 0
@@ -428,10 +426,6 @@ Text GLabel 7400 2550 0    10   UnSpc ~ 0
 SYS_5V
 Text GLabel 3200 2250 0    10   UnSpc ~ 0
 USB_DC
-Text GLabel 1650 2250 2    10   UnSpc ~ 0
-USB_DC
-Text GLabel 5050 2550 0    10   UnSpc ~ 0
-VDD_3V3B
 Text GLabel 5700 3050 2    10   UnSpc ~ 0
 VDD_3V3B
 Text GLabel 7400 3050 0    10   UnSpc ~ 0
@@ -520,17 +514,6 @@ F 3 "" H 3300 4400 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L D D1
-U 1 1 59CBB44D
-P 3000 4850
-F 0 "D1" V 2954 4929 50  0000 L CNN
-F 1 "D" V 3045 4929 50  0000 L CNN
-F 2 "Diodes_SMD:D_SOD-123" H 3000 4850 50  0001 C CNN
-F 3 "" H 3000 4850 50  0001 C CNN
-	1    3000 4850
-	0    1    1    0   
-$EndComp
-$Comp
 L C C4
 U 1 1 59CBB589
 P 3700 4550
@@ -557,7 +540,7 @@ L R R6
 U 1 1 59CBB7E1
 P 3500 4550
 F 0 "R6" H 3350 4600 50  0000 L CNN
-F 1 "R" V 3500 4500 50  0000 L CNN
+F 1 "6k2" V 3500 4500 50  0000 L CNN
 F 2 "Resistors_SMD:R_0603" H 3570 4459 50  0001 L CNN
 F 3 "" H 3500 4550 50  0001 C CNN
 	1    3500 4550
@@ -568,7 +551,7 @@ L R R7
 U 1 1 59CBBA05
 P 3500 4850
 F 0 "R7" H 3350 4900 50  0000 L CNN
-F 1 "R" V 3500 4800 50  0000 L CNN
+F 1 "1k2" V 3500 4800 50  0000 L CNN
 F 2 "Resistors_SMD:R_0603" H 3570 4759 50  0001 L CNN
 F 3 "" H 3500 4850 50  0001 C CNN
 	1    3500 4850
@@ -712,7 +695,7 @@ L CONN_01X05 J7
 U 1 1 59CDF3ED
 P 3700 5450
 F 0 "J7" H 3778 5491 50  0000 L CNN
-F 1 "PM2" H 3600 5100 50  0000 L CNN
+F 1 "PM2" H 3650 5150 50  0000 L CNN
 F 2 "Pin_Headers:Pin_Header_Straight_1x05_Pitch2.54mm" H 3700 5450 50  0001 C CNN
 F 3 "" H 3700 5450 50  0001 C CNN
 	1    3700 5450
@@ -723,7 +706,7 @@ L CONN_01X05 J6
 U 1 1 59CDF479
 P 2900 5450
 F 0 "J6" H 2978 5491 50  0000 L CNN
-F 1 "PM1" H 3000 5150 50  0000 L CNN
+F 1 "PM1" H 2850 5150 50  0000 L CNN
 F 2 "Pin_Headers:Pin_Header_Straight_1x05_Pitch2.54mm" H 2900 5450 50  0001 C CNN
 F 3 "" H 2900 5450 50  0001 C CNN
 	1    2900 5450
@@ -939,28 +922,6 @@ F 3 "" H 4850 4200 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L VCC #PWR09
-U 1 1 59D194BA
-P 5700 4250
-F 0 "#PWR09" H 5700 4100 50  0001 C CNN
-F 1 "VCC" H 5717 4423 50  0000 C CNN
-F 2 "" H 5700 4250 50  0001 C CNN
-F 3 "" H 5700 4250 50  0001 C CNN
-	1    5700 4250
-	1    0    0    -1  
-$EndComp
-$Comp
-L +3.3V #PWR011
-U 1 1 59D196D2
-P 5950 4250
-F 0 "#PWR011" H 5950 4100 50  0001 C CNN
-F 1 "+3.3V" H 5965 4423 50  0000 C CNN
-F 2 "" H 5950 4250 50  0001 C CNN
-F 3 "" H 5950 4250 50  0001 C CNN
-	1    5950 4250
-	1    0    0    -1  
-$EndComp
-$Comp
 L CONN_01X04 J9
 U 1 1 59D1AEC3
 P 9400 5450
@@ -1098,12 +1059,13 @@ F 0 "J10" H 9528 4641 50  0000 L CNN
 F 1 "Display" H 9528 4550 50  0000 L CNN
 F 2 "ldgraphy.pretty:FlatFlexConn-08" H 9450 4600 50  0001 C CNN
 F 3 "" H 9450 4600 50  0001 C CNN
+F 4 "SFv8R-4STBE1HLF" H 9450 4600 60  0001 C CNN "PartNo"
 	1    9450 4600
 	1    0    0    -1  
 $EndComp
 NoConn ~ 9250 4900
-Text Notes 9550 5000 0    60   ~ 0
-NC on 8 to make accidentally\nturned cable less dangerous.
+Text Notes 9550 5150 0    60   ~ 0
+NC on 8 to make accidentally\nturned cable less dangerous.\n(pin 9 = connector shield)
 $Comp
 L CONN_01X05 J11
 U 1 1 59D51437
@@ -1184,15 +1146,11 @@ Wire Wire Line
 Wire Wire Line
 	6250 3650 7450 3650
 Wire Wire Line
-	950  2550 3250 2550
-Wire Wire Line
 	950  2450 3250 2450
 Wire Wire Line
 	950  2350 3250 2350
 Wire Wire Line
 	3250 2050 1750 2050
-Wire Wire Line
-	1300 2150 3250 2150
 Wire Wire Line
 	9150 3650 7950 3650
 Wire Wire Line
@@ -1236,7 +1194,7 @@ Wire Wire Line
 Wire Wire Line
 	9150 2650 7950 2650
 Wire Wire Line
-	1750 2650 3250 2650
+	1550 2650 3250 2650
 Wire Wire Line
 	4950 2650 3750 2650
 Wire Wire Line
@@ -1247,8 +1205,6 @@ Wire Wire Line
 	6250 2950 7450 2950
 Wire Wire Line
 	6150 2550 7450 2550
-Wire Wire Line
-	950  2250 3250 2250
 Wire Wire Line
 	5700 3050 7450 3050
 Wire Wire Line
@@ -1313,9 +1269,7 @@ Wire Wire Line
 	2700 5650 3500 5650
 Connection ~ 5700 3050
 Wire Wire Line
-	5700 4250 5950 4250
-Wire Wire Line
-	9250 5000 9150 5000
+	9150 5000 9250 5000
 Wire Wire Line
 	9250 4800 9200 4800
 Wire Wire Line
@@ -1323,11 +1277,8 @@ Wire Wire Line
 Connection ~ 9200 5000
 Wire Wire Line
 	1300 2250 1300 2150
-Connection ~ 1300 2250
-Connection ~ 1650 2250
 Wire Wire Line
 	1750 2650 1750 2550
-Connection ~ 1750 2550
 $Comp
 L GND #GND01
 U 1 1 59D51733
@@ -1428,5 +1379,77 @@ F 2 "" H 6250 4950 50  0001 C CNN
 F 3 "" H 6250 4950 50  0001 C CNN
 	1    6250 4950
 	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1300 2150 3250 2150
+Wire Wire Line
+	950  2250 1300 2250
+$Comp
+L +5V #PWR09
+U 1 1 59E06EFD
+P 1000 2250
+F 0 "#PWR09" H 1000 2100 50  0001 C CNN
+F 1 "+5V" H 1015 2423 50  0000 C CNN
+F 2 "" H 1000 2250 50  0001 C CNN
+F 3 "" H 1000 2250 50  0001 C CNN
+	1    1000 2250
+	1    0    0    -1  
+$EndComp
+Connection ~ 1000 2250
+Wire Wire Line
+	950  2550 950  2650
+Wire Wire Line
+	1750 2550 3250 2550
+Connection ~ 1750 2650
+NoConn ~ 9150 2450
+NoConn ~ 9150 2550
+NoConn ~ 9150 2650
+NoConn ~ 9150 3150
+NoConn ~ 9150 3450
+NoConn ~ 9150 3550
+NoConn ~ 9150 3650
+NoConn ~ 6250 3250
+NoConn ~ 6250 1950
+NoConn ~ 6250 2050
+NoConn ~ 6250 2150
+NoConn ~ 6250 2250
+NoConn ~ 6250 2350
+NoConn ~ 6250 2450
+NoConn ~ 1750 2750
+NoConn ~ 1750 2850
+NoConn ~ 1750 2950
+NoConn ~ 1750 3050
+NoConn ~ 1750 3150
+NoConn ~ 1750 3250
+NoConn ~ 1750 3450
+NoConn ~ 1750 3650
+NoConn ~ 4950 3650
+NoConn ~ 4950 3550
+NoConn ~ 4950 3450
+NoConn ~ 4950 3350
+NoConn ~ 4950 3250
+NoConn ~ 4950 3150
+NoConn ~ 4950 2850
+NoConn ~ 4950 2750
+NoConn ~ 4950 2450
+NoConn ~ 4950 2350
+NoConn ~ 4950 2250
+NoConn ~ 4950 2150
+NoConn ~ 4950 2050
+NoConn ~ 4950 1950
+NoConn ~ 2700 5350
+NoConn ~ 3500 5350
+NoConn ~ 1750 2050
+NoConn ~ 9150 1950
+$Comp
+L D_Schottky D1
+U 1 1 59F5AC61
+P 3000 4850
+F 0 "D1" V 2954 4929 50  0000 L CNN
+F 1 "MBR230LSFT1G" V 3200 4350 50  0000 L CNN
+F 2 "Diodes_SMD:D_SOD-123" H 3000 4850 50  0001 C CNN
+F 3 "" H 3000 4850 50  0001 C CNN
+	1    3000 4850
+	0    1    1    0   
 $EndComp
 $EndSCHEMATC
