@@ -122,17 +122,6 @@ F 3 "" H 7700 2850 60  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L SYS_5V #SUPPLY05
-U 1 1 59922B13
-P 6050 2550
-F 0 "#SUPPLY05" H 6050 2710 70  0001 L BNN
-F 1 "SYS_5V" V 6200 2450 70  0000 L BNN
-F 2 "" H 6050 2550 60  0001 C CNN
-F 3 "" H 6050 2550 60  0001 C CNN
-	1    6050 2550
-	0    -1   -1   0   
-$EndComp
-$Comp
 L VDD_5V #SUPPLY09
 U 1 1 59922CA3
 P 1650 1950
@@ -1276,8 +1265,6 @@ Wire Wire Line
 	9200 4800 9200 5000
 Connection ~ 9200 5000
 Wire Wire Line
-	1300 2250 1300 2150
-Wire Wire Line
 	1750 2650 1750 2550
 $Comp
 L GND #GND01
@@ -1381,21 +1368,7 @@ F 3 "" H 6250 4950 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	1300 2150 3250 2150
-Wire Wire Line
-	950  2250 1300 2250
-$Comp
-L +5V #PWR09
-U 1 1 59E06EFD
-P 1000 2250
-F 0 "#PWR09" H 1000 2100 50  0001 C CNN
-F 1 "+5V" H 1015 2423 50  0000 C CNN
-F 2 "" H 1000 2250 50  0001 C CNN
-F 3 "" H 1000 2250 50  0001 C CNN
-	1    1000 2250
-	1    0    0    -1  
-$EndComp
-Connection ~ 1000 2250
+	1000 2150 3250 2150
 Wire Wire Line
 	950  2550 950  2650
 Wire Wire Line
@@ -1452,4 +1425,18 @@ F 3 "" H 3000 4850 50  0001 C CNN
 	1    3000 4850
 	0    1    1    0   
 $EndComp
+Wire Wire Line
+	4950 3050 3750 3050
+Text Label 3950 3050 0    60   ~ 0
+SYS_VOUT
+Text GLabel 4950 3050 2    40   Output ~ 0
+SYS_VOUT
+Text GLabel 1050 2250 2    40   Input ~ 0
+SYS_VOUT
+Wire Wire Line
+	950  2250 1050 2250
+Wire Wire Line
+	1000 2150 1000 2250
+Connection ~ 1000 2250
+NoConn ~ 6150 2550
 $EndSCHEMATC
