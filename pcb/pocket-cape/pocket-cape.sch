@@ -1,34 +1,6 @@
 EESchema Schematic File Version 3
 LIBS:power
 LIBS:device
-LIBS:transistors
-LIBS:conn
-LIBS:linear
-LIBS:regul
-LIBS:74xx
-LIBS:cmos4000
-LIBS:adc-dac
-LIBS:memory
-LIBS:xilinx
-LIBS:microcontrollers
-LIBS:dsp
-LIBS:microchip
-LIBS:analog_switches
-LIBS:motorola
-LIBS:texas
-LIBS:intel
-LIBS:audio
-LIBS:interface
-LIBS:digital-audio
-LIBS:philips
-LIBS:display
-LIBS:cypress
-LIBS:siliconi
-LIBS:opto
-LIBS:atmel
-LIBS:contrib
-LIBS:valves
-LIBS:ldgraphy
 LIBS:pocket-cape-cache
 EELAYER 26 0
 EELAYER END
@@ -1245,10 +1217,6 @@ Wire Wire Line
 	7750 4200 8200 4200
 Wire Wire Line
 	7750 4300 8200 4300
-Wire Wire Line
-	7350 5200 7750 5200
-Wire Wire Line
-	7750 5200 7750 5000
 Connection ~ 7350 5200
 Wire Wire Line
 	2700 5250 3500 5250
@@ -1439,4 +1407,15 @@ Wire Wire Line
 	1000 2150 1000 2250
 Connection ~ 1000 2250
 NoConn ~ 6150 2550
+$Comp
+L +5V #PWR?
+U 1 1 59F5543E
+P 7750 5000
+F 0 "#PWR?" H 7750 4850 50  0001 C CNN
+F 1 "+5V" V 7765 5128 50  0000 L CNN
+F 2 "" H 7750 5000 50  0001 C CNN
+F 3 "" H 7750 5000 50  0001 C CNN
+	1    7750 5000
+	0    1    1    0   
+$EndComp
 $EndSCHEMATC
