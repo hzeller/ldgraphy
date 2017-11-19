@@ -71,8 +71,7 @@ for f in "$@" ; do
 done
 
 for f in $ALL_THE_FILES ; do
-    if [[ "$f" == *.g?l ]] ; then  # gtl or gbl
-	#echo "$f - in copper"
+    if [[ "$f" == *.g?l || "$f" == *.g[23]* ]] ; then  # gtl, gbl or inner
 	# Copper layers should have the drill layer ... if available
 	$GERBV -xps -o/tmp/gerbvtmp.$$.ps $DRILL_LAYER $SHOWN_COLOR "$f" $BACKGROUND_LAYERS 2>/dev/null
     else
