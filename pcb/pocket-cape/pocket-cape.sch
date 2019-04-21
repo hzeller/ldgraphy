@@ -1,8 +1,6 @@
-EESchema Schematic File Version 3
-LIBS:power
-LIBS:device
+EESchema Schematic File Version 4
 LIBS:pocket-cape-cache
-EELAYER 26 0
+EELAYER 29 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
@@ -17,7 +15,7 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L GND #GND013
+L pocket-cape-rescue:GND #GND013
 U 1 1 599213A3
 P 1550 2650
 F 0 "#GND013" H 1451 2550 70  0001 L BNN
@@ -28,7 +26,7 @@ F 3 "" H 1550 2650 60  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #GND014
+L pocket-cape-rescue:GND #GND014
 U 1 1 59921407
 P 4950 2650
 F 0 "#GND014" H 4850 2550 70  0001 L BNN
@@ -39,7 +37,7 @@ F 3 "" H 4950 2650 60  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #GND015
+L pocket-cape-rescue:GND #GND015
 U 1 1 5992146B
 P 4950 2950
 F 0 "#GND015" H 4850 2850 70  0001 L BNN
@@ -50,7 +48,7 @@ F 3 "" H 4950 2950 60  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #GND016
+L pocket-cape-rescue:GND #GND016
 U 1 1 599214CF
 P 6250 2650
 F 0 "#GND016" H 6151 2550 70  0001 L BNN
@@ -61,7 +59,7 @@ F 3 "" H 6250 2650 60  0001 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L GND #GND017
+L pocket-cape-rescue:GND #GND017
 U 1 1 59921533
 P 6250 2950
 F 0 "#GND017" H 6151 2850 70  0001 L BNN
@@ -72,7 +70,7 @@ F 3 "" H 6250 2950 60  0001 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L 2X18-_INCH_-0.1-TH-_35MIL-DIA_-W_O-SILK P1
+L pocket-cape-rescue:2X18-_INCH_-0.1-TH-_35MIL-DIA_-W_O-SILK P1
 U 1 1 59921D67
 P 3500 2850
 F 0 "P1" H 3450 3900 70  0000 L BNN
@@ -83,7 +81,7 @@ F 3 "" H 3500 2850 60  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L 2X18-_INCH_-0.1-TH-_35MIL-DIA_-W_O-SILK P2
+L pocket-cape-rescue:2X18-_INCH_-0.1-TH-_35MIL-DIA_-W_O-SILK P2
 U 1 1 59921E2F
 P 7700 2850
 F 0 "P2" H 7650 3900 70  0000 L BNN
@@ -94,7 +92,7 @@ F 3 "" H 7700 2850 60  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L VDD_5V #SUPPLY09
+L pocket-cape-rescue:VDD_5V #SUPPLY09
 U 1 1 59922CA3
 P 1650 1950
 F 0 "#SUPPLY09" H 1650 2110 70  0001 L BNN
@@ -105,7 +103,7 @@ F 3 "" H 1650 1950 60  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L VDD_3V3B #SUPPLY013
+L pocket-cape-rescue:VDD_3V3B #SUPPLY013
 U 1 1 59922DCF
 P 5600 3050
 F 0 "#SUPPLY013" H 5600 3210 70  0001 L BNN
@@ -398,29 +396,29 @@ VDD_5V
 Text GLabel 8000 2550 2    10   UnSpc ~ 0
 VIN.BAT
 $Comp
-L ULN2003A U3
+L Transistor_Array:ULN2003A U3
 U 1 1 59C9A7E3
-P 7350 4500
-F 0 "U3" H 7350 5067 50  0000 C CNN
-F 1 "ULN2003A" H 7350 4976 50  0000 C CNN
-F 2 "Housings_SOIC:SOIC-16_3.9x9.9mm_Pitch1.27mm" H 7400 3850 50  0001 L CNN
-F 3 "" H 7450 4400 50  0001 C CNN
-	1    7350 4500
+P 7350 4400
+F 0 "U3" H 7350 4967 50  0000 C CNN
+F 1 "ULN2003A" H 7350 4876 50  0000 C CNN
+F 2 "Package_SO:SOIC-16_3.9x9.9mm_P1.27mm" H 7400 3750 50  0001 L CNN
+F 3 "" H 7450 4300 50  0001 C CNN
+	1    7350 4400
 	1    0    0    -1  
 $EndComp
 $Comp
-L AP3211 U4
+L pocket-cape-rescue:AP3211 U4
 U 1 1 59CAE446
 P 2500 4450
 F 0 "U4" H 2500 4947 60  0000 C CNN
 F 1 "AP3211" H 2500 4841 60  0000 C CNN
-F 2 "TO_SOT_Packages_SMD:SOT-23-6" H 2500 4450 60  0001 C CNN
+F 2 "Package_TO_SOT_SMD:SOT-23-6" H 2500 4450 60  0001 C CNN
 F 3 "" H 2500 4450 60  0001 C CNN
 	1    2500 4450
 	1    0    0    -1  
 $EndComp
 $Comp
-L +12V #PWR04
+L pocket-cape-rescue:+12V #PWR04
 U 1 1 59CBAD8D
 P 2150 4100
 F 0 "#PWR04" H 2150 3950 50  0001 C CNN
@@ -431,7 +429,7 @@ F 3 "" H 2150 4100 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L C C2
+L pocket-cape-rescue:C C2
 U 1 1 59CBADCB
 P 2000 4350
 F 0 "C2" H 1850 4450 50  0000 L CNN
@@ -442,7 +440,7 @@ F 3 "" H 2000 4350 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR010
+L pocket-cape-rescue:GND #PWR010
 U 1 1 59CBAECF
 P 2000 4500
 F 0 "#PWR010" H 2000 4250 50  0001 C CNN
@@ -453,7 +451,7 @@ F 3 "" H 2000 4500 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L C C1
+L pocket-cape-rescue:C C1
 U 1 1 59CBB083
 P 3000 4200
 F 0 "C1" V 3252 4200 50  0000 C CNN
@@ -464,7 +462,7 @@ F 3 "" H 3000 4200 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L L L1
+L pocket-cape-rescue:L L1
 U 1 1 59CBB1B7
 P 3300 4400
 F 0 "L1" V 3490 4400 50  0000 C CNN
@@ -475,7 +473,7 @@ F 3 "" H 3300 4400 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L C C4
+L pocket-cape-rescue:C C4
 U 1 1 59CBB589
 P 3700 4550
 F 0 "C4" H 3815 4596 50  0000 L CNN
@@ -486,7 +484,7 @@ F 3 "" H 3700 4550 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR013
+L pocket-cape-rescue:GND #PWR013
 U 1 1 59CBB65E
 P 3300 5000
 F 0 "#PWR013" H 3300 4750 50  0001 C CNN
@@ -497,7 +495,7 @@ F 3 "" H 3300 5000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L R R6
+L pocket-cape-rescue:R R6
 U 1 1 59CBB7E1
 P 3500 4550
 F 0 "R6" H 3350 4600 50  0000 L CNN
@@ -508,7 +506,7 @@ F 3 "" H 3500 4550 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L R R7
+L pocket-cape-rescue:R R7
 U 1 1 59CBBA05
 P 3500 4850
 F 0 "R7" H 3350 4900 50  0000 L CNN
@@ -519,7 +517,7 @@ F 3 "" H 3500 4850 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L CONN_01X02 J1
+L pocket-cape-rescue:CONN_01X02 J1
 U 1 1 59CBCAA7
 P 4650 4550
 F 0 "J1" H 4650 4700 50  0000 C CNN
@@ -530,7 +528,7 @@ F 3 "" H 4650 4550 50  0001 C CNN
 	-1   0    0    1   
 $EndComp
 $Comp
-L GND #PWR05
+L pocket-cape-rescue:GND #PWR05
 U 1 1 59CBD3DF
 P 4850 4600
 F 0 "#PWR05" H 4850 4350 50  0001 C CNN
@@ -541,7 +539,7 @@ F 3 "" H 4850 4600 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L +5V #PWR08
+L pocket-cape-rescue:+5V #PWR08
 U 1 1 59CBDB21
 P 3800 4400
 F 0 "#PWR08" H 3800 4250 50  0001 C CNN
@@ -552,7 +550,7 @@ F 3 "" H 3800 4400 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L CONN_01X02 J3
+L pocket-cape-rescue:CONN_01X02 J3
 U 1 1 59CBE568
 P 4650 5800
 F 0 "J3" H 4650 5950 50  0000 C CNN
@@ -563,7 +561,7 @@ F 3 "" H 4650 5800 50  0001 C CNN
 	-1   0    0    1   
 $EndComp
 $Comp
-L GND #PWR015
+L pocket-cape-rescue:GND #PWR015
 U 1 1 59CBE588
 P 4850 5850
 F 0 "#PWR015" H 4850 5600 50  0001 C CNN
@@ -574,7 +572,7 @@ F 3 "" H 4850 5850 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L +5V #PWR012
+L pocket-cape-rescue:+5V #PWR012
 U 1 1 59CBE591
 P 4850 5450
 F 0 "#PWR012" H 4850 5300 50  0001 C CNN
@@ -593,7 +591,7 @@ K
 Text Notes 4500 5900 0    60   ~ 0
 A
 $Comp
-L R R5
+L pocket-cape-rescue:R R5
 U 1 1 59CD141C
 P 4850 4350
 F 0 "R5" V 4750 4350 50  0000 C CNN
@@ -604,7 +602,7 @@ F 3 "" H 4850 4350 50  0001 C CNN
 	-1   0    0    1   
 $EndComp
 $Comp
-L R R10
+L pocket-cape-rescue:R R10
 U 1 1 59CD1872
 P 4850 5600
 F 0 "R10" V 4750 5600 50  0000 C CNN
@@ -615,7 +613,7 @@ F 3 "" H 4850 5600 50  0001 C CNN
 	-1   0    0    1   
 $EndComp
 $Comp
-L CONN_01X02 J2
+L pocket-cape-rescue:CONN_01X02 J2
 U 1 1 59CD217B
 P 1450 4250
 F 0 "J2" H 1450 4400 50  0000 C CNN
@@ -626,7 +624,7 @@ F 3 "" H 1450 4250 50  0001 C CNN
 	-1   0    0    1   
 $EndComp
 $Comp
-L +5V #PWR019
+L pocket-cape-rescue:+5V #PWR019
 U 1 1 59CD55EE
 P 1750 1950
 F 0 "#PWR019" H 1750 1800 50  0001 C CNN
@@ -641,7 +639,7 @@ Sync1
 Text GLabel 5750 5750 2    60   Output ~ 0
 Sync2
 $Comp
-L CONN_01X05 J4
+L pocket-cape-rescue:CONN_01X05 J4
 U 1 1 59CDCDA1
 P 8400 4300
 F 0 "J4" H 8478 4341 50  0000 L CNN
@@ -652,36 +650,36 @@ F 3 "" H 8400 4300 50  0001 C CNN
 	1    0    0    1   
 $EndComp
 $Comp
-L CONN_01X05 J7
+L Connector_Generic:Conn_01x05 J7
 U 1 1 59CDF3ED
 P 3700 5450
 F 0 "J7" H 3778 5491 50  0000 L CNN
 F 1 "PM2" H 3650 5150 50  0000 L CNN
-F 2 "Pin_Headers:Pin_Header_Straight_1x05_Pitch2.54mm" H 3700 5450 50  0001 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical" H 3700 5450 50  0001 C CNN
 F 3 "" H 3700 5450 50  0001 C CNN
 	1    3700 5450
 	1    0    0    -1  
 $EndComp
 $Comp
-L CONN_01X05 J6
+L Connector_Generic:Conn_01x05 J6
 U 1 1 59CDF479
 P 2900 5450
 F 0 "J6" H 2978 5491 50  0000 L CNN
 F 1 "PM1" H 2850 5150 50  0000 L CNN
-F 2 "Pin_Headers:Pin_Header_Straight_1x05_Pitch2.54mm" H 2900 5450 50  0001 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical" H 2900 5450 50  0001 C CNN
 F 3 "" H 2900 5450 50  0001 C CNN
 	1    2900 5450
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR021
+L pocket-cape-rescue:GND #PWR021
 U 1 1 59CDF730
-P 7350 5200
-F 0 "#PWR021" H 7350 4950 50  0001 C CNN
-F 1 "GND" H 7355 5027 50  0000 C CNN
-F 2 "" H 7350 5200 50  0001 C CNN
-F 3 "" H 7350 5200 50  0001 C CNN
-	1    7350 5200
+P 7350 5000
+F 0 "#PWR021" H 7350 4750 50  0001 C CNN
+F 1 "GND" H 7355 4827 50  0000 C CNN
+F 2 "" H 7350 5000 50  0001 C CNN
+F 3 "" H 7350 5000 50  0001 C CNN
+	1    7350 5000
 	1    0    0    -1  
 $EndComp
 Text GLabel 2700 5250 0    40   Input ~ 0
@@ -689,7 +687,7 @@ MIRROR_CLK
 Text GLabel 2700 5450 0    40   Input ~ 0
 ~MIRROR_EN1
 $Comp
-L GND #PWR023
+L pocket-cape-rescue:GND #PWR023
 U 1 1 59CE07D4
 P 2700 5550
 F 0 "#PWR023" H 2700 5300 50  0001 C CNN
@@ -700,7 +698,7 @@ F 3 "" H 2700 5550 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L +12V #PWR024
+L pocket-cape-rescue:+12V #PWR024
 U 1 1 59CE0924
 P 2700 5650
 F 0 "#PWR024" H 2700 5500 50  0001 C CNN
@@ -721,29 +719,29 @@ STEP_B1
 Text GLabel 6950 4800 0    40   Input ~ 0
 STEP_A1
 $Comp
-L CONN_01X03 J5
+L Connector_Generic:Conn_01x03 J5
 U 1 1 59CE5777
 P 2000 5300
 F 0 "J5" H 2200 5300 50  0000 C CNN
 F 1 "Laser1" V 2100 5300 50  0000 C CNN
-F 2 "Connectors_JST:JST_PH_B3B-PH-K_03x2.00mm_Straight" H 2000 5300 50  0001 C CNN
+F 2 "Connector_JST:JST_PH_B3B-PH-K_1x03_P2.00mm_Vertical" H 2000 5300 50  0001 C CNN
 F 3 "" H 2000 5300 50  0001 C CNN
 	1    2000 5300
 	1    0    0    1   
 $EndComp
 $Comp
-L CONN_01X03 J8
+L Connector_Generic:Conn_01x03 J8
 U 1 1 59CE59F8
 P 2000 5950
 F 0 "J8" H 2200 5950 50  0000 C CNN
 F 1 "Laser2" V 2100 5950 50  0000 C CNN
-F 2 "Connectors_JST:JST_PH_B3B-PH-K_03x2.00mm_Straight" H 2000 5950 50  0001 C CNN
+F 2 "Connector_JST:JST_PH_B3B-PH-K_1x03_P2.00mm_Vertical" H 2000 5950 50  0001 C CNN
 F 3 "" H 2000 5950 50  0001 C CNN
 	1    2000 5950
 	1    0    0    1   
 $EndComp
 $Comp
-L GND #PWR025
+L pocket-cape-rescue:GND #PWR025
 U 1 1 59CE60A1
 P 1800 6050
 F 0 "#PWR025" H 1800 5800 50  0001 C CNN
@@ -754,7 +752,7 @@ F 3 "" H 1800 6050 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR022
+L pocket-cape-rescue:GND #PWR022
 U 1 1 59CE60EE
 P 1800 5400
 F 0 "#PWR022" H 1800 5150 50  0001 C CNN
@@ -768,17 +766,6 @@ Text GLabel 1800 5300 0    40   Input ~ 0
 LASER1
 Text GLabel 1800 5950 0    40   Input ~ 0
 LASER2
-$Comp
-L +5V #PWR020
-U 1 1 59CF0516
-P 8200 4100
-F 0 "#PWR020" H 8200 3950 50  0001 C CNN
-F 1 "+5V" V 8215 4228 50  0000 L CNN
-F 2 "" H 8200 4100 50  0001 C CNN
-F 3 "" H 8200 4100 50  0001 C CNN
-	1    8200 4100
-	0    -1   -1   0   
-$EndComp
 Text GLabel 9150 3050 2    40   Output ~ 0
 STEP_B2
 Text GLabel 9150 2950 2    40   Output ~ 0
@@ -792,7 +779,7 @@ LASER1
 Text GLabel 1750 3550 0    40   Output ~ 0
 LASER2
 $Comp
-L +3.3V #PWR026
+L pocket-cape-rescue:+3.3V #PWR026
 U 1 1 59CF5226
 P 5700 3050
 F 0 "#PWR026" H 5700 2900 50  0001 C CNN
@@ -813,7 +800,7 @@ Text GLabel 9150 2050 2    40   Output ~ 0
 Text GLabel 9150 2150 2    40   Output ~ 0
 ~MIRROR_EN2
 $Comp
-L GND #PWR027
+L pocket-cape-rescue:GND #PWR027
 U 1 1 59CF96CE
 P 5850 5250
 F 0 "#PWR027" H 5850 5000 50  0001 C CNN
@@ -824,7 +811,7 @@ F 3 "" H 5850 5250 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L +5V #PWR028
+L pocket-cape-rescue:+5V #PWR028
 U 1 1 59CF971D
 P 5850 4950
 F 0 "#PWR028" H 5850 4800 50  0001 C CNN
@@ -835,7 +822,7 @@ F 3 "" H 5850 4950 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L C C6
+L pocket-cape-rescue:C C6
 U 1 1 59CF9944
 P 5850 5100
 F 0 "C6" V 5900 5200 50  0000 C CNN
@@ -850,7 +837,7 @@ Sync2
 Text GLabel 9150 3250 2    40   Input ~ 0
 Sync1
 $Comp
-L +12V #PWR01
+L pocket-cape-rescue:+12V #PWR01
 U 1 1 59D06646
 P 1800 5200
 F 0 "#PWR01" H 1800 5050 50  0001 C CNN
@@ -861,7 +848,7 @@ F 3 "" H 1800 5200 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L +12V #PWR02
+L pocket-cape-rescue:+12V #PWR02
 U 1 1 59D0674B
 P 1800 5850
 F 0 "#PWR02" H 1800 5700 50  0001 C CNN
@@ -872,7 +859,7 @@ F 3 "" H 1800 5850 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L +5V #PWR07
+L pocket-cape-rescue:+5V #PWR07
 U 1 1 59D169AB
 P 4850 4200
 F 0 "#PWR07" H 4850 4050 50  0001 C CNN
@@ -883,7 +870,7 @@ F 3 "" H 4850 4200 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L CONN_01X04 J9
+L pocket-cape-rescue:CONN_01X04 J9
 U 1 1 59D1AEC3
 P 9400 5450
 F 0 "J9" H 9400 5700 50  0000 C CNN
@@ -894,7 +881,7 @@ F 3 "" H 9400 5450 50  0001 C CNN
 	1    0    0    1   
 $EndComp
 $Comp
-L GND #PWR03
+L pocket-cape-rescue:GND #PWR03
 U 1 1 59D1B4CD
 P 9200 5600
 F 0 "#PWR03" H 9200 5350 50  0001 C CNN
@@ -905,7 +892,7 @@ F 3 "" H 9200 5600 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR014
+L pocket-cape-rescue:GND #PWR014
 U 1 1 59D3B34E
 P 9150 5000
 F 0 "#PWR014" H 9150 4750 50  0001 C CNN
@@ -916,7 +903,7 @@ F 3 "" H 9150 5000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L +3.3V #PWR06
+L pocket-cape-rescue:+3.3V #PWR06
 U 1 1 59D3D62B
 P 9250 4200
 F 0 "#PWR06" H 9250 4050 50  0001 C CNN
@@ -927,29 +914,29 @@ F 3 "" H 9250 4200 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L 74LVC2G14GV U1
+L pocket-cape-rescue:74LVC2G14GV U1
 U 1 1 59D3BA0F
 P 5300 4500
 F 0 "U1" H 5350 4600 50  0000 L CNN
 F 1 "74LVC2G14GV" H 5350 4400 50  0000 L CNN
-F 2 "TO_SOT_Packages_SMD:SOT-23-6" H 5395 4365 50  0001 C CNN
+F 2 "Package_TO_SOT_SMD:SOT-23-6" H 5395 4365 50  0001 C CNN
 F 3 "" H 5445 4615 50  0001 C CNN
 	1    5300 4500
 	1    0    0    -1  
 $EndComp
 $Comp
-L 74LVC2G14GV U1
+L pocket-cape-rescue:74LVC2G14GV U1
 U 2 1 59D3BC08
 P 5300 5750
 F 0 "U1" H 5350 5900 50  0000 L CNN
 F 1 "74LVC2G14GV" H 5350 5650 50  0000 L CNN
-F 2 "" H 5395 5615 50  0001 C CNN
+F 2 "Package_TO_SOT_SMD:SOT-23-6" H 5395 5615 50  0001 C CNN
 F 3 "" H 5445 5865 50  0001 C CNN
 	2    5300 5750
 	1    0    0    -1  
 $EndComp
 $Comp
-L +3.3V #PWR016
+L pocket-cape-rescue:+3.3V #PWR016
 U 1 1 59D3C25B
 P 5250 4300
 F 0 "#PWR016" H 5250 4150 50  0001 C CNN
@@ -960,7 +947,7 @@ F 3 "" H 5250 4300 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L +3.3V #PWR018
+L pocket-cape-rescue:+3.3V #PWR018
 U 1 1 59D3C29A
 P 5250 5550
 F 0 "#PWR018" H 5250 5400 50  0001 C CNN
@@ -971,7 +958,7 @@ F 3 "" H 5250 5550 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR017
+L pocket-cape-rescue:GND #PWR017
 U 1 1 59D3C2D9
 P 5250 4700
 F 0 "#PWR017" H 5250 4450 50  0001 C CNN
@@ -982,7 +969,7 @@ F 3 "" H 5250 4700 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR029
+L pocket-cape-rescue:GND #PWR029
 U 1 1 59D3C318
 P 5250 5950
 F 0 "#PWR029" H 5250 5700 50  0001 C CNN
@@ -1013,7 +1000,7 @@ DISP-DC
 Text GLabel 9250 4700 0    60   Input ~ 0
 DISP-RST
 $Comp
-L CONN_01X09 J10
+L pocket-cape-rescue:CONN_01X09 J10
 U 1 1 59D3B2B8
 P 9450 4600
 F 0 "J10" H 9528 4641 50  0000 L CNN
@@ -1028,7 +1015,7 @@ NoConn ~ 9250 4900
 Text Notes 9550 5150 0    60   ~ 0
 NC on 8 to make accidentally\nturned cable less dangerous.\n(pin 9 = connector shield)
 $Comp
-L CONN_01X05 J11
+L pocket-cape-rescue:CONN_01X05 J11
 U 1 1 59D51437
 P 750 2450
 F 0 "J11" H 828 2491 50  0000 L CNN
@@ -1155,7 +1142,7 @@ Wire Wire Line
 Wire Wire Line
 	9150 2650 7950 2650
 Wire Wire Line
-	1550 2650 3250 2650
+	1550 2650 1750 2650
 Wire Wire Line
 	4950 2650 3750 2650
 Wire Wire Line
@@ -1173,20 +1160,20 @@ Wire Wire Line
 Wire Wire Line
 	9150 2550 7950 2550
 Wire Wire Line
-	1650 4200 2150 4200
+	1650 4200 2000 4200
 Wire Wire Line
-	2150 4100 2150 4600
+	2150 4100 2150 4200
 Connection ~ 2150 4200
 Wire Wire Line
-	2850 4400 3150 4400
+	2850 4400 3000 4400
 Connection ~ 3000 4400
 Wire Wire Line
-	3450 4400 3800 4400
+	3450 4400 3500 4400
 Connection ~ 3500 4400
 Wire Wire Line
 	2500 4800 2500 5000
 Wire Wire Line
-	2500 5000 3700 5000
+	2500 5000 3000 5000
 Wire Wire Line
 	3700 5000 3700 4700
 Connection ~ 3300 5000
@@ -1225,7 +1212,7 @@ Wire Wire Line
 	2700 5650 3500 5650
 Connection ~ 5700 3050
 Wire Wire Line
-	9150 5000 9250 5000
+	9150 5000 9200 5000
 Wire Wire Line
 	9250 4800 9200 4800
 Wire Wire Line
@@ -1234,7 +1221,7 @@ Connection ~ 9200 5000
 Wire Wire Line
 	1750 2650 1750 2550
 $Comp
-L GND #GND01
+L pocket-cape-rescue:GND #GND01
 U 1 1 59D51733
 P 950 2650
 F 0 "#GND01" H 851 2550 70  0001 L BNN
@@ -1269,7 +1256,7 @@ BUTT_2
 Text GLabel 9200 5300 0    40   Input ~ 0
 BUTT_3
 $Comp
-L C C3
+L pocket-cape-rescue:C C3
 U 1 1 59D5BD4F
 P 8300 5050
 F 0 "C3" H 8415 5096 50  0000 L CNN
@@ -1280,7 +1267,7 @@ F 3 "" H 8300 5050 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR030
+L pocket-cape-rescue:GND #PWR030
 U 1 1 59D5BF45
 P 8300 5200
 F 0 "#PWR030" H 8300 4950 50  0001 C CNN
@@ -1291,7 +1278,7 @@ F 3 "" H 8300 5200 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L +5V #PWR031
+L pocket-cape-rescue:+5V #PWR031
 U 1 1 59D5C014
 P 8300 4900
 F 0 "#PWR031" H 8300 4750 50  0001 C CNN
@@ -1302,7 +1289,7 @@ F 3 "" H 8300 4900 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR032
+L pocket-cape-rescue:GND #PWR032
 U 1 1 59D86721
 P 6250 5250
 F 0 "#PWR032" H 6250 5000 50  0001 C CNN
@@ -1313,18 +1300,18 @@ F 3 "" H 6250 5250 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L C C5
+L pocket-cape-rescue:C C5
 U 1 1 59D8672D
 P 6250 5100
 F 0 "C5" V 6300 5200 50  0000 C CNN
 F 1 "100n" V 6400 5100 50  0000 C CNN
-F 2 "Capacitors_SMD:C_0603" H 6288 4950 50  0001 C CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 6288 4950 50  0001 C CNN
 F 3 "" H 6250 5100 50  0001 C CNN
 	1    6250 5100
 	-1   0    0    1   
 $EndComp
 $Comp
-L +3.3V #PWR033
+L pocket-cape-rescue:+3.3V #PWR033
 U 1 1 59D8676E
 P 6250 4950
 F 0 "#PWR033" H 6250 4800 50  0001 C CNN
@@ -1382,7 +1369,7 @@ NoConn ~ 3500 5350
 NoConn ~ 1750 2050
 NoConn ~ 9150 1950
 $Comp
-L D_Schottky D1
+L pocket-cape-rescue:D_Schottky D1
 U 1 1 59F5AC61
 P 3000 4850
 F 0 "D1" V 2954 4929 50  0000 L CNN
@@ -1401,27 +1388,27 @@ SYS_VOUT
 Text GLabel 1050 2250 2    40   Input ~ 0
 SYS_VOUT
 Wire Wire Line
-	950  2250 1050 2250
+	950  2250 1000 2250
 Wire Wire Line
 	1000 2150 1000 2250
 Connection ~ 1000 2250
 NoConn ~ 6150 2550
 $Comp
-L +5V #PWR?
+L power:+5V #PWR0101
 U 1 1 59F5543E
-P 7750 5000
-F 0 "#PWR?" H 7750 4850 50  0001 C CNN
-F 1 "+5V" V 7765 5128 50  0000 L CNN
-F 2 "" H 7750 5000 50  0001 C CNN
-F 3 "" H 7750 5000 50  0001 C CNN
-	1    7750 5000
-	0    1    1    0   
+P 7850 4000
+F 0 "#PWR0101" H 7850 3850 50  0001 C CNN
+F 1 "+5V" H 7950 4100 50  0000 L CNN
+F 2 "" H 7850 4000 50  0001 C CNN
+F 3 "" H 7850 4000 50  0001 C CNN
+	1    7850 4000
+	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR?
+L pocket-cape-rescue:GND #PWR0102
 U 1 1 59F56D9F
 P 6950 4400
-F 0 "#PWR?" H 6950 4150 50  0001 C CNN
+F 0 "#PWR0102" H 6950 4150 50  0001 C CNN
 F 1 "GND" V 6950 4200 50  0000 C CNN
 F 2 "" H 6950 4400 50  0001 C CNN
 F 3 "" H 6950 4400 50  0001 C CNN
@@ -1429,10 +1416,10 @@ F 3 "" H 6950 4400 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L GND #PWR?
+L pocket-cape-rescue:GND #PWR0103
 U 1 1 59F56E7F
 P 6950 4600
-F 0 "#PWR?" H 6950 4350 50  0001 C CNN
+F 0 "#PWR0103" H 6950 4350 50  0001 C CNN
 F 1 "GND" V 6950 4400 50  0000 C CNN
 F 2 "" H 6950 4600 50  0001 C CNN
 F 3 "" H 6950 4600 50  0001 C CNN
@@ -1440,10 +1427,10 @@ F 3 "" H 6950 4600 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L GND #PWR?
+L pocket-cape-rescue:GND #PWR0104
 U 1 1 59F56EC4
 P 6950 4700
-F 0 "#PWR?" H 6950 4450 50  0001 C CNN
+F 0 "#PWR0104" H 6950 4450 50  0001 C CNN
 F 1 "GND" V 6950 4500 50  0000 C CNN
 F 2 "" H 6950 4700 50  0001 C CNN
 F 3 "" H 6950 4700 50  0001 C CNN
@@ -1451,10 +1438,10 @@ F 3 "" H 6950 4700 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L GND #PWR?
+L power:GND #PWR0105
 U 1 1 59F56F09
 P 7750 4700
-F 0 "#PWR?" H 7750 4450 50  0001 C CNN
+F 0 "#PWR0105" H 7750 4450 50  0001 C CNN
 F 1 "GND" V 7750 4500 50  0000 C CNN
 F 2 "" H 7750 4700 50  0001 C CNN
 F 3 "" H 7750 4700 50  0001 C CNN
@@ -1462,10 +1449,10 @@ F 3 "" H 7750 4700 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR?
+L pocket-cape-rescue:GND #PWR0106
 U 1 1 59F56F88
 P 7750 4600
-F 0 "#PWR?" H 7750 4350 50  0001 C CNN
+F 0 "#PWR0106" H 7750 4350 50  0001 C CNN
 F 1 "GND" V 7750 4400 50  0000 C CNN
 F 2 "" H 7750 4600 50  0001 C CNN
 F 3 "" H 7750 4600 50  0001 C CNN
@@ -1473,14 +1460,43 @@ F 3 "" H 7750 4600 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR?
+L pocket-cape-rescue:GND #PWR0107
 U 1 1 59F56FCD
 P 7750 4400
-F 0 "#PWR?" H 7750 4150 50  0001 C CNN
+F 0 "#PWR0107" H 7750 4150 50  0001 C CNN
 F 1 "GND" V 7750 4200 50  0000 C CNN
 F 2 "" H 7750 4400 50  0001 C CNN
 F 3 "" H 7750 4400 50  0001 C CNN
 	1    7750 4400
 	0    -1   -1   0   
 $EndComp
+Wire Wire Line
+	2150 4200 2150 4600
+Wire Wire Line
+	3000 4400 3150 4400
+Wire Wire Line
+	3500 4400 3700 4400
+Wire Wire Line
+	3300 5000 3500 5000
+Wire Wire Line
+	3500 5000 3700 5000
+Wire Wire Line
+	3000 5000 3300 5000
+Wire Wire Line
+	3700 4400 3800 4400
+Wire Wire Line
+	2000 4200 2150 4200
+Wire Wire Line
+	9200 5000 9250 5000
+Wire Wire Line
+	1750 2650 3250 2650
+Wire Wire Line
+	1000 2250 1050 2250
+Wire Wire Line
+	7750 4000 7850 4000
+Wire Wire Line
+	7850 4000 8200 4000
+Wire Wire Line
+	8200 4000 8200 4100
+Connection ~ 7850 4000
 $EndSCHEMATC

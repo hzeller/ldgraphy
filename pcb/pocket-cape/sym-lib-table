@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name pocket-cape-rescue)(type Legacy)(uri ${KIPRJMOD}/pocket-cape-rescue.lib)(options "")(descr ""))
+)
