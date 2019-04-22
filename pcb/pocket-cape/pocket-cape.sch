@@ -15,7 +15,7 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L pocket-cape-rescue:GND #GND013
+L power:GND #GND013
 U 1 1 599213A3
 P 1550 2650
 F 0 "#GND013" H 1451 2550 70  0001 L BNN
@@ -26,7 +26,7 @@ F 3 "" H 1550 2650 60  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #GND014
+L power:GND #GND014
 U 1 1 59921407
 P 4950 2650
 F 0 "#GND014" H 4850 2550 70  0001 L BNN
@@ -37,7 +37,7 @@ F 3 "" H 4950 2650 60  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #GND015
+L power:GND #GND015
 U 1 1 5992146B
 P 4950 2950
 F 0 "#GND015" H 4850 2850 70  0001 L BNN
@@ -48,7 +48,7 @@ F 3 "" H 4950 2950 60  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #GND016
+L power:GND #GND016
 U 1 1 599214CF
 P 6250 2650
 F 0 "#GND016" H 6151 2550 70  0001 L BNN
@@ -59,7 +59,7 @@ F 3 "" H 6250 2650 60  0001 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #GND017
+L power:GND #GND017
 U 1 1 59921533
 P 6250 2950
 F 0 "#GND017" H 6151 2850 70  0001 L BNN
@@ -418,7 +418,7 @@ F 3 "" H 2500 4450 60  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:+12V #PWR04
+L power:+12V #PWR04
 U 1 1 59CBAD8D
 P 2150 4100
 F 0 "#PWR04" H 2150 3950 50  0001 C CNN
@@ -429,18 +429,18 @@ F 3 "" H 2150 4100 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:C C2
+L Device:C C2
 U 1 1 59CBADCB
 P 2000 4350
 F 0 "C2" H 1850 4450 50  0000 L CNN
 F 1 "10u" H 1850 4250 50  0000 L CNN
-F 2 "Capacitors_SMD:C_1206" H 2038 4200 50  0001 C CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric" H 2038 4200 50  0001 C CNN
 F 3 "" H 2000 4350 50  0001 C CNN
 	1    2000 4350
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #PWR010
+L power:GND #PWR010
 U 1 1 59CBAECF
 P 2000 4500
 F 0 "#PWR010" H 2000 4250 50  0001 C CNN
@@ -451,40 +451,40 @@ F 3 "" H 2000 4500 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:C C1
+L Device:C C1
 U 1 1 59CBB083
 P 3000 4200
 F 0 "C1" V 3252 4200 50  0000 C CNN
 F 1 "C" V 3161 4200 50  0000 C CNN
-F 2 "Capacitors_SMD:C_0603" H 3038 4050 50  0001 C CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 3038 4050 50  0001 C CNN
 F 3 "" H 3000 4200 50  0001 C CNN
 	1    3000 4200
 	0    -1   -1   0   
 $EndComp
 $Comp
-L pocket-cape-rescue:L L1
+L Device:L L1
 U 1 1 59CBB1B7
 P 3300 4400
 F 0 "L1" V 3490 4400 50  0000 C CNN
 F 1 "4u7" V 3399 4400 50  0000 C CNN
-F 2 "Inductors:Inductor_Taiyo-Yuden_NR-60xx" H 3300 4400 50  0001 C CNN
+F 2 "Inductor_SMD:L_Taiyo-Yuden_NR-60xx" H 3300 4400 50  0001 C CNN
 F 3 "" H 3300 4400 50  0001 C CNN
 	1    3300 4400
 	0    -1   -1   0   
 $EndComp
 $Comp
-L pocket-cape-rescue:C C4
+L Device:C C4
 U 1 1 59CBB589
 P 3700 4550
 F 0 "C4" H 3815 4596 50  0000 L CNN
 F 1 "22u" H 3815 4505 50  0000 L CNN
-F 2 "Capacitors_SMD:C_1206" H 3738 4400 50  0001 C CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric" H 3738 4400 50  0001 C CNN
 F 3 "" H 3700 4550 50  0001 C CNN
 	1    3700 4550
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #PWR013
+L power:GND #PWR013
 U 1 1 59CBB65E
 P 3300 5000
 F 0 "#PWR013" H 3300 4750 50  0001 C CNN
@@ -495,40 +495,40 @@ F 3 "" H 3300 5000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:R R6
+L Device:R R6
 U 1 1 59CBB7E1
 P 3500 4550
 F 0 "R6" H 3350 4600 50  0000 L CNN
 F 1 "6k2" V 3500 4500 50  0000 L CNN
-F 2 "Resistors_SMD:R_0603" H 3570 4459 50  0001 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 3570 4459 50  0001 L CNN
 F 3 "" H 3500 4550 50  0001 C CNN
 	1    3500 4550
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:R R7
+L Device:R R7
 U 1 1 59CBBA05
 P 3500 4850
 F 0 "R7" H 3350 4900 50  0000 L CNN
 F 1 "1k2" V 3500 4800 50  0000 L CNN
-F 2 "Resistors_SMD:R_0603" H 3570 4759 50  0001 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 3570 4759 50  0001 L CNN
 F 3 "" H 3500 4850 50  0001 C CNN
 	1    3500 4850
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:CONN_01X02 J1
+L Connector_Generic:Conn_01x02 J1
 U 1 1 59CBCAA7
-P 4650 4550
-F 0 "J1" H 4650 4700 50  0000 C CNN
-F 1 "Sync1" H 4700 4400 50  0000 C CNN
-F 2 "Connectors_JST:JST_PH_B2B-PH-K_02x2.00mm_Straight" H 4650 4550 50  0001 C CNN
-F 3 "" H 4650 4550 50  0001 C CNN
-	1    4650 4550
+P 4650 4600
+F 0 "J1" H 4650 4750 50  0000 C CNN
+F 1 "Sync1" H 4700 4450 50  0000 C CNN
+F 2 "Connector_JST:JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical" H 4650 4600 50  0001 C CNN
+F 3 "" H 4650 4600 50  0001 C CNN
+	1    4650 4600
 	-1   0    0    1   
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #PWR05
+L power:GND #PWR05
 U 1 1 59CBD3DF
 P 4850 4600
 F 0 "#PWR05" H 4850 4350 50  0001 C CNN
@@ -539,7 +539,7 @@ F 3 "" H 4850 4600 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:+5V #PWR08
+L power:+5V #PWR08
 U 1 1 59CBDB21
 P 3800 4400
 F 0 "#PWR08" H 3800 4250 50  0001 C CNN
@@ -550,18 +550,18 @@ F 3 "" H 3800 4400 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:CONN_01X02 J3
+L Connector_Generic:Conn_01x02 J3
 U 1 1 59CBE568
-P 4650 5800
-F 0 "J3" H 4650 5950 50  0000 C CNN
-F 1 "Sync2" H 4700 5650 50  0000 C CNN
-F 2 "Connectors_JST:JST_PH_B2B-PH-K_02x2.00mm_Straight" H 4650 5800 50  0001 C CNN
-F 3 "" H 4650 5800 50  0001 C CNN
-	1    4650 5800
+P 4650 5850
+F 0 "J3" H 4650 6000 50  0000 C CNN
+F 1 "Sync2" H 4700 5700 50  0000 C CNN
+F 2 "Connector_JST:JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical" H 4650 5850 50  0001 C CNN
+F 3 "" H 4650 5850 50  0001 C CNN
+	1    4650 5850
 	-1   0    0    1   
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #PWR015
+L power:GND #PWR015
 U 1 1 59CBE588
 P 4850 5850
 F 0 "#PWR015" H 4850 5600 50  0001 C CNN
@@ -572,7 +572,7 @@ F 3 "" H 4850 5850 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:+5V #PWR012
+L power:+5V #PWR012
 U 1 1 59CBE591
 P 4850 5450
 F 0 "#PWR012" H 4850 5300 50  0001 C CNN
@@ -591,40 +591,40 @@ K
 Text Notes 4500 5900 0    60   ~ 0
 A
 $Comp
-L pocket-cape-rescue:R R5
+L Device:R R5
 U 1 1 59CD141C
 P 4850 4350
 F 0 "R5" V 4750 4350 50  0000 C CNN
 F 1 "100k" V 4850 4350 50  0000 C CNN
-F 2 "Resistors_SMD:R_0603" V 4780 4350 50  0001 C CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" V 4780 4350 50  0001 C CNN
 F 3 "" H 4850 4350 50  0001 C CNN
 	1    4850 4350
 	-1   0    0    1   
 $EndComp
 $Comp
-L pocket-cape-rescue:R R10
+L Device:R R10
 U 1 1 59CD1872
 P 4850 5600
 F 0 "R10" V 4750 5600 50  0000 C CNN
 F 1 "100k" V 4850 5600 50  0000 C CNN
-F 2 "Resistors_SMD:R_0603" V 4780 5600 50  0001 C CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" V 4780 5600 50  0001 C CNN
 F 3 "" H 4850 5600 50  0001 C CNN
 	1    4850 5600
 	-1   0    0    1   
 $EndComp
 $Comp
-L pocket-cape-rescue:CONN_01X02 J2
+L Connector_Generic:Conn_01x02 J2
 U 1 1 59CD217B
-P 1450 4250
-F 0 "J2" H 1450 4400 50  0000 C CNN
-F 1 "12..16V" H 1500 4100 50  0000 C CNN
-F 2 "Connectors_JST:JST_XH_B02B-XH-A_02x2.50mm_Straight" H 1450 4250 50  0001 C CNN
-F 3 "" H 1450 4250 50  0001 C CNN
-	1    1450 4250
+P 1450 4300
+F 0 "J2" H 1450 4450 50  0000 C CNN
+F 1 "12..16V" H 1500 4150 50  0000 C CNN
+F 2 "Connector_JST:JST_XH_B2B-XH-A_1x02_P2.50mm_Vertical" H 1450 4300 50  0001 C CNN
+F 3 "" H 1450 4300 50  0001 C CNN
+	1    1450 4300
 	-1   0    0    1   
 $EndComp
 $Comp
-L pocket-cape-rescue:+5V #PWR019
+L power:+5V #PWR019
 U 1 1 59CD55EE
 P 1750 1950
 F 0 "#PWR019" H 1750 1800 50  0001 C CNN
@@ -639,12 +639,12 @@ Sync1
 Text GLabel 5750 5750 2    60   Output ~ 0
 Sync2
 $Comp
-L pocket-cape-rescue:CONN_01X05 J4
+L Connector_Generic:Conn_01x05 J4
 U 1 1 59CDCDA1
 P 8400 4300
 F 0 "J4" H 8478 4341 50  0000 L CNN
 F 1 "Sled" H 8478 4250 50  0000 L CNN
-F 2 "Connectors_JST:JST_XH_B05B-XH-A_05x2.50mm_Straight" H 8400 4300 50  0001 C CNN
+F 2 "Connector_JST:JST_XH_B5B-XH-A_1x05_P2.50mm_Vertical" H 8400 4300 50  0001 C CNN
 F 3 "" H 8400 4300 50  0001 C CNN
 	1    8400 4300
 	1    0    0    1   
@@ -672,7 +672,7 @@ F 3 "" H 2900 5450 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #PWR021
+L power:GND #PWR021
 U 1 1 59CDF730
 P 7350 5000
 F 0 "#PWR021" H 7350 4750 50  0001 C CNN
@@ -687,7 +687,7 @@ MIRROR_CLK
 Text GLabel 2700 5450 0    40   Input ~ 0
 ~MIRROR_EN1
 $Comp
-L pocket-cape-rescue:GND #PWR023
+L power:GND #PWR023
 U 1 1 59CE07D4
 P 2700 5550
 F 0 "#PWR023" H 2700 5300 50  0001 C CNN
@@ -698,7 +698,7 @@ F 3 "" H 2700 5550 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L pocket-cape-rescue:+12V #PWR024
+L power:+12V #PWR024
 U 1 1 59CE0924
 P 2700 5650
 F 0 "#PWR024" H 2700 5500 50  0001 C CNN
@@ -741,7 +741,7 @@ F 3 "" H 2000 5950 50  0001 C CNN
 	1    0    0    1   
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #PWR025
+L power:GND #PWR025
 U 1 1 59CE60A1
 P 1800 6050
 F 0 "#PWR025" H 1800 5800 50  0001 C CNN
@@ -752,7 +752,7 @@ F 3 "" H 1800 6050 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #PWR022
+L power:GND #PWR022
 U 1 1 59CE60EE
 P 1800 5400
 F 0 "#PWR022" H 1800 5150 50  0001 C CNN
@@ -779,7 +779,7 @@ LASER1
 Text GLabel 1750 3550 0    40   Output ~ 0
 LASER2
 $Comp
-L pocket-cape-rescue:+3.3V #PWR026
+L power:+3.3V #PWR026
 U 1 1 59CF5226
 P 5700 3050
 F 0 "#PWR026" H 5700 2900 50  0001 C CNN
@@ -800,7 +800,7 @@ Text GLabel 9150 2050 2    40   Output ~ 0
 Text GLabel 9150 2150 2    40   Output ~ 0
 ~MIRROR_EN2
 $Comp
-L pocket-cape-rescue:GND #PWR027
+L power:GND #PWR027
 U 1 1 59CF96CE
 P 5850 5250
 F 0 "#PWR027" H 5850 5000 50  0001 C CNN
@@ -811,7 +811,7 @@ F 3 "" H 5850 5250 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:+5V #PWR028
+L power:+5V #PWR028
 U 1 1 59CF971D
 P 5850 4950
 F 0 "#PWR028" H 5850 4800 50  0001 C CNN
@@ -822,12 +822,12 @@ F 3 "" H 5850 4950 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:C C6
+L Device:C C6
 U 1 1 59CF9944
 P 5850 5100
 F 0 "C6" V 5900 5200 50  0000 C CNN
 F 1 "100n" V 6000 5100 50  0000 C CNN
-F 2 "Capacitors_SMD:C_0603" H 5888 4950 50  0001 C CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 5888 4950 50  0001 C CNN
 F 3 "" H 5850 5100 50  0001 C CNN
 	1    5850 5100
 	-1   0    0    1   
@@ -837,7 +837,7 @@ Sync2
 Text GLabel 9150 3250 2    40   Input ~ 0
 Sync1
 $Comp
-L pocket-cape-rescue:+12V #PWR01
+L power:+12V #PWR01
 U 1 1 59D06646
 P 1800 5200
 F 0 "#PWR01" H 1800 5050 50  0001 C CNN
@@ -848,7 +848,7 @@ F 3 "" H 1800 5200 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:+12V #PWR02
+L power:+12V #PWR02
 U 1 1 59D0674B
 P 1800 5850
 F 0 "#PWR02" H 1800 5700 50  0001 C CNN
@@ -859,7 +859,7 @@ F 3 "" H 1800 5850 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:+5V #PWR07
+L power:+5V #PWR07
 U 1 1 59D169AB
 P 4850 4200
 F 0 "#PWR07" H 4850 4050 50  0001 C CNN
@@ -870,18 +870,18 @@ F 3 "" H 4850 4200 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:CONN_01X04 J9
+L Connector_Generic:Conn_01x04 J9
 U 1 1 59D1AEC3
-P 9400 5450
-F 0 "J9" H 9400 5700 50  0000 C CNN
-F 1 "Switches" V 9500 5450 50  0000 C CNN
-F 2 "Connectors_JST:JST_PH_B4B-PH-K_04x2.00mm_Straight" H 9400 5450 50  0001 C CNN
-F 3 "" H 9400 5450 50  0001 C CNN
-	1    9400 5450
+P 9400 5500
+F 0 "J9" H 9400 5750 50  0000 C CNN
+F 1 "Switches" V 9500 5500 50  0000 C CNN
+F 2 "Connector_JST:JST_PH_B4B-PH-K_1x04_P2.00mm_Vertical" H 9400 5500 50  0001 C CNN
+F 3 "" H 9400 5500 50  0001 C CNN
+	1    9400 5500
 	1    0    0    1   
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #PWR03
+L power:GND #PWR03
 U 1 1 59D1B4CD
 P 9200 5600
 F 0 "#PWR03" H 9200 5350 50  0001 C CNN
@@ -892,7 +892,7 @@ F 3 "" H 9200 5600 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #PWR014
+L power:GND #PWR014
 U 1 1 59D3B34E
 P 9150 5000
 F 0 "#PWR014" H 9150 4750 50  0001 C CNN
@@ -903,7 +903,7 @@ F 3 "" H 9150 5000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:+3.3V #PWR06
+L power:+3.3V #PWR06
 U 1 1 59D3D62B
 P 9250 4200
 F 0 "#PWR06" H 9250 4050 50  0001 C CNN
@@ -936,7 +936,7 @@ F 3 "" H 5445 5865 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:+3.3V #PWR016
+L power:+3.3V #PWR016
 U 1 1 59D3C25B
 P 5250 4300
 F 0 "#PWR016" H 5250 4150 50  0001 C CNN
@@ -947,7 +947,7 @@ F 3 "" H 5250 4300 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:+3.3V #PWR018
+L power:+3.3V #PWR018
 U 1 1 59D3C29A
 P 5250 5550
 F 0 "#PWR018" H 5250 5400 50  0001 C CNN
@@ -958,7 +958,7 @@ F 3 "" H 5250 5550 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #PWR017
+L power:GND #PWR017
 U 1 1 59D3C2D9
 P 5250 4700
 F 0 "#PWR017" H 5250 4450 50  0001 C CNN
@@ -969,7 +969,7 @@ F 3 "" H 5250 4700 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #PWR029
+L power:GND #PWR029
 U 1 1 59D3C318
 P 5250 5950
 F 0 "#PWR029" H 5250 5700 50  0001 C CNN
@@ -1000,7 +1000,7 @@ DISP-DC
 Text GLabel 9250 4700 0    60   Input ~ 0
 DISP-RST
 $Comp
-L pocket-cape-rescue:CONN_01X09 J10
+L Connector_Generic:Conn_01x09 J10
 U 1 1 59D3B2B8
 P 9450 4600
 F 0 "J10" H 9528 4641 50  0000 L CNN
@@ -1015,7 +1015,7 @@ NoConn ~ 9250 4900
 Text Notes 9550 5150 0    60   ~ 0
 NC on 8 to make accidentally\nturned cable less dangerous.\n(pin 9 = connector shield)
 $Comp
-L pocket-cape-rescue:CONN_01X05 J11
+L Connector_Generic:Conn_01x05 J11
 U 1 1 59D51437
 P 750 2450
 F 0 "J11" H 828 2491 50  0000 L CNN
@@ -1221,7 +1221,7 @@ Connection ~ 9200 5000
 Wire Wire Line
 	1750 2650 1750 2550
 $Comp
-L pocket-cape-rescue:GND #GND01
+L power:GND #GND01
 U 1 1 59D51733
 P 950 2650
 F 0 "#GND01" H 851 2550 70  0001 L BNN
@@ -1256,18 +1256,18 @@ BUTT_2
 Text GLabel 9200 5300 0    40   Input ~ 0
 BUTT_3
 $Comp
-L pocket-cape-rescue:C C3
+L Device:C C3
 U 1 1 59D5BD4F
 P 8300 5050
 F 0 "C3" H 8415 5096 50  0000 L CNN
 F 1 "22u" H 8415 5005 50  0000 L CNN
-F 2 "Capacitors_SMD:C_1206" H 8338 4900 50  0001 C CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric" H 8338 4900 50  0001 C CNN
 F 3 "" H 8300 5050 50  0001 C CNN
 	1    8300 5050
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #PWR030
+L power:GND #PWR030
 U 1 1 59D5BF45
 P 8300 5200
 F 0 "#PWR030" H 8300 4950 50  0001 C CNN
@@ -1278,7 +1278,7 @@ F 3 "" H 8300 5200 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:+5V #PWR031
+L power:+5V #PWR031
 U 1 1 59D5C014
 P 8300 4900
 F 0 "#PWR031" H 8300 4750 50  0001 C CNN
@@ -1289,7 +1289,7 @@ F 3 "" H 8300 4900 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #PWR032
+L power:GND #PWR032
 U 1 1 59D86721
 P 6250 5250
 F 0 "#PWR032" H 6250 5000 50  0001 C CNN
@@ -1300,7 +1300,7 @@ F 3 "" H 6250 5250 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:C C5
+L Device:C C5
 U 1 1 59D8672D
 P 6250 5100
 F 0 "C5" V 6300 5200 50  0000 C CNN
@@ -1311,7 +1311,7 @@ F 3 "" H 6250 5100 50  0001 C CNN
 	-1   0    0    1   
 $EndComp
 $Comp
-L pocket-cape-rescue:+3.3V #PWR033
+L power:+3.3V #PWR033
 U 1 1 59D8676E
 P 6250 4950
 F 0 "#PWR033" H 6250 4800 50  0001 C CNN
@@ -1369,12 +1369,12 @@ NoConn ~ 3500 5350
 NoConn ~ 1750 2050
 NoConn ~ 9150 1950
 $Comp
-L pocket-cape-rescue:D_Schottky D1
+L Device:D_Schottky D1
 U 1 1 59F5AC61
 P 3000 4850
 F 0 "D1" V 2954 4929 50  0000 L CNN
 F 1 "MBR230LSFT1G" V 3200 4350 50  0000 L CNN
-F 2 "Diodes_SMD:D_SOD-123" H 3000 4850 50  0001 C CNN
+F 2 "Diode_SMD:D_SOD-123" H 3000 4850 50  0001 C CNN
 F 3 "" H 3000 4850 50  0001 C CNN
 	1    3000 4850
 	0    1    1    0   
@@ -1405,7 +1405,7 @@ F 3 "" H 7850 4000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #PWR0102
+L power:GND #PWR0102
 U 1 1 59F56D9F
 P 6950 4400
 F 0 "#PWR0102" H 6950 4150 50  0001 C CNN
@@ -1416,7 +1416,7 @@ F 3 "" H 6950 4400 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #PWR0103
+L power:GND #PWR0103
 U 1 1 59F56E7F
 P 6950 4600
 F 0 "#PWR0103" H 6950 4350 50  0001 C CNN
@@ -1427,7 +1427,7 @@ F 3 "" H 6950 4600 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #PWR0104
+L power:GND #PWR0104
 U 1 1 59F56EC4
 P 6950 4700
 F 0 "#PWR0104" H 6950 4450 50  0001 C CNN
@@ -1449,7 +1449,7 @@ F 3 "" H 7750 4700 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #PWR0106
+L power:GND #PWR0106
 U 1 1 59F56F88
 P 7750 4600
 F 0 "#PWR0106" H 7750 4350 50  0001 C CNN
@@ -1460,7 +1460,7 @@ F 3 "" H 7750 4600 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L pocket-cape-rescue:GND #PWR0107
+L power:GND #PWR0107
 U 1 1 59F56FCD
 P 7750 4400
 F 0 "#PWR0107" H 7750 4150 50  0001 C CNN
@@ -1499,4 +1499,5 @@ Wire Wire Line
 Wire Wire Line
 	8200 4000 8200 4100
 Connection ~ 7850 4000
+Connection ~ 950  2650
 $EndSCHEMATC
