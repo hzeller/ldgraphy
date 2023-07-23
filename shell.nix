@@ -14,6 +14,10 @@ pkgs.mkShell {
       pstoedit    # Generate DXF from it
       librecad    # mostly to just look at generated dxf
 
+      # PCBs
+      kicad
+      python3     # For PCB cam scripts
+
       # CAM
       lightburn
     ];
