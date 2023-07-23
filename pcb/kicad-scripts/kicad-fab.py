@@ -19,14 +19,14 @@ popt.SetOutputDirectory(plotDir)
 
 # Set some important plot options:
 popt.SetPlotFrameRef(False)
-popt.SetLineWidth(FromMM(0.35))
+#popt.SetLineWidth(FromMM(0.35))
 
 popt.SetAutoScale(False)
 popt.SetScale(1)
 popt.SetMirror(False)
 popt.SetUseGerberAttributes(True)
 popt.SetUseGerberProtelExtensions(True)
-popt.SetExcludeEdgeLayer(True);
+#popt.SetExcludeEdgeLayer(True);
 popt.SetScale(1)
 popt.SetUseAuxOrigin(True)
 
@@ -69,11 +69,9 @@ pctl.ClosePlot()
 drlwriter = EXCELLON_WRITER( board )
 drlwriter.SetMapFileFormat( PLOT_FORMAT_PDF )
 
-mirror = False
-minimalHeader = False
-offset = board.GetAuxOrigin()
+offset = board.GetDesignSettings().GetAuxOrigin()
 mergeNPTH = True   # non-plated through-hole
-drlwriter.SetOptions( mirror, minimalHeader, offset, mergeNPTH )
+drlwriter.SetOptions( aMirror=False, aMinimalHeader=False, aOffset=offset, aMerge_PTH_NPTH=mergeNPTH )
 
 metricFmt = True
 drlwriter.SetFormat( metricFmt )
@@ -86,5 +84,5 @@ drlwriter.CreateDrillandMapFilesSet( plotDir, genDrl, genMap );
 # time, but we do want its name to be a bit different to show up on top.
 # So this is an ugly hack to rename the drl-file to have a 0 in the beginning.
 base_name = filename[:-10]
-print plotDir + base_name + ".drl"
+print(plotDir + base_name + ".drl")
 os.rename(plotDir + base_name + ".drl", plotDir + base_name + "-0.drl")

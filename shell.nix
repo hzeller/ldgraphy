@@ -17,6 +17,8 @@ pkgs.mkShell {
       # PCBs
       kicad
       python3     # For PCB cam scripts
+      python310Packages.kicad
+      zip         # pack up the gerbers.
 
       # CAM
       lightburn
